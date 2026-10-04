@@ -311,7 +311,7 @@ public final class KillerUiText {
     }
 
     public static int measureParagraphHeight(JagString text, int style, int width, int vpadding) {
-        ParsedText parsed = parse(text, style, 0xFFFFFF, -1, 256, EFFECT_NONE);
+        ParsedText parsed = parse(text, style, 0xFFFFFF, -1, 256, EFFECT_NONE, 0);
         List<Line> lines = layout(parsed, Math.max(1, width), KillerUi.px(vpadding));
         int height = 0;
         for (Line line : lines) {
