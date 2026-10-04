@@ -691,7 +691,12 @@ public class Cs1ScriptRunner {
 											} else if (component.invSprite != null && temp1 < 20) {
 												@Pc(1381) Sprite invSprite = component.getInvSprite(temp1);
 												if (invSprite != null) {
-													invSprite.render(x, y);
+													invSprite.renderResized(
+														x,
+														y,
+														KillerUi.px(invSprite.innerWidth),
+														KillerUi.px(invSprite.innerHeight)
+													);
 												} else if (Component.loadFailed) {
 													InterfaceList.redraw(component);
 												}
@@ -786,7 +791,45 @@ public class Cs1ScriptRunner {
 												temp2 = sprite.innerWidth;
 												temp3 = sprite.innerHeight;
 
-												if (component.spriteTiling) {
+												if (component.spriteTiling && Math.abs(KillerUi.scale() - 1.0D) > 0.000001D) {
+													int killerTileWidth = Math.max(1, KillerUi.px(temp2));
+													int killerTileHeight = Math.max(1, KillerUi.px(temp3));
+													memory = (component.width + killerTileWidth - 1) / killerTileWidth;
+													color = (component.height + killerTileHeight - 1) / killerTileHeight;
+
+													if (GlRenderer.enabled) {
+														GlRaster.setClipRegion(componentX, componentY, component.width + componentX, component.height + componentY);
+													} else {
+														SoftwareRaster.shrinkClip(componentX, componentY, componentX + component.width, componentY + component.height);
+													}
+
+													int killerTileZoom = Math.max(1, killerTileWidth * 4096 / Math.max(1, temp2));
+													for (temp5 = 0; temp5 < memory; temp5++) {
+														for (temp6 = 0; temp6 < color; temp6++) {
+															int killerTileX = componentX + temp5 * killerTileWidth;
+															int killerTileY = componentY + temp6 * killerTileHeight;
+															if (component.angle2d != 0) {
+																sprite.renderAngled(
+																	killerTileY + killerTileHeight / 2,
+																	component.angle2d,
+																	killerTileZoom,
+																	killerTileX + killerTileWidth / 2
+																);
+															} else if (alpha == 0) {
+																sprite.renderResized(killerTileX, killerTileY, killerTileWidth, killerTileHeight);
+															} else {
+																sprite.renderAlpha(killerTileX, killerTileY, killerTileWidth, killerTileHeight, 256 - (alpha & 0xFF));
+															}
+														}
+													}
+
+													if (GlRenderer.enabled) {
+														GlRaster.setClip(clipLeft, clipTop, clipRight, clipBottom);
+													} else {
+														SoftwareRaster.setClip(clipLeft, clipTop, clipRight, clipBottom);
+													}
+													PluginRepository.ComponentDraw(i, component, componentX, componentY);
+												} else if (component.spriteTiling) {
 													memory = (temp2 + component.width - 1) / temp2;
 													color = (component.height + temp3 - 1) / temp3;
 
@@ -1150,10 +1193,10 @@ public class Cs1ScriptRunner {
 		int arrowHeight = KillerUi.scrollbarArrowHeight();
 		int minThumb = KillerUi.px(8);
 
-		// Keep the original arrow artwork, but size the rewritten track/thumb
-		// around the scaled UI geometry.
-		Sprites.scrollbars[0].renderTransparent(x, y);
-		Sprites.scrollbars[1].renderTransparent(x, height + y - arrowHeight);
+		// Scale the arrow artwork with the same box as the rewritten track/thumb
+		// so the full scrollbar remains proportional at non-1.0 UI scales.
+		Sprites.scrollbars[0].renderScaled(x, y, barWidth, arrowHeight);
+		Sprites.scrollbars[1].renderScaled(x, height + y - arrowHeight, barWidth, arrowHeight);
 
 		int trackHeight = Math.max(1, height - arrowHeight * 2);
 		int thumbHeight = height * trackHeight / Math.max(1, scrollMax);
