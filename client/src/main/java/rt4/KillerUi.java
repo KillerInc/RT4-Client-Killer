@@ -13,9 +13,9 @@ public final class KillerUi {
     private KillerUi() {
     }
 
-    public static double scale() {
+    private static double readScale(String property) {
         try {
-            double value = Double.parseDouble(System.getProperty("killerFontScale", "1.0"));
+            double value = Double.parseDouble(System.getProperty(property, "1.0"));
             if (Double.isNaN(value) || Double.isInfinite(value) || value <= 0.0D) {
                 return 1.0D;
             }
@@ -23,6 +23,28 @@ public final class KillerUi {
         } catch (NumberFormatException ignored) {
             return 1.0D;
         }
+    }
+
+    /**
+     * UI/layout geometry scale. Font Scale must never affect this value.
+     */
+    public static double scale() {
+        return readScale("sun.java2d.uiScale");
+    }
+
+    /**
+     * Extra text-only multiplier selected in the launcher.
+     */
+    public static double textScale() {
+        return readScale("killerFontScale");
+    }
+
+    /**
+     * UI Scale is allowed to scale text as part of scaling the whole UI.
+     * Font Scale then applies an additional text-only multiplier.
+     */
+    public static double effectiveTextScale() {
+        return scale() * textScale();
     }
 
     public static int px(int value) {
@@ -35,7 +57,7 @@ public final class KillerUi {
     }
 
     public static int fontTarget(int nativeSize) {
-        return Math.max(1, (int) Math.floor((double) nativeSize * scale() + 0.000001D));
+        return Math.max(1, (int) Math.floor((double) nativeSize * effectiveTextScale() + 0.000001D));
     }
 
     public static int inventorySlotSize() {
