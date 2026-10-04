@@ -452,8 +452,8 @@ public final class ScriptRunner {
 				if (entity.chatMessage != null && (entityIndex >= PlayerList.size || Chat.publicFilter == 0 || Chat.publicFilter == 3 || Chat.publicFilter == 1 && FriendsList.contains(((Player) entity).username))) {
 					setOverheadScreenCoordinateOffsets(height >> 1, zoomH, entity, zoomV, entity.getModelHeight(), width >> 1);
 					if (screenX > -1 && OverheadChat.size < OverheadChat.CAPACITY) {
-						OverheadChat.textHalfWidths[OverheadChat.size] = Fonts.b12Full.getStringWidth(entity.chatMessage) / 2;
-						OverheadChat.textHeights[OverheadChat.size] = Fonts.b12Full.lineHeight;
+						OverheadChat.textHalfWidths[OverheadChat.size] = KillerUiText.measureWidth(entity.chatMessage, KillerUiText.BOLD_12) / 2;
+						OverheadChat.textHeights[OverheadChat.size] = KillerUiText.lineHeight(KillerUiText.BOLD_12);
 						OverheadChat.screenX[OverheadChat.size] = screenX;
 						OverheadChat.screenY[OverheadChat.size] = screenY;
 						OverheadChat.colors[OverheadChat.size] = entity.chatColor;
@@ -535,7 +535,15 @@ public final class ScriptRunner {
 								screenX += 15;
 							}
 							Sprites.hitmarks[entity.hitTypes[yOffset]].render(left + screenX - 12, top + screenY - 12);
-							Fonts.p11Full.renderCenter(JagString.parseInt(entity.hitDamages[yOffset]), screenX + left - 1, screenY + 3 + top, 16777215, 0);
+							KillerUiLog.once("hit-text", "ROUTE hitDamageText=KillerUiText");
+							KillerUiText.drawCenter(
+								JagString.parseInt(entity.hitDamages[yOffset]),
+								KillerUiText.PLAIN_11,
+								screenX + left - 1,
+								screenY + 3 + top,
+								16777215,
+								0
+							);
 						}
 					}
 				}
@@ -604,25 +612,41 @@ public final class ScriptRunner {
 					}
 				}
 				if (OverheadChat.effects[entityIndex] == 0) {
-					Fonts.b12Full.renderCenter(chatMessage, screenX + left, top + screenY, fillWidth, 0);
+					KillerUiText.drawCenter(chatMessage, KillerUiText.BOLD_12, screenX + left, top + screenY, fillWidth, 0);
 				}
 				if (OverheadChat.effects[entityIndex] == 1) {
-					Fonts.b12Full.renderWave(chatMessage, left + screenX, screenY + top, fillWidth, renderCycle);
+					KillerUiText.drawWave(chatMessage, KillerUiText.BOLD_12, left + screenX, screenY + top, fillWidth, 0);
 				}
 				if (OverheadChat.effects[entityIndex] == 2) {
-					Fonts.b12Full.renderWave2(chatMessage, left + screenX, top - -screenY, fillWidth, renderCycle);
+					KillerUiText.drawWave2(chatMessage, KillerUiText.BOLD_12, left + screenX, top - -screenY, fillWidth, 0);
 				}
 				if (OverheadChat.effects[entityIndex] == 3) {
-					Fonts.b12Full.renderShake(chatMessage, left + screenX, screenY + top, fillWidth, renderCycle, 150 - OverheadChat.loops[entityIndex]);
+					KillerUiText.drawShake(
+						chatMessage,
+						KillerUiText.BOLD_12,
+						left + screenX,
+						screenY + top,
+						fillWidth,
+						0,
+						150 - OverheadChat.loops[entityIndex]
+					);
 				}
 				if (OverheadChat.effects[entityIndex] == 4) {
-					spriteHeight = (150 - OverheadChat.loops[entityIndex]) * (Fonts.b12Full.getStringWidth(chatMessage) + 100) / 150;
+					spriteHeight = (150 - OverheadChat.loops[entityIndex])
+						* (KillerUiText.measureWidth(chatMessage, KillerUiText.BOLD_12) + KillerUi.px(100)) / 150;
 					if (GlRenderer.enabled) {
 						GlRaster.setClipRegion(screenX + left - 50, top, screenX + left + 50, height + top);
 					} else {
 						SoftwareRaster.shrinkClip(left + screenX - 50, top, screenX + left + 50, height + top);
 					}
-					Fonts.b12Full.renderLeft(chatMessage, left + screenX + 50 - spriteHeight, top + screenY, fillWidth, 0);
+					KillerUiText.drawLeft(
+						chatMessage,
+						KillerUiText.BOLD_12,
+						left + screenX + KillerUi.px(50) - spriteHeight,
+						top + screenY,
+						fillWidth,
+						0
+					);
 					if (GlRenderer.enabled) {
 						GlRaster.setClip(left, top, width + left, height + top);
 					} else {
@@ -633,16 +657,33 @@ public final class ScriptRunner {
 					@Pc(1372) int slideOffset = 0;
 					spriteHeight = 150 - OverheadChat.loops[entityIndex];
 					if (GlRenderer.enabled) {
-						GlRaster.setClipRegion(left, screenY + top - Fonts.b12Full.lineHeight - 1, width + left, top + screenY + 5);
+						GlRaster.setClipRegion(
+							left,
+							screenY + top - KillerUiText.lineHeight(KillerUiText.BOLD_12) - KillerUi.px(1),
+							width + left,
+							top + screenY + KillerUi.px(5)
+						);
 					} else {
-						SoftwareRaster.shrinkClip(left, screenY + top - Fonts.b12Full.lineHeight - 1, left + width, screenY + top + 5);
+						SoftwareRaster.shrinkClip(
+							left,
+							screenY + top - KillerUiText.lineHeight(KillerUiText.BOLD_12) - KillerUi.px(1),
+							left + width,
+							screenY + top + KillerUi.px(5)
+						);
 					}
 					if (spriteHeight < 25) {
 						slideOffset = spriteHeight - 25;
 					} else if (spriteHeight > 125) {
 						slideOffset = spriteHeight - 125;
 					}
-					Fonts.b12Full.renderCenter(chatMessage, screenX + left, slideOffset + top + screenY, fillWidth, 0);
+					KillerUiText.drawCenter(
+						chatMessage,
+						KillerUiText.BOLD_12,
+						screenX + left,
+						slideOffset + top + screenY,
+						fillWidth,
+						0
+					);
 					if (GlRenderer.enabled) {
 						GlRaster.setClip(left, top, left + width, top + height);
 					} else {
@@ -650,7 +691,14 @@ public final class ScriptRunner {
 					}
 				}
 			} else {
-				Fonts.b12Full.renderCenter(chatMessage, left + screenX, top + screenY, 16776960, 0);
+				KillerUiText.drawCenter(
+					chatMessage,
+					KillerUiText.BOLD_12,
+					left + screenX,
+					top + screenY,
+					16776960,
+					0
+				);
 			}
 		}
 	}
@@ -5711,7 +5759,7 @@ public final class ScriptRunner {
 										isp -= 2;
 										int2 = intStack[isp + 1];
 										int3 = intStack[isp];
-										intStack[isp++] = FontMetricsList.get(int2).getParagraphLineCount(string, int3);
+										intStack[isp++] = KillerUiText.getParagraphLineCount(int2, string, int3);
 										continue;
 									}
 									if (opcode == Cs2Opcodes.getMaxLineWidth) {
@@ -5720,7 +5768,7 @@ public final class ScriptRunner {
 										string = stringStack[ssp];
 										int2 = intStack[isp + 1];
 										int3 = intStack[isp];
-										intStack[isp++] = FontMetricsList.get(int2).getMaxLineWidth(string, int3);
+										intStack[isp++] = KillerUiText.getMaxLineWidth(int2, string, int3);
 										continue;
 									}
 									if (opcode == Cs2Opcodes.chooseString) {
