@@ -138,43 +138,6 @@ public abstract class Font extends SecondaryNode {
 		this.paragraphBottomPadding = maxBottom - this.lineHeight;
 	}
 
-	protected Font(
-		int[] glyphWidths,
-		byte[] kerning,
-		int lineHeight,
-		int[] xOffsets,
-		int[] yOffsets,
-		int[] innerWidths,
-		int[] innerHeights
-	) {
-		this.glyphWidths = glyphWidths;
-		this.kerning = kerning;
-		this.lineHeight = lineHeight;
-		this.spriteXOffsets = xOffsets;
-		this.spriteYOffsets = yOffsets;
-		this.spriteInnerWidths = innerWidths;
-		this.spriteInnerHeights = innerHeights;
-
-		int minTop = Integer.MAX_VALUE;
-		int maxBottom = Integer.MIN_VALUE;
-		for (int i = 0; i < 256; i++) {
-			if (this.spriteYOffsets[i] < minTop && this.spriteInnerHeights[i] != 0) {
-				minTop = this.spriteYOffsets[i];
-			}
-			if (this.spriteYOffsets[i] + this.spriteInnerHeights[i] > maxBottom) {
-				maxBottom = this.spriteYOffsets[i] + this.spriteInnerHeights[i];
-			}
-		}
-		if (minTop == Integer.MAX_VALUE) {
-			minTop = this.lineHeight;
-		}
-		if (maxBottom == Integer.MIN_VALUE) {
-			maxBottom = this.lineHeight;
-		}
-		this.paragraphTopPadding = this.lineHeight - minTop;
-		this.paragraphBottomPadding = maxBottom - this.lineHeight;
-	}
-
 	@OriginalMember(owner = "client!rk", name = "<init>", descriptor = "([B)V")
 	public Font(@OriginalArg(0) byte[] data) {
 		this.decode(data);
