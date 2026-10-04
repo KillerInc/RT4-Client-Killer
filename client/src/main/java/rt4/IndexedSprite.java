@@ -34,4 +34,10 @@ public abstract class IndexedSprite {
 
 	@OriginalMember(owner = "client!ok", name = "a", descriptor = "(II)V")
 	public abstract void renderTransparent(@OriginalArg(0) int x, @OriginalArg(1) int y);
+
+	/**
+	 * Killer scalable UI helper. Draw this indexed sprite into the requested
+	 * logical UI box while preserving the sprite's transparent palette entry.
+	 */
+	public abstract void renderScaled(int x, int y, int scaledWidth, int scaledHeight);
 }
