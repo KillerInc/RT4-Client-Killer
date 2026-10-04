@@ -2,15 +2,6 @@
 
 This file tracks **Killer RT4 client changes only**. Upstream 2009Scape/Pazaz history and changelogs are intentionally left untouched.
 
-## v0.3.4 — 2026-10-04
-
-- Reworked generated-font rendering to preserve 8-bit alpha coverage from the TTF raster instead of collapsing glyphs to a 1-bit mask.
-- Added a generated-font-only alpha blending path to the software renderer.
-- Added alpha coverage to the OpenGL font texture path and linear filtering for generated fonts.
-- Original cache fonts keep their original binary/nearest-neighbor behavior.
-- Font Scale behavior from v0.3.3 remains available, but UI/window scaling remains untouched.
-- Font diagnostics now report `mask=alpha8` and `rendererAlpha=enabled` when the new path is active.
-
 ## v0.3.3 — 2026-10-04
 
 - Font Scale now changes the actual generated RT4 font size instead of only the source rasterization quality.
