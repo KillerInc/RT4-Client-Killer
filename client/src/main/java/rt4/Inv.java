@@ -250,7 +250,15 @@ public final class Inv extends Node {
 		}
 
 		if (drawText && (objType.stackable == 1 || stack != 1) && stack != -1) {
-			ObjTypeList.font.renderLeft(formatObjAmount(stack), 0, 9, 16776960, 1);
+			KillerUiLog.once("item-stack-text", "ROUTE itemStackAmount=KillerUiText software");
+			KillerUiText.drawSoftwareLeft(
+				formatObjAmount(stack),
+				KillerUiText.PLAIN_11,
+				0,
+				KillerUi.px(9),
+				16776960,
+				1
+			);
 		}
 
 		SoftwareRaster.setSize(pixels, width, height);
