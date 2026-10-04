@@ -241,16 +241,17 @@ public class MiniMenu {
 		@Pc(173) int row;
 		@Pc(171) int slotIndex;
 		if (component.type == 2) {
+			int killerSlotSize = KillerUi.inventorySlotSize();
 			slotIndex = 0;
 			for (row = 0; row < component.baseHeight; row++) {
 				for (@Pc(183) int col = 0; col < component.baseWidth; col++) {
-					@Pc(195) int slotX = (component.invMarginX + 32) * col;
-					@Pc(202) int slotY = (component.invMarginY + 32) * row;
+					@Pc(195) int slotX = (component.invMarginX + killerSlotSize) * col;
+					@Pc(202) int slotY = (component.invMarginY + killerSlotSize) * row;
 					if (slotIndex < 20) {
 						slotY += component.invOffsetY[slotIndex];
 						slotX += component.invOffsetX[slotIndex];
 					}
-					if (mouseX >= slotX && slotY <= mouseY && slotX + 32 > mouseX && slotY + 32 > mouseY) {
+					if (mouseX >= slotX && slotY <= mouseY && slotX + killerSlotSize > mouseX && slotY + killerSlotSize > mouseY) {
 						InterfaceList.mouseOverInventoryInterface = component;
 						clickedInventoryIndex = slotIndex;
 						if (component.objTypes[slotIndex] > 0) {
@@ -1653,16 +1654,39 @@ public class MiniMenu {
 		}
 		@Pc(24) JagString tooltipText = getTooltipText();
 		if (component == null) {
-			@Pc(40) int wavyWidth = Fonts.b12Full.renderWavyText(tooltipText, x + 4, y - -15, client.aRandom1, gregorianDateSeed);
-			InterfaceList.redrawScreen(x + 4, Fonts.b12Full.getStringWidth(tooltipText) + wavyWidth, y, 15);
+			int tooltipWidth = KillerUiText.measureWidth(tooltipText, KillerUiText.BOLD_12) + KillerUi.px(8);
+			int tooltipHeight = KillerUiText.lineHeight(KillerUiText.BOLD_12) + KillerUi.px(6);
+			KillerUiText.draw(
+				tooltipText,
+				KillerUiText.BOLD_12,
+				x + KillerUi.px(4),
+				y,
+				tooltipWidth,
+				tooltipHeight,
+				16777215,
+				0,
+				256,
+				0,
+				0,
+				0,
+				KillerUiText.EFFECT_WAVE
+			);
+			InterfaceList.redrawScreen(x + KillerUi.px(4), tooltipWidth, y, tooltipHeight);
 			return;
 		}
-		@Pc(59) Font font = component.getFont(Sprites.nameIcons);
-		if (font == null) {
-			font = Fonts.b12Full;
-		}
-		font.renderWavyTextAligned(tooltipText, x, y, component.width, component.height, component.color, component.shadowColor, component.halign, component.valign, client.aRandom1, gregorianDateSeed, tooltipBounds);
-		InterfaceList.redrawScreen(tooltipBounds[0], tooltipBounds[2], tooltipBounds[1], tooltipBounds[3]);
+		KillerUiText.drawWavy(
+			tooltipText,
+			KillerUiText.styleForComponent(component),
+			x,
+			y,
+			component.width,
+			component.height,
+			component.color,
+			component.shadowColor,
+			component.halign,
+			component.valign
+		);
+		InterfaceList.redrawScreen(x, component.width, y, component.height);
 	}
 
 	@OriginalMember(owner = "client!ej", name = "h", descriptor = "(I)V")
@@ -1699,135 +1723,99 @@ public class MiniMenu {
 
 	@OriginalMember(owner = "client!lf", name = "b", descriptor = "(I)V")
 	public static void drawA() {
-		@Pc(3) int menuY = InterfaceList.menuY;
-		@Pc(9) int menuWidth = InterfaceList.menuWidth;
-		@Pc(11) int menuX = InterfaceList.menuX;
-		@Pc(15) int menuHeight = InterfaceList.menuHeight;
-		if (GlRenderer.enabled) {
-			GlRaster.fillRect(menuX, menuY, menuWidth, menuHeight, 6116423);
-			GlRaster.fillRect(menuX + 1, menuY + 1, menuWidth - 2, 16, 0);
-			GlRaster.drawRect(menuX + 1, menuY + 18, menuWidth - 2, menuHeight + -19, 0);
-		} else {
-			SoftwareRaster.fillRect(menuX, menuY, menuWidth, menuHeight, 6116423);
-			SoftwareRaster.fillRect(menuX + 1, menuY + 1, menuWidth - 2, 16, 0);
-			SoftwareRaster.drawRect(menuX + 1, menuY + 18, menuWidth - 2, menuHeight + -19, 0);
-		}
-		Fonts.b12Full.renderLeft(LocalizedText.CHOOSE_OPTION, menuX + 3, menuY + 14, 6116423, -1);
-		@Pc(96) int mouseY = Mouse.lastMouseY;
-		@Pc(98) int mouseX = Mouse.lastMouseX;
-		for (@Pc(107) int i = 0; i < size; i++) {
-			@Pc(127) int entryY = (size - i - 1) * 15 + menuY + 31;
-			@Pc(129) int color = 16777215; //WHITE
-			if (menuX < mouseX && mouseX < menuX + menuWidth && entryY - 13 < mouseY && mouseY < entryY + 3) {
-				color = 16776960; //YELLOW
-			}
-			Fonts.b12Full.renderLeft(getOp(i), menuX + 3, entryY, color, 0);
-		}
-		InterfaceList.forceRedrawScreen(InterfaceList.menuX, InterfaceList.menuY, InterfaceList.menuHeight, InterfaceList.menuWidth);
+		drawKillerMenu(false);
 	}
-
 	@OriginalMember(owner = "client!ij", name = "a", descriptor = "(B)V")
 	public static void drawB() {
-		@Pc(3) int menuX = InterfaceList.menuX;
-		@Pc(9) int menuY = InterfaceList.menuY;
-		@Pc(11) int menuHeight = InterfaceList.menuHeight;
-		@Pc(13) int menuWidth = InterfaceList.menuWidth;
-		if (LoginManager.menuHeaderFillSprite == null || LoginManager.menuHeaderEdgeSprite == null) {
-			if (client.js5Archive8.isFileReady(LoginManager.menuHeaderFillSpriteId) && client.js5Archive8.isFileReady(LoginManager.menuHeaderEdgeSpriteId)) {
-				LoginManager.menuHeaderFillSprite = SoftwareSprite.loadSoftwareAlphaSprite(client.js5Archive8, LoginManager.menuHeaderFillSpriteId);
-				LoginManager.menuHeaderEdgeSprite = SoftwareSprite.loadSoftwareAlphaSprite(client.js5Archive8, LoginManager.menuHeaderEdgeSpriteId);
-				if (GlRenderer.enabled) {
-					if (LoginManager.menuHeaderFillSprite instanceof SoftwareAlphaSprite) {
-						LoginManager.menuHeaderFillSprite = new GlAlphaSprite((SoftwareSprite) LoginManager.menuHeaderFillSprite);
-					} else {
-						LoginManager.menuHeaderFillSprite = new GlSprite((SoftwareSprite) LoginManager.menuHeaderFillSprite);
-					}
-					if (LoginManager.menuHeaderEdgeSprite instanceof SoftwareAlphaSprite) {
-						LoginManager.menuHeaderEdgeSprite = new GlAlphaSprite((SoftwareSprite) LoginManager.menuHeaderEdgeSprite);
-					} else {
-						LoginManager.menuHeaderEdgeSprite = new GlSprite((SoftwareSprite) LoginManager.menuHeaderEdgeSprite);
-					}
-				}
-			} else if (GlRenderer.enabled) {
-				GlRaster.fillRectAlpha(menuX, menuY, menuWidth, 20, LoginManager.menuFillColor, 256 - LoginManager.menuFillTransparency);
-			} else {
-				SoftwareRaster.fillRectAlpha(menuX, menuY, menuWidth, 20, LoginManager.menuFillColor, 256 - LoginManager.menuFillTransparency);
-			}
-		}
-		@Pc(112) int mouseX;
-		@Pc(114) int mouseY;
-		if (LoginManager.menuHeaderFillSprite != null && LoginManager.menuHeaderEdgeSprite != null) {
-			mouseX = menuWidth / LoginManager.menuHeaderFillSprite.width;
-			for (mouseY = 0; mouseY < mouseX; mouseY++) {
-				LoginManager.menuHeaderFillSprite.render(mouseY * LoginManager.menuHeaderFillSprite.width + menuX, menuY);
-			}
-			LoginManager.menuHeaderEdgeSprite.render(menuX, menuY);
-			LoginManager.menuHeaderEdgeSprite.renderHorizontalFlip(menuX + menuWidth - LoginManager.menuHeaderEdgeSprite.width, menuY);
-		}
-		Fonts.b12Full.renderLeft(LocalizedText.CHOOSE_OPTION, menuX + 3, menuY + 14, LoginManager.menuTextColor, -1);
-		if (GlRenderer.enabled) {
-			GlRaster.fillRectAlpha(menuX, menuY + 20, menuWidth, menuHeight - 20, LoginManager.menuFillColor, 256 - LoginManager.menuFillTransparency);
-		} else {
-			SoftwareRaster.fillRectAlpha(menuX, menuY + 20, menuWidth, menuHeight - 20, LoginManager.menuFillColor, 256 - LoginManager.menuFillTransparency);
-		}
-		mouseY = Mouse.lastMouseY;
-		mouseX = Mouse.lastMouseX;
-		@Pc(203) int i;
-		@Pc(219) int entryY;
-		for (i = 0; i < size; i++) {
-			entryY = (size - i - 1) * 15 + menuY + 35;
-			if (menuX < mouseX && mouseX < menuX + menuWidth && mouseY > entryY - 13 && mouseY < entryY + 3) {
-				if (GlRenderer.enabled) {
-					GlRaster.fillRectAlpha(menuX, entryY - 13, menuWidth, 16, LoginManager.menuHighlightColor, 256 - LoginManager.menuHighlightTransparency);
-				} else {
-					SoftwareRaster.fillRectAlpha(menuX, entryY - 13, menuWidth, 16, LoginManager.menuHighlightColor, 256 - LoginManager.menuHighlightTransparency);
-				}
-			}
-		}
-		if ((LoginManager.menuBottomFillSprite == null || LoginManager.menuSideFillSprite == null || LoginManager.menuBottomEdgeSprite == null) && client.js5Archive8.isFileReady(LoginManager.menuBottomFillSpriteId) && client.js5Archive8.isFileReady(LoginManager.menuSideFillSpriteId) && client.js5Archive8.isFileReady(LoginManager.menuBottomEdgeSpriteId)) {
-			LoginManager.menuBottomFillSprite = SoftwareSprite.loadSoftwareAlphaSprite(client.js5Archive8, LoginManager.menuBottomFillSpriteId);
-			LoginManager.menuSideFillSprite = SoftwareSprite.loadSoftwareAlphaSprite(client.js5Archive8, LoginManager.menuSideFillSpriteId);
-			LoginManager.menuBottomEdgeSprite = SoftwareSprite.loadSoftwareAlphaSprite(client.js5Archive8, LoginManager.menuBottomEdgeSpriteId);
-			if (GlRenderer.enabled) {
-				if (LoginManager.menuBottomFillSprite instanceof SoftwareAlphaSprite) {
-					LoginManager.menuBottomFillSprite = new GlAlphaSprite((SoftwareSprite) LoginManager.menuBottomFillSprite);
-				} else {
-					LoginManager.menuBottomFillSprite = new GlSprite((SoftwareSprite) LoginManager.menuBottomFillSprite);
-				}
-				if (LoginManager.menuSideFillSprite instanceof SoftwareAlphaSprite) {
-					LoginManager.menuSideFillSprite = new GlAlphaSprite((SoftwareSprite) LoginManager.menuSideFillSprite);
-				} else {
-					LoginManager.menuSideFillSprite = new GlSprite((SoftwareSprite) LoginManager.menuSideFillSprite);
-				}
-				if (LoginManager.menuBottomEdgeSprite instanceof SoftwareAlphaSprite) {
-					LoginManager.menuBottomEdgeSprite = new GlAlphaSprite((SoftwareSprite) LoginManager.menuBottomEdgeSprite);
-				} else {
-					LoginManager.menuBottomEdgeSprite = new GlSprite((SoftwareSprite) LoginManager.menuBottomEdgeSprite);
-				}
-			}
-		}
-		@Pc(418) int textColor;
-		if (LoginManager.menuBottomFillSprite != null && LoginManager.menuSideFillSprite != null && LoginManager.menuBottomEdgeSprite != null) {
-			i = menuWidth / LoginManager.menuBottomFillSprite.width;
-			for (entryY = 0; entryY < i; entryY++) {
-				LoginManager.menuBottomFillSprite.render(menuX + LoginManager.menuBottomFillSprite.width * entryY, menuHeight + menuY + -LoginManager.menuBottomFillSprite.height);
-			}
-			entryY = (menuHeight - 20) / LoginManager.menuSideFillSprite.height;
-			for (textColor = 0; textColor < entryY; textColor++) {
-				LoginManager.menuSideFillSprite.render(menuX, menuY + textColor * LoginManager.menuSideFillSprite.height + 20);
-				LoginManager.menuSideFillSprite.renderHorizontalFlip(menuX + menuWidth - LoginManager.menuSideFillSprite.width, menuY + 20 + textColor * LoginManager.menuSideFillSprite.height);
-			}
-			LoginManager.menuBottomEdgeSprite.render(menuX, menuHeight + menuY - LoginManager.menuBottomEdgeSprite.height);
-			LoginManager.menuBottomEdgeSprite.renderHorizontalFlip(menuX + menuWidth - LoginManager.menuBottomEdgeSprite.width, menuY - -menuHeight + -LoginManager.menuBottomEdgeSprite.height);
-		}
-		for (i = 0; i < size; i++) {
-			entryY = (size - i - 1) * 15 + menuY + 35;
-			textColor = LoginManager.menuTextColor;
-			if (menuX < mouseX && menuWidth + menuX > mouseX && entryY - 13 < mouseY && mouseY < entryY + 3) {
-				textColor = LoginManager.menuHighlightTextColor;
-			}
-			Fonts.b12Full.renderLeft(getOp(i), menuX + 3, entryY, textColor, 0);
-		}
-		InterfaceList.forceRedrawScreen(InterfaceList.menuX, InterfaceList.menuY, InterfaceList.menuHeight, InterfaceList.menuWidth);
+		drawKillerMenu(true);
 	}
+
+	private static void drawKillerMenu(boolean styled) {
+		int menuX = InterfaceList.menuX;
+		int menuY = InterfaceList.menuY;
+		int menuWidth = InterfaceList.menuWidth;
+		int menuHeight = InterfaceList.menuHeight;
+		int rowHeight = KillerUi.menuRowHeight();
+		int headerHeight = KillerUi.menuHeaderHeight();
+		int padding = KillerUi.menuPadding();
+
+		int panelColor = styled ? LoginManager.menuFillColor : 6116423;
+		int headerColor = styled ? LoginManager.menuFillColor : 0;
+		int textColor = styled ? LoginManager.menuTextColor : 16777215;
+		int highlightColor = styled ? LoginManager.menuHighlightColor : 0x4D4D32;
+		int highlightTextColor = styled ? LoginManager.menuHighlightTextColor : 16776960;
+		int alpha = styled ? 256 - LoginManager.menuFillTransparency : 256;
+
+		if (GlRenderer.enabled) {
+			if (alpha >= 256) {
+				GlRaster.fillRect(menuX, menuY, menuWidth, menuHeight, panelColor);
+				GlRaster.fillRect(menuX, menuY, menuWidth, headerHeight, headerColor);
+			} else {
+				GlRaster.fillRectAlpha(menuX, menuY, menuWidth, menuHeight, panelColor, alpha);
+				GlRaster.fillRectAlpha(menuX, menuY, menuWidth, headerHeight, headerColor, alpha);
+			}
+			GlRaster.drawRect(menuX, menuY, menuWidth, menuHeight, styled ? LoginManager.menuTextColor : 0);
+		} else {
+			if (alpha >= 256) {
+				SoftwareRaster.fillRect(menuX, menuY, menuWidth, menuHeight, panelColor);
+				SoftwareRaster.fillRect(menuX, menuY, menuWidth, headerHeight, headerColor);
+			} else {
+				SoftwareRaster.fillRectAlpha(menuX, menuY, menuWidth, menuHeight, panelColor, alpha);
+				SoftwareRaster.fillRectAlpha(menuX, menuY, menuWidth, headerHeight, headerColor, alpha);
+			}
+			SoftwareRaster.drawRect(menuX, menuY, menuWidth, menuHeight, styled ? LoginManager.menuTextColor : 0);
+		}
+
+		int headerBaseline = menuY
+			+ Math.max(0, (headerHeight - KillerUiText.lineHeight(KillerUiText.BOLD_12)) / 2)
+			+ KillerUiText.ascent(KillerUiText.BOLD_12);
+		KillerUiText.drawLeft(
+			LocalizedText.CHOOSE_OPTION,
+			KillerUiText.BOLD_12,
+			menuX + padding,
+			headerBaseline,
+			textColor,
+			-1
+		);
+
+		int mouseX = Mouse.lastMouseX;
+		int mouseY = Mouse.lastMouseY;
+
+		for (int i = 0; i < size; i++) {
+			int visualRow = size - i - 1;
+			int rowTop = menuY + headerHeight + visualRow * rowHeight;
+			boolean hovered = mouseX >= menuX
+				&& mouseX < menuX + menuWidth
+				&& mouseY >= rowTop
+				&& mouseY < rowTop + rowHeight;
+
+			if (hovered) {
+				if (GlRenderer.enabled) {
+					GlRaster.fillRectAlpha(menuX + KillerUi.px(1), rowTop, menuWidth - KillerUi.px(2), rowHeight, highlightColor, 224);
+				} else {
+					SoftwareRaster.fillRectAlpha(menuX + KillerUi.px(1), rowTop, menuWidth - KillerUi.px(2), rowHeight, highlightColor, 224);
+				}
+			}
+
+			int baseline = rowTop
+				+ Math.max(0, (rowHeight - KillerUiText.lineHeight(KillerUiText.BOLD_12)) / 2)
+				+ KillerUiText.ascent(KillerUiText.BOLD_12);
+			KillerUiText.drawLeft(
+				getOp(i),
+				KillerUiText.BOLD_12,
+				menuX + padding,
+				baseline,
+				hovered ? highlightTextColor : textColor,
+				0
+			);
+		}
+
+		InterfaceList.forceRedrawScreen(
+			InterfaceList.menuX,
+			InterfaceList.menuY,
+			InterfaceList.menuHeight,
+			InterfaceList.menuWidth
+		);
+	}
+
 }
