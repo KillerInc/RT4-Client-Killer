@@ -11,6 +11,7 @@ import java.awt.image.BufferedImage;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,15 @@ public final class KillerUiText {
     public static final int PLAIN_11 = 0;
     public static final int PLAIN_12 = 1;
     public static final int BOLD_12 = 2;
+    public static final int QUILL_8 = 3;
+    public static final int QUILL = 4;
+    public static final int QUILL_CAPS = 5;
+    public static final int FAIRY = 6;
+    public static final int FAIRY_LARGE = 7;
+    public static final int BARBARIAN_ASSAULT = 8;
+    public static final int SUROK = 9;
+
+    private static final int FONT_STYLE_COUNT = 10;
 
     public static final int EFFECT_NONE = 0;
     public static final int EFFECT_WAVE = 1;
@@ -37,12 +47,21 @@ public final class KillerUiText {
     private static final String PLAIN_11_RESOURCE = "/killer-fonts/RuneScape-Plain-11.ttf";
     private static final String PLAIN_12_RESOURCE = "/killer-fonts/RuneScape-Plain-12.ttf";
     private static final String BOLD_12_RESOURCE = "/killer-fonts/RuneScape-Bold-12.ttf";
+    private static final String QUILL_8_RESOURCE = "/killer-fonts/RuneScape-Quill-8.ttf";
+    private static final String QUILL_RESOURCE = "/killer-fonts/RuneScape-Quill.ttf";
+    private static final String QUILL_CAPS_RESOURCE = "/killer-fonts/RuneScape-Quill-Caps.ttf";
+    private static final String FAIRY_RESOURCE = "/killer-fonts/RuneScape-Fairy.ttf";
+    private static final String FAIRY_LARGE_RESOURCE = "/killer-fonts/RuneScape-Fairy-Large.ttf";
+    private static final String BARBARIAN_ASSAULT_RESOURCE = "/killer-fonts/RuneScape-Barbarian-Assault.ttf";
+    private static final String SUROK_RESOURCE = "/killer-fonts/RuneScape-Surok.ttf";
 
     private static final Charset WINDOWS_1252 = Charset.forName("windows-1252");
     private static final FontRenderContext FRC = new FontRenderContext(null, true, true);
 
-    private static final java.awt.Font[] BASE_FONTS = new java.awt.Font[3];
-    private static final java.awt.Font[] SCALED_FONTS = new java.awt.Font[3];
+    private static final java.awt.Font[] BASE_FONTS = new java.awt.Font[FONT_STYLE_COUNT];
+    private static final java.awt.Font[] SCALED_FONTS = new java.awt.Font[FONT_STYLE_COUNT];
+    private static final Map<Integer, Integer> CACHE_FONT_STYLES = new HashMap<Integer, Integer>();
+    private static final Map<Integer, String> CACHE_FONT_NAMES = new HashMap<Integer, String>();
     private static double loadedScale = -1.0D;
 
     private static final int CACHE_LIMIT = 320;
@@ -69,13 +88,79 @@ public final class KillerUiText {
         KillerUiLog.start();
         ensureFonts();
 
-        if (BASE_FONTS[PLAIN_11] == null || BASE_FONTS[PLAIN_12] == null || BASE_FONTS[BOLD_12] == null
-            || SCALED_FONTS[PLAIN_11] == null || SCALED_FONTS[PLAIN_12] == null || SCALED_FONTS[BOLD_12] == null) {
-            KillerUiLog.write("FATAL uiTextEngineVerificationFailed");
-            throw new IllegalStateException("Killer UI text engine failed startup verification");
+        for (int style = 0; style < FONT_STYLE_COUNT; style++) {
+            if (BASE_FONTS[style] == null || SCALED_FONTS[style] == null) {
+                KillerUiLog.write("FATAL uiTextEngineVerificationFailed style=" + style);
+                throw new IllegalStateException("Killer UI text engine failed startup verification for style " + style);
+            }
         }
 
-        KillerUiLog.once("verified", "VERIFY uiTextEngine=READY allRequiredTtfLoaded=true fallback=false");
+        KillerUiLog.once(
+            "verified",
+            "VERIFY uiTextEngine=READY allRequiredTtfLoaded=true supportedTtfCount=" + FONT_STYLE_COUNT + " fallback=false"
+        );
+    }
+
+    public static synchronized void registerCacheFonts(Js5 provider) {
+        if (provider == null) {
+            KillerUiLog.write("FATAL registerCacheFonts provider=null");
+            throw new IllegalStateException("Killer UI font registry requires the font JS5 provider");
+        }
+
+        CACHE_FONT_STYLES.clear();
+        CACHE_FONT_NAMES.clear();
+
+        registerCacheFont(provider, "p11_full", PLAIN_11);
+        registerCacheFont(provider, "p12_full", PLAIN_12);
+        registerCacheFont(provider, "b12_full", BOLD_12);
+        registerCacheFont(provider, "q8_full", QUILL_8);
+        registerCacheFont(provider, "quill_oblique_large", QUILL);
+        registerCacheFont(provider, "quill_caps_large", QUILL_CAPS);
+        registerCacheFont(provider, "lunar_alphabet", FAIRY);
+        registerCacheFont(provider, "lunar_alphabet_lrg", FAIRY_LARGE);
+        registerCacheFont(provider, "barbassault_font", BARBARIAN_ASSAULT);
+        registerCacheFont(provider, "surok_font", SUROK);
+
+        // Known Jagex UI font with no separate RuneStar vector face.
+        // This is an explicit compatibility map, never a runtime fallback.
+        registerCacheFont(provider, "menu_font_small", PLAIN_11);
+
+        discoverUnsupportedFont(provider, "tutorial_font_big");
+        discoverUnsupportedFont(provider, "tzhaar_numbers");
+        discoverUnsupportedFont(provider, "verdana_11pt_regular");
+        discoverUnsupportedFont(provider, "verdana_13pt_regular");
+        discoverUnsupportedFont(provider, "verdana_15pt_regular");
+
+        KillerUiLog.write(
+            "FONT_REGISTRY supportedCacheFontIds=" + CACHE_FONT_STYLES.size()
+                + " unsupportedKnownFontsRemainStrict=true"
+        );
+    }
+
+    private static void registerCacheFont(Js5 provider, String cacheName, int style) {
+        int id = provider.getGroupId(JagString.parse(cacheName));
+        if (id < 0) {
+            KillerUiLog.write("FONT_NOT_PRESENT cacheName=" + cacheName);
+            return;
+        }
+
+        CACHE_FONT_STYLES.put(id, style);
+        CACHE_FONT_NAMES.put(id, cacheName);
+        KillerUiLog.write(
+            "FONT_MAP fontId=" + id + " cacheName=" + cacheName
+                + " style=" + style + " resource=" + resourceForStyle(style)
+        );
+    }
+
+    private static void discoverUnsupportedFont(Js5 provider, String cacheName) {
+        int id = provider.getGroupId(JagString.parse(cacheName));
+        if (id >= 0) {
+            CACHE_FONT_NAMES.put(id, cacheName);
+            KillerUiLog.write(
+                "FONT_DISCOVERED_UNSUPPORTED fontId=" + id + " cacheName=" + cacheName
+                    + " action=HARD_FAIL_IF_RENDERED"
+            );
+        }
     }
 
     public static int styleForComponent(Component component) {
@@ -83,6 +168,14 @@ public final class KillerUiText {
             KillerUiLog.write("FATAL componentStyle=null component");
             throw new IllegalStateException("Killer UI text requested for a null component");
         }
+
+        Integer registered = CACHE_FONT_STYLES.get(component.font);
+        if (registered != null) {
+            return registered;
+        }
+
+        // These remain as a safety check for normal startup ordering. They are
+        // not a visual fallback: they route to the same replacement TTF engine.
         if (component.font == Sprites.p11FullId) {
             return PLAIN_11;
         }
@@ -93,25 +186,18 @@ public final class KillerUiText {
             return BOLD_12;
         }
 
-        // Jagex's login/game-menu interface uses a separate small menu font.
-        // It is explicitly supported by the replacement UI engine rather than
-        // falling back to Component.getFont()/the stock bitmap renderer.
-        if (component.font == 591) {
-            KillerUiLog.once(
-                "font-alias-591",
-                "FONT_MAP fontId=591 cacheName=menu_font_small -> RuneScape-Plain-11.ttf"
-            );
-            return PLAIN_11;
-        }
-
+        String knownName = CACHE_FONT_NAMES.get(component.font);
         KillerUiLog.write(
             "FATAL unsupportedUiFont component=" + component.id + " fontId=" + component.font
+                + " cacheName=" + (knownName == null ? "UNKNOWN" : knownName)
                 + " p11Id=" + Sprites.p11FullId
                 + " p12Id=" + Sprites.p12FullId
                 + " b12Id=" + Sprites.b12FullId
         );
         throw new IllegalStateException(
-            "Unsupported UI font id " + component.font + " on component " + component.id
+            "Unsupported UI font id " + component.font
+                + (knownName == null ? "" : " (" + knownName + ")")
+                + " on component " + component.id
         );
     }
 
@@ -696,18 +782,33 @@ public final class KillerUiText {
             return;
         }
 
-        loadBaseFont(PLAIN_11, PLAIN_11_RESOURCE, java.awt.Font.PLAIN);
-        loadBaseFont(PLAIN_12, PLAIN_12_RESOURCE, java.awt.Font.PLAIN);
-        loadBaseFont(BOLD_12, BOLD_12_RESOURCE, java.awt.Font.BOLD);
+        loadBaseFont(PLAIN_11, PLAIN_11_RESOURCE);
+        loadBaseFont(PLAIN_12, PLAIN_12_RESOURCE);
+        loadBaseFont(BOLD_12, BOLD_12_RESOURCE);
+        loadBaseFont(QUILL_8, QUILL_8_RESOURCE);
+        loadBaseFont(QUILL, QUILL_RESOURCE);
+        loadBaseFont(QUILL_CAPS, QUILL_CAPS_RESOURCE);
+        loadBaseFont(FAIRY, FAIRY_RESOURCE);
+        loadBaseFont(FAIRY_LARGE, FAIRY_LARGE_RESOURCE);
+        loadBaseFont(BARBARIAN_ASSAULT, BARBARIAN_ASSAULT_RESOURCE);
+        loadBaseFont(SUROK, SUROK_RESOURCE);
 
-        SCALED_FONTS[PLAIN_11] = BASE_FONTS[PLAIN_11].deriveFont((float) KillerUi.fontTarget(11));
-        SCALED_FONTS[PLAIN_12] = BASE_FONTS[PLAIN_12].deriveFont((float) KillerUi.fontTarget(12));
-        SCALED_FONTS[BOLD_12] = BASE_FONTS[BOLD_12].deriveFont((float) KillerUi.fontTarget(12));
+        for (int style = 0; style < FONT_STYLE_COUNT; style++) {
+            SCALED_FONTS[style] = BASE_FONTS[style].deriveFont((float) KillerUi.fontTarget(nativeSizeForStyle(style)));
+        }
+
         KillerUiLog.once(
             "font-targets-" + currentScale,
             "TTF_TARGETS p11=" + KillerUi.fontTarget(11)
                 + " p12=" + KillerUi.fontTarget(12)
                 + " b12=" + KillerUi.fontTarget(12)
+                + " q8=" + KillerUi.fontTarget(12)
+                + " quill=" + KillerUi.fontTarget(24)
+                + " quillCaps=" + KillerUi.fontTarget(48)
+                + " fairy=" + KillerUi.fontTarget(24)
+                + " fairyLarge=" + KillerUi.fontTarget(48)
+                + " barbAssault=" + KillerUi.fontTarget(24)
+                + " surok=" + KillerUi.fontTarget(12)
         );
         loadedScale = currentScale;
         synchronized (CACHE) {
@@ -715,7 +816,56 @@ public final class KillerUiText {
         }
     }
 
-    private static void loadBaseFont(int style, String resource, int fallbackStyle) {
+    private static int nativeSizeForStyle(int style) {
+        switch (style) {
+            case PLAIN_11:
+                return 11;
+            case PLAIN_12:
+            case BOLD_12:
+            case QUILL_8:
+            case SUROK:
+                return 12;
+            case QUILL:
+            case FAIRY:
+            case BARBARIAN_ASSAULT:
+                return 24;
+            case QUILL_CAPS:
+            case FAIRY_LARGE:
+                return 48;
+            default:
+                KillerUiLog.write("FATAL unknownNativeFontSize style=" + style);
+                throw new IllegalArgumentException("Unknown Killer UI font style " + style);
+        }
+    }
+
+    private static String resourceForStyle(int style) {
+        switch (style) {
+            case PLAIN_11:
+                return PLAIN_11_RESOURCE;
+            case PLAIN_12:
+                return PLAIN_12_RESOURCE;
+            case BOLD_12:
+                return BOLD_12_RESOURCE;
+            case QUILL_8:
+                return QUILL_8_RESOURCE;
+            case QUILL:
+                return QUILL_RESOURCE;
+            case QUILL_CAPS:
+                return QUILL_CAPS_RESOURCE;
+            case FAIRY:
+                return FAIRY_RESOURCE;
+            case FAIRY_LARGE:
+                return FAIRY_LARGE_RESOURCE;
+            case BARBARIAN_ASSAULT:
+                return BARBARIAN_ASSAULT_RESOURCE;
+            case SUROK:
+                return SUROK_RESOURCE;
+            default:
+                return "UNKNOWN";
+        }
+    }
+
+    private static void loadBaseFont(int style, String resource) {
         if (BASE_FONTS[style] != null) {
             return;
         }
