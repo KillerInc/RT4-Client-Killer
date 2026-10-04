@@ -23,6 +23,10 @@ public final class KillerVectorFont {
     private static final Charset CP1252 = Charset.forName("windows-1252");
     private static final float BASE_PIXEL_SIZE = 16.0F;
 
+    private static GlyphSet plain11Cache;
+    private static GlyphSet plain12Cache;
+    private static GlyphSet bold12Cache;
+
     public static final String PLAIN_11 = "/killer-fonts/RuneScape-Plain-11.ttf";
     public static final String PLAIN_12 = "/killer-fonts/RuneScape-Plain-12.ttf";
     public static final String BOLD_12 = "/killer-fonts/RuneScape-Bold-12.ttf";
@@ -44,7 +48,7 @@ public final class KillerVectorFont {
     }
 
     public static Font create(byte[] metricsData, String resource) {
-        GlyphSet glyphs = generate(resource, getTextScale());
+        GlyphSet glyphs = getOrGenerate(resource);
         if (glyphs == null) {
             return null;
         }
@@ -54,8 +58,30 @@ public final class KillerVectorFont {
     }
 
     public static SoftwareFont createSoftware(byte[] metricsData, String resource) {
-        GlyphSet glyphs = generate(resource, getTextScale());
+        GlyphSet glyphs = getOrGenerate(resource);
         return glyphs == null ? null : new SoftwareFont(metricsData, glyphs);
+    }
+
+    private static synchronized GlyphSet getOrGenerate(String resource) {
+        if (PLAIN_11.equals(resource) && plain11Cache != null) {
+            return plain11Cache;
+        }
+        if (PLAIN_12.equals(resource) && plain12Cache != null) {
+            return plain12Cache;
+        }
+        if (BOLD_12.equals(resource) && bold12Cache != null) {
+            return bold12Cache;
+        }
+
+        GlyphSet generated = generate(resource, getTextScale());
+        if (PLAIN_11.equals(resource)) {
+            plain11Cache = generated;
+        } else if (PLAIN_12.equals(resource)) {
+            plain12Cache = generated;
+        } else if (BOLD_12.equals(resource)) {
+            bold12Cache = generated;
+        }
+        return generated;
     }
 
     private static GlyphSet generate(String resource, double scale) {
@@ -64,6 +90,7 @@ public final class KillerVectorFont {
                 return null;
             }
 
+            System.out.println("[KillerFont] Generating " + resource + " at text scale " + scale);
             java.awt.Font vector = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, in)
                 .deriveFont((float) (BASE_PIXEL_SIZE * scale));
 
