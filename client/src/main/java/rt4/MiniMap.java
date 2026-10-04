@@ -257,19 +257,22 @@ public class MiniMap {
 						i = (LoginManager.mapElementList.coordX[k] - Camera.originX) * 4 + 2 - PlayerList.self.xFine / 32;
 						sinAngle = MathUtils.sin[totalAngle];
 						cosAngle = MathUtils.cos[totalAngle];
-						@Pc(156) Font labelFont = Fonts.p11Full;
+						@Pc(156) int labelStyle = KillerUiText.PLAIN_11;
 						@Pc(164) int scaledSin = sinAngle * 256 / (zoomOffset + 256);
 						j = (LoginManager.mapElementList.coordY[k] - Camera.originY) * 4 + 2 - PlayerList.self.yFine / 32;
 						@Pc(189) int scaledCos = cosAngle * 256 / (zoomOffset + 256);
 						screenDY = j * scaledCos - i * scaledSin >> 16;
 						if (LoginManager.mapElementList.getLabelSize(k) == 1) {
-							labelFont = Fonts.p12Full;
+							labelStyle = KillerUiText.PLAIN_12;
 						}
 						if (LoginManager.mapElementList.getLabelSize(k) == 2) {
-							labelFont = Fonts.b12Full;
+							labelStyle = KillerUiText.BOLD_12;
 						}
 						screenDX = scaledSin * j + scaledCos * i >> 16;
-						labelWidth = labelFont.getMaxLineWidth(LoginManager.mapElementList.names[k], 100);
+						labelWidth = Math.min(
+							KillerUi.px(100),
+							Math.max(1, KillerUiText.measureWidth(LoginManager.mapElementList.names[k], labelStyle))
+						);
 						@Pc(245) int labelX = screenDX - labelWidth / 2;
 						if (labelX >= -component.width && labelX <= component.width && screenDY >= -component.height && screenDY <= component.height) {
 							labelColor = 16777215;
@@ -281,7 +284,22 @@ public class MiniMap {
 							} else {
 								SoftwareRaster.setLineMasks(component.clickMaskStart, component.clickMaskWidth);
 							}
-							labelFont.renderParagraphAlpha(LoginManager.mapElementList.names[k], x + labelX + component.width / 2, y + component.height / 2 + -screenDY, labelWidth, 50, labelColor, 0, 1, 0, 0);
+							KillerUiLog.once("minimap-labels", "ROUTE minimapLabels=KillerUiText");
+							KillerUiText.draw(
+								LoginManager.mapElementList.names[k],
+								labelStyle,
+								x + labelX + component.width / 2,
+								y + component.height / 2 - screenDY,
+								labelWidth,
+								KillerUi.px(50),
+								labelColor,
+								0,
+								256,
+								1,
+								0,
+								0,
+								KillerUiText.EFFECT_NONE
+							);
 							if (GlRenderer.enabled) {
 								GlFont.clearLineMask();
 							} else {
