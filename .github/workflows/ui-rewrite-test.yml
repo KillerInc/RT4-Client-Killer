@@ -1,0 +1,67 @@
+name: Test Killer UI Rewrite
+
+on:
+  push:
+    branches:
+      - killer-ui-rewrite
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+
+      - name: Bundle RuneScape vector fonts
+        shell: bash
+        run: |
+          set -euo pipefail
+          FONT_ZIP="$RUNNER_TEMP/RuneScape-Fonts.zip"
+          FONT_DIR="$RUNNER_TEMP/runestar-fonts"
+          RESOURCE_DIR="client/src/main/resources/killer-fonts"
+          curl -fL "https://github.com/RuneStar/fonts/releases/download/1.103-0/RuneScape-Fonts.zip" -o "$FONT_ZIP"
+          mkdir -p "$FONT_DIR" "$RESOURCE_DIR"
+          unzip -q "$FONT_ZIP" -d "$FONT_DIR"
+          cp "$(find "$FONT_DIR" -type f -iname 'RuneScape-Plain-11.ttf' | head -1)" "$RESOURCE_DIR/RuneScape-Plain-11.ttf"
+          cp "$(find "$FONT_DIR" -type f -iname 'RuneScape-Plain-12.ttf' | head -1)" "$RESOURCE_DIR/RuneScape-Plain-12.ttf"
+          cp "$(find "$FONT_DIR" -type f -iname 'RuneScape-Bold-12.ttf' | head -1)" "$RESOURCE_DIR/RuneScape-Bold-12.ttf"
+
+      - name: Build client
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew :client:build
+
+      - name: Build overwrite patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          PATCH="$RUNNER_TEMP/KillerUIRewrite"
+          mkdir -p "$PATCH/client/src/main/java/rt4"
+          mkdir -p "$PATCH/client/src/main/resources/killer-fonts"
+
+          for f in             Component.java             InterfaceList.java             Cs1ScriptRunner.java             ScriptRunner.java             MiniMenu.java             Fonts.java             KillerUi.java             KillerUiText.java
+          do
+            cp "client/src/main/java/rt4/$f" "$PATCH/client/src/main/java/rt4/$f"
+          done
+
+          cp client/src/main/resources/killer-fonts/*.ttf "$PATCH/client/src/main/resources/killer-fonts/"
+
+          cd "$PATCH"
+          zip -qr "$RUNNER_TEMP/KillerUIRewrite_v0.1.zip" client
+
+      - name: Upload overwrite patch
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillerUIRewrite_v0.1
+          path: ${{ runner.temp }}/KillerUIRewrite_v0.1.zip
