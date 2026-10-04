@@ -2,6 +2,15 @@
 
 This file tracks **Killer RT4 client changes only**. Upstream 2009Scape/Pazaz history and changelogs are intentionally left untouched.
 
+## v0.8.1 — 2026-10-04
+
+- Kept the validated TTF text scaler unchanged.
+- Added scale-aware rendering for indexed UI sprites in both software and OpenGL renderers.
+- Scales scrollbar arrow artwork with the rewritten scrollbar geometry instead of leaving 1.0-size arrows inside enlarged bars.
+- Scales inventory/decorative slot sprites with their UI cells.
+- Added a non-1.0 path for tiled interface sprites so panel textures, frames, parchment pieces, and other repeated artwork grow with the UI instead of repeating at native 1.0 tile size.
+- Preserves the exact 1.0 tiled-sprite rendering path to avoid changing the validated baseline.
+
 ## v0.8.0 — 2026-10-04
 
 - Split UI geometry scaling from the independent Font Scale control.
