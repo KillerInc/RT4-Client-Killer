@@ -125,6 +125,64 @@ public final class GlIndexedSprite extends IndexedSprite {
 		gl.glLoadIdentity();
 	}
 
+	@Override
+	public final void renderScaled(int x, int y, int scaledWidth, int scaledHeight) {
+		if (scaledWidth <= 0 || scaledHeight <= 0) {
+			return;
+		}
+
+		GlRenderer.begin2DReplace();
+
+		int srcWidth = this.width;
+		int srcHeight = this.height;
+		int srcOffX = 0;
+		int srcOffY = 0;
+		int totalWidth = this.innerWidth;
+		int totalHeight = this.innerHeight;
+		int scaleX = (totalWidth << 16) / scaledWidth;
+		int scaleY = (totalHeight << 16) / scaledHeight;
+		int adjust;
+
+		if (this.xOffset > 0) {
+			adjust = ((this.xOffset << 16) + scaleX - 1) / scaleX;
+			x += adjust;
+			srcOffX = adjust * scaleX - (this.xOffset << 16);
+		}
+		if (this.yOffset > 0) {
+			adjust = ((this.yOffset << 16) + scaleY - 1) / scaleY;
+			y += adjust;
+			srcOffY = adjust * scaleY - (this.yOffset << 16);
+		}
+		if (srcWidth < totalWidth) {
+			scaledWidth = ((srcWidth << 16) + scaleX - srcOffX - 1) / scaleX;
+		}
+		if (srcHeight < totalHeight) {
+			scaledHeight = ((srcHeight << 16) + scaleY - srcOffY - 1) / scaleY;
+		}
+
+		GL2 gl = GlRenderer.gl;
+		GlRenderer.setTextureId(this.textureId);
+		this.setNearestFilter();
+
+		float left = (float) x;
+		float right = left + (float) scaledWidth;
+		float top = (float) (GlRenderer.canvasHeight - y);
+		float bottom = top - (float) scaledHeight;
+		float texU = (float) this.width / (float) this.powerOfTwoWidth;
+		float texV = (float) this.height / (float) this.powerOfTwoHeight;
+
+		gl.glBegin(GL2.GL_TRIANGLE_FAN);
+		gl.glTexCoord2f(texU, 0.0F);
+		gl.glVertex2f(right, top);
+		gl.glTexCoord2f(0.0F, 0.0F);
+		gl.glVertex2f(left, top);
+		gl.glTexCoord2f(0.0F, texV);
+		gl.glVertex2f(left, bottom);
+		gl.glTexCoord2f(texU, texV);
+		gl.glVertex2f(right, bottom);
+		gl.glEnd();
+	}
+
 	@OriginalMember(owner = "client!oh", name = "finalize", descriptor = "()V")
 	@Override
 	public final void finalize() throws Throwable {
