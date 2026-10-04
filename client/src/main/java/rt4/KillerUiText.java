@@ -194,6 +194,15 @@ public final class KillerUiText {
 
         Integer registered = CACHE_FONT_STYLES.get(component.font);
         if (registered != null) {
+            String mappedName = CACHE_FONT_NAMES.get(component.font);
+            KillerUiLog.once(
+                "font-use-" + component.font,
+                "FONT_USED fontId=" + component.font
+                    + " cacheName=" + (mappedName == null ? "UNKNOWN" : mappedName)
+                    + " style=" + registered
+                    + " resource=" + resourceForStyle(registered)
+                    + " component=" + component.id
+            );
             return registered;
         }
 
