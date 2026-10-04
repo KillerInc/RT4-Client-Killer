@@ -2,6 +2,16 @@
 
 This file tracks **Killer RT4 client changes only**. Upstream 2009Scape/Pazaz history and changelogs are intentionally left untouched.
 
+## v0.4.0 — 2026-10-04
+
+- Replaced the experimental RT4 bitmap-font conversion approach with a direct TTF rendering path.
+- Restored the stock `SoftwareFont` and `GlFont` implementations unchanged.
+- Added dedicated `KillerSoftwareTtfFont` and `KillerGlTtfFont` renderers that consume RuneScape TTF glyphs directly.
+- Keeps RT4's existing text parser and effects layer, so color tags, shadows, transparency, wave/shake positioning and other text codes continue to be processed by the normal `Font` logic.
+- TTF advances, glyph bounds, offsets, line height and kerning are generated directly from the vector font at `native size × Font Scale`.
+- UI Scale is no longer used to size the TTF; the existing UI scaler remains responsible for whole-client scaling.
+- Added direct-TTF diagnostics to `logs/killer-font.log`, including source TTF, logical size, generated glyph count, kerning source, renderer type, install status and cache-font fallback.
+
 ## v0.3.3 — 2026-10-04
 
 - Font Scale now changes the actual generated RT4 font size instead of only the source rasterization quality.
