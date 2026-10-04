@@ -47,14 +47,42 @@ public class Fonts {
 
 	@OriginalMember(owner = "client!hn", name = "a", descriptor = "(Lclient!ve;ILclient!ve;)V")
 	public static void load(@OriginalArg(0) Js5 fontArchive, @OriginalArg(2) Js5 metricsArchive) {
-		p11Full = Font.load(Sprites.p11FullId, metricsArchive, fontArchive);
+		p11Full = KillerFontGenerator.load(
+			Sprites.p11FullId,
+			metricsArchive,
+			fontArchive,
+			KillerFontGenerator.PLAIN_11,
+			11.0F,
+			"p11_full"
+		);
 		if (GlRenderer.enabled) {
-			p11FullSoftware = SoftwareFont.load(Sprites.p11FullId, fontArchive, metricsArchive);
+			p11FullSoftware = KillerFontGenerator.loadSoftware(
+				Sprites.p11FullId,
+				metricsArchive,
+				fontArchive,
+				KillerFontGenerator.PLAIN_11,
+				11.0F,
+				"p11_full"
+			);
 		} else {
 			p11FullSoftware = (SoftwareFont) p11Full;
 		}
-		p12Full = Font.load(Sprites.p12FullId, metricsArchive, fontArchive);
-		b12Full = Font.load(Sprites.b12FullId, metricsArchive, fontArchive);
+		p12Full = KillerFontGenerator.load(
+			Sprites.p12FullId,
+			metricsArchive,
+			fontArchive,
+			KillerFontGenerator.PLAIN_12,
+			12.0F,
+			"p12_full"
+		);
+		b12Full = KillerFontGenerator.load(
+			Sprites.b12FullId,
+			metricsArchive,
+			fontArchive,
+			KillerFontGenerator.BOLD_12,
+			12.0F,
+			"b12_full"
+		);
 	}
 
 	@OriginalMember(owner = "client!j", name = "a", descriptor = "(BZLclient!na;)V")
