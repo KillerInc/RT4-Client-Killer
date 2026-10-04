@@ -226,6 +226,7 @@ public abstract class Font extends SecondaryNode {
 
 	@OriginalMember(owner = "client!rk", name = "a", descriptor = "(Lclient!na;II)V")
 	private void render(@OriginalArg(0) JagString text, @OriginalArg(1) int x, @OriginalArg(2) int y) {
+		KillerUiText.forbidStockRenderer("Font.render");
 		@Pc(4) int baseY = y - this.lineHeight;
 		@Pc(6) int tagStart = -1;
 		@Pc(8) int prevChar = 0;
@@ -893,6 +894,7 @@ public abstract class Font extends SecondaryNode {
 
 	@OriginalMember(owner = "client!rk", name = "a", descriptor = "(Lclient!na;II[I[I)V")
 	private void renderOffset(@OriginalArg(0) JagString text, @OriginalArg(1) int x, @OriginalArg(2) int y, @OriginalArg(3) int[] xOffsets, @OriginalArg(4) int[] yOffsets) {
+		KillerUiText.forbidStockRenderer("Font.renderOffset");
 		@Pc(4) int baseY = y - this.lineHeight;
 		@Pc(6) int tagStart = -1;
 		@Pc(8) int prevChar = 0;
