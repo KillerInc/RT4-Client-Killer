@@ -3510,15 +3510,16 @@ public class Protocol {
 			InterfaceList.redrawScreen(InterfaceList.menuX, InterfaceList.menuWidth, InterfaceList.menuY, InterfaceList.menuHeight);
 		} else {
 			InterfaceList.redrawScreen(InterfaceList.menuX, InterfaceList.menuWidth, InterfaceList.menuY, InterfaceList.menuHeight);
-			maxWidth = Fonts.b12Full.getStringWidth(LocalizedText.CHOOSE_OPTION);
+			maxWidth = KillerUiText.measureWidth(LocalizedText.CHOOSE_OPTION, KillerUiText.BOLD_12);
 			for (@Pc(95) int j = 0; j < MiniMenu.size; j++) {
-				@Pc(104) int opWidth = Fonts.b12Full.getStringWidth(MiniMenu.getOp(j));
+				@Pc(104) int opWidth = KillerUiText.measureWidth(MiniMenu.getOp(j), KillerUiText.BOLD_12);
 				if (opWidth > maxWidth) {
 					maxWidth = opWidth;
 				}
 			}
-			InterfaceList.menuWidth = maxWidth + 8;
-			InterfaceList.menuHeight = MiniMenu.size * 15 + (InterfaceList.useStyledMenu ? 26 : 22);
+			InterfaceList.menuWidth = maxWidth + KillerUi.menuPadding() * 2;
+			InterfaceList.menuHeight = MiniMenu.size * KillerUi.menuRowHeight()
+				+ KillerUi.menuHeaderHeight() + KillerUi.menuPadding();
 		}
 		if (parent != null) {
 			InterfaceList.layoutComponent(parent, false);
