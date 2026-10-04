@@ -10,7 +10,6 @@ public final class SoftwareFont extends Font {
 
 	@OriginalMember(owner = "client!dd", name = "Eb", descriptor = "[[B")
 	private byte[][] pixels = new byte[256][];
-	private boolean killerAlphaGlyphs = false;
 
 	@OriginalMember(owner = "client!dd", name = "<init>", descriptor = "([B)V")
 	public SoftwareFont(@OriginalArg(0) byte[] data) {
@@ -26,7 +25,6 @@ public final class SoftwareFont extends Font {
 	public SoftwareFont(byte[] data, int[] xOffsets, int[] yOffsets, int[] innerWidths, int[] innerHeights, byte[][] pixels, double killerFontScale) {
 		super(data, xOffsets, yOffsets, innerWidths, innerHeights, killerFontScale);
 		this.pixels = pixels;
-		this.killerAlphaGlyphs = true;
 	}
 
 	@OriginalMember(owner = "client!dd", name = "a", descriptor = "([I[BIIIIIII)V")
@@ -133,117 +131,6 @@ public final class SoftwareFont extends Font {
 		}
 	}
 
-	private static int killerCoverage(byte pixel) {
-		int value = pixel & 0xFF;
-		if (value == 0) {
-			return 0;
-		}
-		// Original RT4 masks use 1 for fully-on pixels. Generated masks use 0..255.
-		return value == 1 ? 255 : value;
-	}
-
-	private static int killerBlend(int destColor, int sourceColor, int alpha256) {
-		if (alpha256 <= 0) {
-			return destColor;
-		}
-		if (alpha256 >= 256) {
-			return sourceColor;
-		}
-		int inverse = 256 - alpha256;
-		return ((((sourceColor & 0xFF00FF) * alpha256 + (destColor & 0xFF00FF) * inverse) & 0xFF00FF00)
-			+ (((sourceColor & 0x00FF00) * alpha256 + (destColor & 0x00FF00) * inverse) & 0x00FF0000)) >> 8;
-	}
-
-	private static void killerBlitAlpha(
-		int[] dest,
-		byte[] glyphPixels,
-		int color,
-		int srcOff,
-		int destOff,
-		int width,
-		int height,
-		int destStep,
-		int srcStep,
-		int globalAlpha
-	) {
-		for (int y = 0; y < height; y++) {
-			for (int x = 0; x < width; x++) {
-				int coverage = killerCoverage(glyphPixels[srcOff++]);
-				if (coverage == 0) {
-					destOff++;
-					continue;
-				}
-				int alpha256 = ((coverage + 1) * globalAlpha) >> 8;
-				if (coverage == 255 && globalAlpha >= 256) {
-					alpha256 = 256;
-				}
-				dest[destOff] = killerBlend(dest[destOff], color, alpha256);
-				destOff++;
-			}
-			destOff += destStep;
-			srcOff += srcStep;
-		}
-	}
-
-	private static void killerBlitMaskedAlpha(
-		byte[] glyphPixels,
-		int glyphX,
-		int glyphY,
-		int width,
-		int height,
-		int color,
-		int srcOff,
-		int destOff,
-		int destStep,
-		int srcStep,
-		int[] maskStarts,
-		int[] maskWidths
-	) {
-		int relX = glyphX - SoftwareRaster.clipLeft;
-		int relY = glyphY - SoftwareRaster.clipTop;
-		for (int row = relY; row < relY + height; row++) {
-			int maskStart = maskStarts[row];
-			int maskWidth = maskWidths[row];
-			int rowWidth = width;
-			int skip;
-			if (relX > maskStart) {
-				skip = relX - maskStart;
-				if (skip >= maskWidth) {
-					srcOff += width + srcStep;
-					destOff += width + destStep;
-					continue;
-				}
-				maskWidth -= skip;
-			} else {
-				skip = maskStart - relX;
-				if (skip >= width) {
-					srcOff += width + srcStep;
-					destOff += width + destStep;
-					continue;
-				}
-				srcOff += skip;
-				rowWidth = width - skip;
-				destOff += skip;
-			}
-			skip = 0;
-			if (rowWidth < maskWidth) {
-				maskWidth = rowWidth;
-			} else {
-				skip = rowWidth - maskWidth;
-			}
-			for (int col = 0; col < maskWidth; col++) {
-				int coverage = killerCoverage(glyphPixels[srcOff++]);
-				if (coverage != 0) {
-					int alpha256 = coverage == 255 ? 256 : coverage + 1;
-					SoftwareRaster.pixels[destOff] = killerBlend(SoftwareRaster.pixels[destOff], color, alpha256);
-				}
-				destOff++;
-			}
-			srcOff += skip + srcStep;
-			destOff += skip + destStep;
-		}
-	}
-
 	@OriginalMember(owner = "client!jh", name = "a", descriptor = "(IILclient!ve;Lclient!ve;I)Lclient!dd;")
 	public static SoftwareFont load(@OriginalArg(0) int fileId, @OriginalArg(2) Js5 fontJs5, @OriginalArg(3) Js5 spriteJs5) {
 		return SpriteLoader.decode(spriteJs5, 0, fileId) ? createFont(fontJs5.fetchFile(fileId, 0)) : null;
@@ -294,11 +181,7 @@ public final class SoftwareFont extends Font {
 			destStep += clip;
 		}
 		if (width > 0 && height > 0) {
-			if (this.killerAlphaGlyphs) {
-				killerBlitAlpha(SoftwareRaster.pixels, this.pixels[glyphId], color, srcOff, destOff, width, height, destStep, srcStep, alpha);
-			} else {
-				blitTransparent(SoftwareRaster.pixels, this.pixels[glyphId], color, srcOff, destOff, width, height, destStep, srcStep, alpha);
-			}
+			blitTransparent(SoftwareRaster.pixels, this.pixels[glyphId], color, srcOff, destOff, width, height, destStep, srcStep, alpha);
 		}
 	}
 
@@ -339,13 +222,7 @@ public final class SoftwareFont extends Font {
 			return;
 		}
 		if (SoftwareRaster.lineMaskStarts == null) {
-			if (this.killerAlphaGlyphs) {
-				killerBlitAlpha(SoftwareRaster.pixels, this.pixels[glyphId], color, srcOff, destOff, width, height, destStep, srcStep, 256);
-			} else {
-				blit(SoftwareRaster.pixels, this.pixels[glyphId], color, srcOff, destOff, width, height, destStep, srcStep);
-			}
-		} else if (this.killerAlphaGlyphs) {
-			killerBlitMaskedAlpha(this.pixels[glyphId], x, y, width, height, color, srcOff, destOff, destStep, srcStep, SoftwareRaster.lineMaskStarts, SoftwareRaster.lineMaskWidths);
+			blit(SoftwareRaster.pixels, this.pixels[glyphId], color, srcOff, destOff, width, height, destStep, srcStep);
 		} else {
 			blitMasked(SoftwareRaster.pixels, this.pixels[glyphId], x, y, width, height, color, srcOff, destOff, destStep, srcStep, SoftwareRaster.lineMaskStarts, SoftwareRaster.lineMaskWidths);
 		}
