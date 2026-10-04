@@ -2,6 +2,14 @@
 
 This file tracks **Killer RT4 client changes only**. Upstream 2009Scape/Pazaz history and changelogs are intentionally left untouched.
 
+## v0.2.2 — 2026-10-04
+
+- Fully removed the experimental vector/generated-font rendering path.
+- Restored the original 2009Scape RT4 `Font`, `SoftwareFont`, `GlFont`, and `Fonts` behavior.
+- Removed the vector font generator and build-time RuneStar font injection.
+- Returned UI/text rendering to the same single UI-scale path used before the text experiments.
+- Keeps the Killer client release/update plumbing so the launcher will automatically fetch this corrected client.
+
 ## v0.2.1 — 2026-10-04
 
 - Removed the separate text-scaling property path.
