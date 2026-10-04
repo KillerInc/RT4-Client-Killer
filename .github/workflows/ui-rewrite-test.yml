@@ -42,6 +42,19 @@ jobs:
           chmod +x gradlew
           ./gradlew :client:build
 
+      - name: Stage runtime client
+        shell: bash
+        run: |
+          set -euo pipefail
+          JAR="$(ls -1 client/build/libs/client-*.jar | head -1)"
+          cp "$JAR" "$RUNNER_TEMP/2009scape.jar"
+
+      - name: Upload runtime client
+        uses: actions/upload-artifact@v4
+        with:
+          name: 2009scape-ui-rewrite
+          path: ${{ runner.temp }}/2009scape.jar
+
       - name: Build overwrite patch
         shell: bash
         run: |
