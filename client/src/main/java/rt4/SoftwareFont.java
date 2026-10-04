@@ -22,6 +22,11 @@ public final class SoftwareFont extends Font {
 		this.pixels = pixels;
 	}
 
+	public SoftwareFont(byte[] data, KillerVectorFont.GlyphSet glyphs) {
+		super(data, glyphs);
+		this.pixels = glyphs.pixels;
+	}
+
 	@OriginalMember(owner = "client!dd", name = "a", descriptor = "([I[BIIIIIII)V")
 	public static void blit(@OriginalArg(0) int[] dest, @OriginalArg(1) byte[] glyphPixels, @OriginalArg(2) int color, @OriginalArg(3) int srcOff, @OriginalArg(4) int destOff, @OriginalArg(5) int width, @OriginalArg(6) int height, @OriginalArg(7) int destStep, @OriginalArg(8) int srcStep) {
 		@Pc(4) int widthQuads = -(width >> 2);
