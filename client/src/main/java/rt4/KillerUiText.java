@@ -449,30 +449,102 @@ public final class KillerUiText {
         int color,
         int shadow
     ) {
-        if (component == null) {
+        if (component == null || text == null || component.width <= 0 || component.height <= 0) {
             return;
         }
+
         KillerUiLog.once("component-text", "ROUTE componentText=KillerUiText");
         int style = styleForComponent(component);
         Font legacyMetrics = legacyMetricsForComponent(component);
-        drawWithMetrics(
+
+        ParsedText parsed = parse(
             text,
             style,
-            x,
-            y,
-            component.width,
-            component.height,
             color,
             shadow,
             256,
-            component.halign,
-            component.valign,
-            component.vpadding,
             EFFECT_NONE,
             0,
-            legacyMetrics,
-            component.font
+            legacyMetrics
         );
+
+        int legacyLineHeight = lineHeight(style, legacyMetrics);
+        int topPadding = scaleLegacyMetric(legacyMetrics.killerParagraphTopPadding(), style);
+        int bottomPadding = scaleLegacyMetric(legacyMetrics.killerParagraphBottomPadding(), style);
+        int lineSpacing = component.vpadding == 0 ? legacyLineHeight : component.vpadding;
+
+        int wrapWidth = component.width;
+        if (component.height < topPadding + bottomPadding + lineSpacing
+            && component.height < lineSpacing + lineSpacing) {
+            // Matches the stock paragraph renderer: a short single-line
+            // component does not wrap simply because TTF bearings differ.
+            wrapWidth = Integer.MAX_VALUE / 4;
+        }
+
+        List<Line> lines = layout(parsed, Math.max(1, wrapWidth), 0);
+        int firstBaseline;
+
+        if (component.valign == 0) {
+            firstBaseline = topPadding;
+        } else if (component.valign == 1) {
+            firstBaseline = topPadding
+                + (component.height - topPadding - bottomPadding
+                    - (lines.size() - 1) * lineSpacing) / 2;
+        } else if (component.valign == 2) {
+            firstBaseline = component.height - bottomPadding
+                - (lines.size() - 1) * lineSpacing;
+        } else {
+            int distributed = (
+                component.height - topPadding - bottomPadding
+                    - (lines.size() - 1) * lineSpacing
+            ) / (lines.size() + 1);
+            if (distributed < 0) {
+                distributed = 0;
+            }
+            firstBaseline = topPadding + distributed;
+            lineSpacing += distributed;
+        }
+
+        boolean animated = parsed.effect != EFFECT_NONE;
+        String key = null;
+        RenderedText rendered = null;
+        if (!animated) {
+            key = cacheKey(
+                text,
+                style,
+                component.font,
+                component.width,
+                component.height,
+                color,
+                shadow,
+                256,
+                component.halign,
+                component.valign,
+                component.vpadding
+            );
+            synchronized (CACHE) {
+                rendered = CACHE.get(key);
+            }
+        }
+
+        if (rendered == null) {
+            rendered = rasterizeBaselines(
+                parsed,
+                lines,
+                component.width,
+                component.height,
+                firstBaseline,
+                component.halign,
+                lineSpacing
+            );
+            if (!animated && key != null) {
+                synchronized (CACHE) {
+                    CACHE.put(key, rendered);
+                }
+            }
+        }
+
+        rendered.render(x, y);
     }
 
     public static void drawLeft(JagString text, int style, int x, int baselineY, int color, int shadow) {
@@ -838,6 +910,46 @@ public final class KillerUiText {
         rendered.render(x, y);
     }
 
+    private static RenderedText rasterizeBaselines(
+        ParsedText parsed,
+        List<Line> lines,
+        int width,
+        int height,
+        int firstBaseline,
+        int halign,
+        int lineSpacing
+    ) {
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = image.createGraphics();
+        List<IconPlacement> icons = new ArrayList<IconPlacement>();
+
+        try {
+            g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+            g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+
+            int baseline = firstBaseline;
+            int charIndex = 0;
+
+            for (Line line : lines) {
+                int lineX = 0;
+                if (halign == 1) {
+                    lineX = Math.max(0, (width - line.width) / 2);
+                } else if (halign == 2) {
+                    lineX = Math.max(0, width - line.width);
+                }
+
+                charIndex = drawLine(g, icons, parsed, line, lineX, baseline, charIndex);
+                baseline += lineSpacing;
+            }
+        } finally {
+            g.dispose();
+        }
+
+        int[] pixels = image.getRGB(0, 0, width, height, null, 0, width);
+        return new RenderedText(width, height, pixels, icons);
+    }
+
     private static RenderedText rasterize(
         ParsedText parsed,
         List<Line> lines,
@@ -867,68 +979,7 @@ public final class KillerUiText {
                 }
 
                 int baseline = y + line.ascent;
-                int x = lineX;
-
-                for (Token token : line.tokens) {
-                    if (token.kind == Token.ICON) {
-                        if (token.iconIndex >= 0 && Sprites.nameIcons != null
-                            && token.iconIndex < Sprites.nameIcons.length
-                            && Sprites.nameIcons[token.iconIndex] != null) {
-                            IndexedSprite icon = Sprites.nameIcons[token.iconIndex];
-                            icons.add(new IconPlacement(
-                                token.iconIndex,
-                                x,
-                                baseline - icon.innerHeight,
-                                token.style.alpha
-                            ));
-                        }
-                        x += token.advance;
-                        continue;
-                    }
-
-                    if (token.kind != Token.CHARACTER) {
-                        continue;
-                    }
-
-                    char ch = token.ch;
-                    java.awt.Font font = getFont(token.style.fontStyle);
-                    int waveY = effectYOffset(parsed.effect, parsed.effectParam, charIndex);
-                    int waveX = effectXOffset(parsed.effect, parsed.effectParam, charIndex);
-                    int drawX = x + waveX;
-                    int drawY = baseline + waveY;
-
-                    int rgb = token.style.color;
-                    if (parsed.effect == EFFECT_RAINBOW) {
-                        rgb = rainbowColor(charIndex);
-                    }
-
-                    GlyphVector gv = font.createGlyphVector(FRC, new char[]{ch});
-
-                    if (token.style.shadow >= 0) {
-                        setComposite(g, token.style.alpha);
-                        g.setColor(new Color(token.style.shadow & 0xFFFFFF));
-                        g.drawGlyphVector(gv, drawX + KillerUi.px(1), drawY + KillerUi.px(1));
-                    }
-
-                    setComposite(g, token.style.alpha);
-                    g.setColor(new Color(rgb & 0xFFFFFF));
-                    g.drawGlyphVector(gv, drawX, drawY);
-
-                    if (token.style.underline >= 0) {
-                        g.setColor(new Color(token.style.underline & 0xFFFFFF));
-                        g.drawLine(drawX, drawY + KillerUi.px(1), drawX + token.advance, drawY + KillerUi.px(1));
-                    }
-
-                    if (token.style.strike >= 0) {
-                        g.setColor(new Color(token.style.strike & 0xFFFFFF));
-                        int strikeY = drawY - Math.max(1, line.ascent / 3);
-                        g.drawLine(drawX, strikeY, drawX + token.advance, strikeY);
-                    }
-
-                    x += token.advance;
-                    charIndex++;
-                }
-
+                charIndex = drawLine(g, icons, parsed, line, lineX, baseline, charIndex);
                 y += line.height + parsed.linePadding;
             }
         } finally {
@@ -937,6 +988,80 @@ public final class KillerUiText {
 
         int[] pixels = image.getRGB(0, 0, width, height, null, 0, width);
         return new RenderedText(width, height, pixels, icons);
+    }
+
+    private static int drawLine(
+        Graphics2D g,
+        List<IconPlacement> icons,
+        ParsedText parsed,
+        Line line,
+        int lineX,
+        int baseline,
+        int charIndex
+    ) {
+        int x = lineX;
+
+        for (Token token : line.tokens) {
+            if (token.kind == Token.ICON) {
+                if (token.iconIndex >= 0 && Sprites.nameIcons != null
+                    && token.iconIndex < Sprites.nameIcons.length
+                    && Sprites.nameIcons[token.iconIndex] != null) {
+                    IndexedSprite icon = Sprites.nameIcons[token.iconIndex];
+                    icons.add(new IconPlacement(
+                        token.iconIndex,
+                        x,
+                        baseline - icon.innerHeight,
+                        token.style.alpha
+                    ));
+                }
+                x += token.advance;
+                continue;
+            }
+
+            if (token.kind != Token.CHARACTER) {
+                continue;
+            }
+
+            char ch = token.ch;
+            java.awt.Font font = getFont(token.style.fontStyle);
+            int waveY = effectYOffset(parsed.effect, parsed.effectParam, charIndex);
+            int waveX = effectXOffset(parsed.effect, parsed.effectParam, charIndex);
+            int drawX = x + waveX;
+            int drawY = baseline + waveY;
+
+            int rgb = token.style.color;
+            if (parsed.effect == EFFECT_RAINBOW) {
+                rgb = rainbowColor(charIndex);
+            }
+
+            GlyphVector gv = font.createGlyphVector(FRC, new char[]{ch});
+
+            if (token.style.shadow >= 0) {
+                setComposite(g, token.style.alpha);
+                g.setColor(new Color(token.style.shadow & 0xFFFFFF));
+                g.drawGlyphVector(gv, drawX + KillerUi.px(1), drawY + KillerUi.px(1));
+            }
+
+            setComposite(g, token.style.alpha);
+            g.setColor(new Color(rgb & 0xFFFFFF));
+            g.drawGlyphVector(gv, drawX, drawY);
+
+            if (token.style.underline >= 0) {
+                g.setColor(new Color(token.style.underline & 0xFFFFFF));
+                g.drawLine(drawX, drawY + KillerUi.px(1), drawX + token.advance, drawY + KillerUi.px(1));
+            }
+
+            if (token.style.strike >= 0) {
+                g.setColor(new Color(token.style.strike & 0xFFFFFF));
+                int strikeY = drawY - Math.max(1, line.ascent / 3);
+                g.drawLine(drawX, strikeY, drawX + token.advance, strikeY);
+            }
+
+            x += token.advance;
+            charIndex++;
+        }
+
+        return charIndex;
     }
 
     private static void setComposite(Graphics2D g, int alpha) {
