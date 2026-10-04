@@ -870,7 +870,7 @@ public final class client extends GameShell {
 		if (gameState == 0) {
 			LoadingBarAwt.render(null, fullRedraw, mainLoadSecondaryText, mainLoadPercentage);
 		} else if (gameState == 5) {
-			LoadingBar.render(false, Fonts.b12Full);
+			LoadingBar.render(false);
 		} else if (gameState == 10) {
 			InterfaceList.updateLoginScreen();
 		} else if (gameState == 25 || gameState == 28) {
