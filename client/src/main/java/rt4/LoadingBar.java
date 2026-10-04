@@ -6,7 +6,7 @@ import org.openrs2.deob.annotation.Pc;
 
 public class LoadingBar {
 	@OriginalMember(owner = "client!oj", name = "a", descriptor = "(BZLclient!rk;)V")
-	public static void render(@OriginalArg(1) boolean drawBackground, @OriginalArg(2) Font font) {
+	public static void render(@OriginalArg(1) boolean drawBackground) {
 		@Pc(9) int y;
 		if (GlRenderer.enabled || drawBackground) {
 			y = GameShell.canvasHeight;
