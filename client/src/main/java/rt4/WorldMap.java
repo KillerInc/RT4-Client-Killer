@@ -210,42 +210,42 @@ public class WorldMap {
 			loadPercentage = 70;
 			GameShell.resetTimer();
 		} else if (loadPercentage == 70) {
-			font11 = new WorldMapFont(11, true, GameShell.canvas);
+			KillerUiLog.once("worldmap-fonts", "ROUTE worldMapLabels=KillerUiText");
 			loadPercentage = 73;
 			ClientProt.ping(true);
 			GameShell.resetTimer();
 		} else if (loadPercentage == 73) {
-			font12 = new WorldMapFont(12, true, GameShell.canvas);
+			// KillerUiText supplies the 12px map label face.
 			loadPercentage = 76;
 			ClientProt.ping(true);
 			GameShell.resetTimer();
 		} else if (loadPercentage == 76) {
-			font14 = new WorldMapFont(14, true, GameShell.canvas);
+			// KillerUiText supplies the 14px map label face.
 			loadPercentage = 79;
 			ClientProt.ping(true);
 			GameShell.resetTimer();
 		} else if (loadPercentage == 79) {
-			font17 = new WorldMapFont(17, true, GameShell.canvas);
+			// KillerUiText supplies the 17px map label face.
 			loadPercentage = 82;
 			ClientProt.ping(true);
 			GameShell.resetTimer();
 		} else if (loadPercentage == 82) {
-			font19 = new WorldMapFont(19, true, GameShell.canvas);
+			// KillerUiText supplies the 19px map label face.
 			loadPercentage = 85;
 			ClientProt.ping(true);
 			GameShell.resetTimer();
 		} else if (loadPercentage == 85) {
-			font22 = new WorldMapFont(22, true, GameShell.canvas);
+			// KillerUiText supplies the 22px map label face.
 			loadPercentage = 88;
 			ClientProt.ping(true);
 			GameShell.resetTimer();
 		} else if (loadPercentage == 88) {
-			font26 = new WorldMapFont(26, true, GameShell.canvas);
+			// KillerUiText supplies the 26px map label face.
 			loadPercentage = 91;
 			ClientProt.ping(true);
 			GameShell.resetTimer();
 		} else {
-			font30 = new WorldMapFont(30, true, GameShell.canvas);
+			// KillerUiText supplies the 30px map label face.
 			loadPercentage = 100;
 			ClientProt.ping(true);
 			GameShell.resetTimer();
@@ -1633,7 +1633,14 @@ public class WorldMap {
 				SoftwareRaster.fillRect(centerX - 150, centerY + 2, loadPercentage * 3, 30, 9179409);
 				SoftwareRaster.fillRect(loadPercentage * 3 + centerX - 150, centerY - -2, 300 - loadPercentage * 3, 30, 0);
 			}
-			Fonts.b12Full.renderCenter(LocalizedText.LOADINGDOTDOTDOT, centerX, centerY + 20, 16777215, -1);
+			KillerUiText.drawCenter(
+				LocalizedText.LOADINGDOTDOTDOT,
+				KillerUiText.BOLD_12,
+				centerX,
+				centerY + KillerUi.px(20),
+				16777215,
+				-1
+			);
 			return;
 		}
 		viewportHeight = (int) ((float) (dstW * 2) / zoom);
@@ -1671,16 +1678,30 @@ public class WorldMap {
 		if (Cheat.displayFps) {
 			@Pc(405) int debugY = dstY + dstW - 8;
 			@Pc(412) int debugX = dstX + dstH - 5;
-			Fonts.p12Full.renderRight(JagString.concatenate(new JagString[]{Cheat.DEBUG_FPS, JagString.parseInt((int) GameShell.framesPerSecond)}), debugX, debugY, 16776960, -1);
+			KillerUiText.drawRight(
+				JagString.concatenate(new JagString[]{Cheat.DEBUG_FPS, JagString.parseInt((int) GameShell.framesPerSecond)}),
+				KillerUiText.PLAIN_12,
+				debugX,
+				debugY,
+				16776960,
+				-1
+			);
 			@Pc(434) Runtime runtime = Runtime.getRuntime();
 			@Pc(443) int memory = (int) ((runtime.totalMemory() - runtime.freeMemory()) / 1024L / 1024L);
 			@Pc(445) int color = 16776960;
-			@Pc(446) int nextLine = debugY - 15;
+			@Pc(446) int nextLine = debugY - KillerUi.px(15);
 			if (memory > 95) {
 				color = 16711680;
 			}
-			Fonts.p12Full.renderRight(JagString.concatenate(new JagString[]{Cheat.DEBUG_MEMORY, JagString.parseInt(memory), Cheat.DEBUG_MEMORY_UNIT}), debugX, nextLine, color, -1);
-			debugY = nextLine - 15;
+			KillerUiText.drawRight(
+				JagString.concatenate(new JagString[]{Cheat.DEBUG_MEMORY, JagString.parseInt(memory), Cheat.DEBUG_MEMORY_UNIT}),
+				KillerUiText.PLAIN_12,
+				debugX,
+				nextLine,
+				color,
+				-1
+			);
+			debugY = nextLine - KillerUi.px(15);
 		}
 	}
 
@@ -1815,73 +1836,59 @@ public class WorldMap {
 	@OriginalMember(owner = "client!cn", name = "a", descriptor = "(BIIIIIIII)V")
 	public static void renderMapLabels(@OriginalArg(1) int dstLeft, @OriginalArg(2) int dstTop, @OriginalArg(3) int srcLeft, @OriginalArg(4) int dstRight, @OriginalArg(5) int srcBottom, @OriginalArg(6) int srcTop, @OriginalArg(7) int srcRight, @OriginalArg(8) int dstBottom) {
 		for (@Pc(11) int i = 0; i < labels.count; i++) {
-			if (labels.isTextLabel(i)) {
-				@Pc(32) int mapX = labels.coordX[i] - originX;
-				@Pc(43) int mapY = originY + length - labels.coordY[i] - 1;
-				@Pc(59) int screenX = dstLeft + (dstRight - dstLeft) * (mapX - srcLeft) / (srcRight - srcLeft);
-				@Pc(64) int labelSize = labels.getLabelSize(i);
-				@Pc(80) int screenY = (dstBottom - dstTop) * (mapY - srcTop) / (srcBottom - srcTop) + dstTop;
-				@Pc(82) int color = 16777215;
-				@Pc(84) WorldMapFont font = null;
-				if (labelSize == 0) {
-					if ((double) zoom == 3.0D) {
-						font = font11;
-					}
-					if ((double) zoom == 4.0D) {
-						font = font12;
-					}
-					if ((double) zoom == 6.0D) {
-						font = font14;
-					}
-					if ((double) zoom >= 8.0D) {
-						font = font17;
-					}
-				}
-				if (labelSize == 1) {
-					if ((double) zoom == 3.0D) {
-						font = font14;
-					}
-					if ((double) zoom == 4.0D) {
-						font = font17;
-					}
-					if ((double) zoom == 6.0D) {
-						font = font19;
-					}
-					if ((double) zoom >= 8.0D) {
-						font = font22;
-					}
-				}
-				if (labelSize == 2) {
-					if ((double) zoom == 3.0D) {
-						font = font19;
-					}
-					color = 16755200;
-					if ((double) zoom == 4.0D) {
-						font = font22;
-					}
-					if ((double) zoom == 6.0D) {
-						font = font26;
-					}
-					if ((double) zoom >= 8.0D) {
-						font = font30;
-					}
-				}
-				if (labels.colors[i] != -1) {
-					color = labels.colors[i];
-				}
-				if (font != null) {
-					@Pc(211) int lineCount = Fonts.p11Full.splitParagraph(labels.names[i], null, labelLines);
-					screenY -= font.getLineHeight() * (lineCount - 1) / 2;
-					screenY += font.getAscent() / 2;
-					for (@Pc(231) int line = 0; line < lineCount; line++) {
-						@Pc(242) JagString text = labelLines[line];
-						if (lineCount - 1 > line) {
-							text.setLength(text.length() - 4);
-						}
-						font.renderStringCenter(text, screenX, screenY, color);
-						screenY += font.getLineHeight();
-					}
-				}
+			if (!labels.isTextLabel(i)) {
+				continue;
+			}
+
+			@Pc(32) int mapX = labels.coordX[i] - originX;
+			@Pc(43) int mapY = originY + length - labels.coordY[i] - 1;
+			@Pc(59) int screenX = dstLeft + (dstRight - dstLeft) * (mapX - srcLeft) / (srcRight - srcLeft);
+			@Pc(64) int labelSize = labels.getLabelSize(i);
+			@Pc(80) int screenY = (dstBottom - dstTop) * (mapY - srcTop) / (srcBottom - srcTop) + dstTop;
+			@Pc(82) int color = 16777215;
+			int nativeSize = 0;
+
+			if (labelSize == 0) {
+				if ((double) zoom == 3.0D) nativeSize = 11;
+				if ((double) zoom == 4.0D) nativeSize = 12;
+				if ((double) zoom == 6.0D) nativeSize = 14;
+				if ((double) zoom >= 8.0D) nativeSize = 17;
+			} else if (labelSize == 1) {
+				if ((double) zoom == 3.0D) nativeSize = 14;
+				if ((double) zoom == 4.0D) nativeSize = 17;
+				if ((double) zoom == 6.0D) nativeSize = 19;
+				if ((double) zoom >= 8.0D) nativeSize = 22;
+			} else if (labelSize == 2) {
+				color = 16755200;
+				if ((double) zoom == 3.0D) nativeSize = 19;
+				if ((double) zoom == 4.0D) nativeSize = 22;
+				if ((double) zoom == 6.0D) nativeSize = 26;
+				if ((double) zoom >= 8.0D) nativeSize = 30;
+			}
+
+			if (labels.colors[i] != -1) {
+				color = labels.colors[i];
+			}
+			if (nativeSize == 0) {
+				continue;
+			}
+
+			int lineCount = KillerUiText.splitExplicitLines(labels.names[i], labelLines);
+			int lineHeight = KillerUiText.lineHeightSized(KillerUiText.BOLD_12, nativeSize);
+			screenY -= lineHeight * (lineCount - 1) / 2;
+			screenY += KillerUiText.ascentSized(KillerUiText.BOLD_12, nativeSize) / 2;
+
+			for (int line = 0; line < lineCount; line++) {
+				KillerUiText.drawCenterSizedSoftware(
+					labelLines[line],
+					KillerUiText.BOLD_12,
+					nativeSize,
+					screenX,
+					screenY,
+					color,
+					1
+				);
+				screenY += lineHeight;
 			}
 		}
 	}
