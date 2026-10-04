@@ -144,9 +144,17 @@ public abstract class Font extends SecondaryNode {
 		this.spriteInnerWidths = glyphs.widths;
 		this.spriteInnerHeights = glyphs.heights;
 		this.decode(data);
+
+		int originalLineHeight = this.lineHeight;
+		int targetLineHeight = Math.max(1, (int) Math.round(originalLineHeight * KillerVectorFont.getTextScale()));
+		int baselineDelta = targetLineHeight - glyphs.lineHeight;
+		for (int i = 0; i < this.spriteYOffsets.length; i++) {
+			this.spriteYOffsets[i] += baselineDelta;
+		}
+
 		this.glyphWidths = glyphs.advances;
 		this.kerning = null;
-		this.lineHeight = glyphs.lineHeight;
+		this.lineHeight = targetLineHeight;
 
 		int minTop = Integer.MAX_VALUE;
 		int maxBottom = Integer.MIN_VALUE;
