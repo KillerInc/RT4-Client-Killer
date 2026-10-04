@@ -1174,7 +1174,7 @@ public class Cs1ScriptRunner {
 			if (GlRenderer.enabled) {
 				@Pc(44) Sprite sprite = component.getSprite(false);
 				if (sprite != null) {
-					sprite.render(x, y);
+					sprite.renderResized(x, y, component.width, component.height);
 				}
 			} else {
 				SoftwareRaster.clearMaskedRegion(x, y, component.clickMaskStart, component.clickMaskWidth);
