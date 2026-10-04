@@ -746,6 +746,44 @@ public final class KillerUiText {
         int effect,
         int effectParam
     ) {
+        drawWithMetrics(
+            text,
+            style,
+            x,
+            y,
+            width,
+            height,
+            color,
+            shadow,
+            alpha,
+            halign,
+            valign,
+            vpadding,
+            effect,
+            effectParam,
+            legacyMetricsForStyle(style),
+            -1000 - style
+        );
+    }
+
+    private static void drawWithMetrics(
+        JagString text,
+        int style,
+        int x,
+        int y,
+        int width,
+        int height,
+        int color,
+        int shadow,
+        int alpha,
+        int halign,
+        int valign,
+        int vpadding,
+        int effect,
+        int effectParam,
+        Font legacyMetrics,
+        int metricKey
+    ) {
         if (text == null || width <= 0 || height <= 0) {
             return;
         }
@@ -756,7 +794,7 @@ public final class KillerUiText {
             "COMPOSITOR=" + (GlRenderer.enabled ? "OPENGL" : "SOFTWARE")
         );
 
-        ParsedText parsed = parse(text, style, color, shadow, alpha, effect, effectParam);
+        ParsedText parsed = parse(text, style, color, shadow, alpha, effect, effectParam, legacyMetrics);
         int padding = KillerUi.px(vpadding);
         List<Line> lines = layout(parsed, width, padding);
 
@@ -780,7 +818,7 @@ public final class KillerUiText {
         RenderedText rendered;
 
         if (!animated) {
-            key = cacheKey(text, style, width, height, color, shadow, alpha, halign, valign, vpadding);
+            key = cacheKey(text, style, metricKey, width, height, color, shadow, alpha, halign, valign, vpadding);
             synchronized (CACHE) {
                 rendered = CACHE.get(key);
             }
@@ -948,11 +986,11 @@ public final class KillerUiText {
 
         for (Token token : parsed.tokens) {
             if (token.kind == Token.BREAK) {
-                current = flushWord(lines, current, word, wordWidth, maxWidth, parsed.fontStyle);
+                current = flushWord(lines, current, word, wordWidth, maxWidth, parsed.fontStyle, parsed.legacyMetrics);
                 word.clear();
                 wordWidth = 0;
 
-                current.finish(parsed.fontStyle);
+                current.finish(parsed.fontStyle, parsed.legacyMetrics);
                 lines.add(current);
                 current = new Line();
                 continue;
@@ -965,7 +1003,7 @@ public final class KillerUiText {
 
                 if (!current.tokens.isEmpty()) {
                     if (current.width + token.advance <= maxWidth) {
-                        current.add(token);
+                        current.add(token, parsed.legacyMetrics);
                     } else {
                         current.finish(parsed.fontStyle);
                         lines.add(current);
@@ -996,14 +1034,15 @@ public final class KillerUiText {
         List<Token> word,
         int wordWidth,
         int maxWidth,
-        int fallbackStyle
+        int fallbackStyle,
+        Font legacyMetrics
     ) {
         if (word.isEmpty()) {
             return current;
         }
 
         if (!current.tokens.isEmpty() && current.width + wordWidth > maxWidth) {
-            current.finish(fallbackStyle);
+            current.finish(fallbackStyle, legacyMetrics);
             lines.add(current);
             current = new Line();
         }
@@ -1014,7 +1053,7 @@ public final class KillerUiText {
                 lines.add(current);
                 current = new Line();
             }
-            current.add(token);
+            current.add(token, legacyMetrics);
         }
 
         return current;
@@ -1028,6 +1067,28 @@ public final class KillerUiText {
         int baseAlpha,
         int requestedEffect,
         int requestedEffectParam
+    ) {
+        return parse(
+            input,
+            fontStyle,
+            baseColor,
+            baseShadow,
+            baseAlpha,
+            requestedEffect,
+            requestedEffectParam,
+            legacyMetricsForStyle(fontStyle)
+        );
+    }
+
+    private static ParsedText parse(
+        JagString input,
+        int fontStyle,
+        int baseColor,
+        int baseShadow,
+        int baseAlpha,
+        int requestedEffect,
+        int requestedEffectParam,
+        Font legacyMetrics
     ) {
         String text = toJavaString(input);
         int effect = requestedEffect;
@@ -1126,7 +1187,6 @@ public final class KillerUiText {
 
         flushPlain(tokens, plain, state);
 
-        Font legacyMetrics = legacyMetricsForStyle(fontStyle);
         int previousChar = 0;
         for (Token token : tokens) {
             if (token.kind == Token.CHARACTER) {
@@ -1137,7 +1197,7 @@ public final class KillerUiText {
             }
         }
 
-        return new ParsedText(tokens, fontStyle, effect, requestedEffectParam);
+        return new ParsedText(tokens, fontStyle, effect, requestedEffectParam, legacyMetrics);
     }
 
     private static PrefixResult parsePrefix(String text, int color, int effect) {
@@ -1362,6 +1422,7 @@ public final class KillerUiText {
     private static String cacheKey(
         JagString text,
         int style,
+        int metricKey,
         int width,
         int height,
         int color,
@@ -1371,7 +1432,7 @@ public final class KillerUiText {
         int valign,
         int vpadding
     ) {
-        return KillerUi.scale() + "|" + style + "|" + width + "|" + height + "|" + color + "|" + shadow
+        return KillerUi.scale() + "|" + style + "|" + metricKey + "|" + width + "|" + height + "|" + color + "|" + shadow
             + "|" + alpha + "|" + halign + "|" + valign + "|" + vpadding + "|" + toJavaString(text);
     }
 
@@ -1380,13 +1441,15 @@ public final class KillerUiText {
         final int fontStyle;
         final int effect;
         final int effectParam;
+        final Font legacyMetrics;
         int linePadding;
 
-        ParsedText(List<Token> tokens, int fontStyle, int effect, int effectParam) {
+        ParsedText(List<Token> tokens, int fontStyle, int effect, int effectParam, Font legacyMetrics) {
             this.tokens = tokens;
             this.fontStyle = fontStyle;
             this.effect = effect;
             this.effectParam = effectParam;
+            this.legacyMetrics = legacyMetrics;
         }
     }
 
@@ -1463,13 +1526,13 @@ public final class KillerUiText {
         int height;
         int ascent;
 
-        void add(Token token) {
+        void add(Token token, Font legacyMetrics) {
             this.tokens.add(token);
             this.width += token.advance;
 
             if (token.kind == Token.CHARACTER) {
-                int tokenHeight = lineHeight(token.style.fontStyle);
-                int tokenAscent = ascent(token.style.fontStyle);
+                int tokenHeight = lineHeight(token.style.fontStyle, legacyMetrics);
+                int tokenAscent = ascent(token.style.fontStyle, legacyMetrics);
                 if (tokenHeight > this.height) {
                     this.height = tokenHeight;
                 }
@@ -1489,12 +1552,12 @@ public final class KillerUiText {
             }
         }
 
-        void finish(int fallbackStyle) {
+        void finish(int fallbackStyle, Font legacyMetrics) {
             if (this.height <= 0) {
-                this.height = lineHeight(fallbackStyle);
+                this.height = lineHeight(fallbackStyle, legacyMetrics);
             }
             if (this.ascent <= 0) {
-                this.ascent = ascent(fallbackStyle);
+                this.ascent = ascent(fallbackStyle, legacyMetrics);
             }
         }
     }
