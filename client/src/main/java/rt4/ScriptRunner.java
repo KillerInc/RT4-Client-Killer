@@ -2837,19 +2837,19 @@ public final class ScriptRunner {
 								if (opcode < 1600) {
 									component = useActiveComponent1 ? staticActiveComponent1 : staticActiveComponent2;
 									if (opcode == Cs2Opcodes.getX) {
-										intStack[isp++] = component.x;
+										intStack[isp++] = KillerUi.scriptGeometry(component, component.x);
 										continue;
 									}
 									if (opcode == Cs2Opcodes.getY) {
-										intStack[isp++] = component.y;
+										intStack[isp++] = KillerUi.scriptGeometry(component, component.y);
 										continue;
 									}
 									if (opcode == Cs2Opcodes.getWidth) {
-										intStack[isp++] = component.width;
+										intStack[isp++] = KillerUi.scriptGeometry(component, component.width);
 										continue;
 									}
 									if (opcode == Cs2Opcodes.getHeight) {
-										intStack[isp++] = component.height;
+										intStack[isp++] = KillerUi.scriptGeometry(component, component.height);
 										continue;
 									}
 									if (opcode == Cs2Opcodes.getHidden) {
@@ -2863,11 +2863,11 @@ public final class ScriptRunner {
 								} else if (opcode < 1700) {
 									component = useActiveComponent1 ? staticActiveComponent1 : staticActiveComponent2;
 									if (opcode == Cs2Opcodes.getScrollX) {
-										intStack[isp++] = component.scrollX;
+										intStack[isp++] = KillerUi.scriptGeometry(component, component.scrollX);
 										continue;
 									}
 									if (opcode == Cs2Opcodes.getScrollY) {
-										intStack[isp++] = component.scrollY;
+										intStack[isp++] = KillerUi.scriptGeometry(component, component.scrollY);
 										continue;
 									}
 									if (opcode == Cs2Opcodes.getText) {
@@ -2875,11 +2875,11 @@ public final class ScriptRunner {
 										continue;
 									}
 									if (opcode == Cs2Opcodes.getScrollMaxH) {
-										intStack[isp++] = component.scrollMaxH;
+										intStack[isp++] = KillerUi.scriptGeometry(component, component.scrollMaxH);
 										continue;
 									}
 									if (opcode == Cs2Opcodes.getScrollMaxV) {
-										intStack[isp++] = component.scrollMaxV;
+										intStack[isp++] = KillerUi.scriptGeometry(component, component.scrollMaxV);
 										continue;
 									}
 									if (opcode == Cs2Opcodes.get3DDistance) {
@@ -2961,19 +2961,19 @@ public final class ScriptRunner {
 									isp--;
 									component = InterfaceList.getComponent(intStack[isp]);
 									if (opcode == Cs2Opcodes.getX2) {
-										intStack[isp++] = component.x;
+										intStack[isp++] = KillerUi.scriptGeometry(component, component.x);
 										continue;
 									}
 									if (opcode == Cs2Opcodes.getY2) {
-										intStack[isp++] = component.y;
+										intStack[isp++] = KillerUi.scriptGeometry(component, component.y);
 										continue;
 									}
 									if (opcode == Cs2Opcodes.getWidth2) {
-										intStack[isp++] = component.width;
+										intStack[isp++] = KillerUi.scriptGeometry(component, component.width);
 										continue;
 									}
 									if (opcode == Cs2Opcodes.getHeight2) {
-										intStack[isp++] = component.height;
+										intStack[isp++] = KillerUi.scriptGeometry(component, component.height);
 										continue;
 									}
 									if (opcode == Cs2Opcodes.isHidden2) {
@@ -2988,11 +2988,11 @@ public final class ScriptRunner {
 									isp--;
 									component = InterfaceList.getComponent(intStack[isp]);
 									if (opcode == Cs2Opcodes.getScrollX2) {
-										intStack[isp++] = component.scrollX;
+										intStack[isp++] = KillerUi.scriptGeometry(component, component.scrollX);
 										continue;
 									}
 									if (opcode == Cs2Opcodes.getScrollY2) {
-										intStack[isp++] = component.scrollY;
+										intStack[isp++] = KillerUi.scriptGeometry(component, component.scrollY);
 										continue;
 									}
 									if (opcode == Cs2Opcodes.getText2) {
@@ -3000,11 +3000,11 @@ public final class ScriptRunner {
 										continue;
 									}
 									if (opcode == Cs2Opcodes.getScrollMaxH2) {
-										intStack[isp++] = component.scrollMaxH;
+										intStack[isp++] = KillerUi.scriptGeometry(component, component.scrollMaxH);
 										continue;
 									}
 									if (opcode == Cs2Opcodes.getScrollMaxV2) {
-										intStack[isp++] = component.scrollMaxV;
+										intStack[isp++] = KillerUi.scriptGeometry(component, component.scrollMaxV);
 										continue;
 									}
 									if (opcode == Cs2Opcodes.get3DDistance2) {
