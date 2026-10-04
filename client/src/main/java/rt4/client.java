@@ -226,7 +226,7 @@ public final class client extends GameShell {
 		// Deliberately outside every startup catch: if the Killer UI engine,
 		// its required TTFs, or its audit log are unavailable, terminate.
 		KillerUiText.verifyReady();
-		KillerUiLog.once("build-id", "BUILD=UI-REWRITE-STRICT-20261004C");
+		KillerUiLog.once("build-id", "BUILD=UI-REWRITE-STRICT-20261004D");
     try {
       String configPath = GlobalConfig.EXTENDED_CONFIG_PATH;
       boolean helpRequested = false;
