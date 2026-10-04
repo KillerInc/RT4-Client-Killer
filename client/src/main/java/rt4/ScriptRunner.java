@@ -549,6 +549,9 @@ public final class ScriptRunner {
 				}
 			}
 		}
+		if (OverheadChat.size > 0) {
+			KillerUiLog.once("overhead-chat", "ROUTE overheadChat=KillerUiText");
+		}
 		for (entityIndex = 0; entityIndex < OverheadChat.size; entityIndex++) {
 			yOffset = OverheadChat.screenY[entityIndex];
 			@Pc(859) int chatScreenX = OverheadChat.screenX[entityIndex];
