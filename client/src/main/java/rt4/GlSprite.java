@@ -81,6 +81,20 @@ public class GlSprite extends Sprite {
 		if (clipMask == null) {
 			return;
 		}
+		this.renderClippedScaledMask(x, y, clipMask, clipMask.width, clipMask.height);
+	}
+
+	/**
+	 * Render through a sprite mask that is displayed at a different physical
+	 * size than its native texture. Used by the UI-scaled minimap/compass.
+	 */
+	public final void renderClippedScaledMask(int x, int y, GlSprite clipMask, int maskDisplayWidth, int maskDisplayHeight) {
+		if (clipMask == null) {
+			return;
+		}
+		maskDisplayWidth = Math.max(1, maskDisplayWidth);
+		maskDisplayHeight = Math.max(1, maskDisplayHeight);
+
 		GlRenderer.begin2DReplace();
 		GlRenderer.setTextureId(clipMask.textureId);
 		clipMask.setTextureFilter(1);
@@ -92,10 +106,19 @@ public class GlSprite extends Sprite {
 		gl.glBindTexture(GL2.GL_TEXTURE_2D, clipMask.textureId);
 		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_COMBINE_RGB, GL2.GL_REPLACE);
 		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_SRC0_RGB, GL2.GL_PREVIOUS);
-		@Pc(47) float clipU0 = (float) (x - GlRaster.clipLeft) / (float) clipMask.powerOfTwoWidth;
-		@Pc(56) float clipV0 = (float) (y - GlRaster.clipTop) / (float) clipMask.powerOfTwoHeight;
-		@Pc(68) float clipU1 = (float) (x + this.width - GlRaster.clipLeft) / (float) clipMask.powerOfTwoWidth;
-		@Pc(80) float clipV1 = (float) (y + this.height - GlRaster.clipTop) / (float) clipMask.powerOfTwoHeight;
+
+		float maskScaleX = (float) clipMask.width / (float) maskDisplayWidth;
+		float maskScaleY = (float) clipMask.height / (float) maskDisplayHeight;
+		float nativeMaskX0 = (float) (x - GlRaster.clipLeft) * maskScaleX;
+		float nativeMaskY0 = (float) (y - GlRaster.clipTop) * maskScaleY;
+		float nativeMaskX1 = (float) (x + this.width - GlRaster.clipLeft) * maskScaleX;
+		float nativeMaskY1 = (float) (y + this.height - GlRaster.clipTop) * maskScaleY;
+
+		float clipU0 = nativeMaskX0 / (float) clipMask.powerOfTwoWidth;
+		float clipV0 = nativeMaskY0 / (float) clipMask.powerOfTwoHeight;
+		float clipU1 = nativeMaskX1 / (float) clipMask.powerOfTwoWidth;
+		float clipV1 = nativeMaskY1 / (float) clipMask.powerOfTwoHeight;
+
 		@Pc(85) int drawX = x + this.xOffset;
 		@Pc(90) int drawY = y + this.yOffset;
 		gl.glBegin(GL2.GL_TRIANGLE_FAN);
