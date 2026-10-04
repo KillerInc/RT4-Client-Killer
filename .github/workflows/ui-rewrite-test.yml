@@ -68,6 +68,18 @@ jobs:
           name: 2009scape-ui-rewrite
           path: ${{ runner.temp }}/2009scape.jar
 
+      - name: Build versioned 7z test package
+        shell: bash
+        run: |
+          set -euo pipefail
+          7z a -t7z -mx=9 "$RUNNER_TEMP/2009scape_v0.2.7z" "$RUNNER_TEMP/2009scape.jar"
+
+      - name: Upload versioned 7z test package
+        uses: actions/upload-artifact@v4
+        with:
+          name: 2009scape_v0.2
+          path: ${{ runner.temp }}/2009scape_v0.2.7z
+
       - name: Build overwrite patch
         shell: bash
         run: |
