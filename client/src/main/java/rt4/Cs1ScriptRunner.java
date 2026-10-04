@@ -495,7 +495,7 @@ public class Cs1ScriptRunner {
 								}
 								temp1 = component.width + componentX;
 								temp2 = componentY + 15;
-								Fonts.p12Full.renderRight(JagString.concatenate(new JagString[]{Cheat.DEBUG_FPS2, JagString.parseInt((int) GameShell.framesPerSecond)}), temp1, temp2, 16776960, 0);
+								KillerUiText.drawRight(JagString.concatenate(new JagString[]{Cheat.DEBUG_FPS2, JagString.parseInt((int) GameShell.framesPerSecond)}), KillerUiText.PLAIN_12, temp1, temp2, 16776960, 0);
 								temp2 += 15;
 								@Pc(795) Runtime runtime = Runtime.getRuntime();
 								memory = (int) ((runtime.totalMemory() - runtime.freeMemory()) / 1024L / 1024L);
@@ -503,7 +503,7 @@ public class Cs1ScriptRunner {
 								if (memory > 128) {
 									color = 16711680;
 								}
-								Fonts.p12Full.renderRight(JagString.concatenate(new JagString[]{Cheat.DEBUG_MEM, JagString.parseInt(memory), Cheat.DEBUG_MEM_UNIT}), temp1, temp2, color, 0);
+								KillerUiText.drawRight(JagString.concatenate(new JagString[]{Cheat.DEBUG_MEM, JagString.parseInt(memory), Cheat.DEBUG_MEM_UNIT}), KillerUiText.PLAIN_12, temp1, temp2, color, 0);
 								temp2 += 15;
 								if (GlRenderer.enabled) {
 									color = 16776960;
@@ -511,7 +511,7 @@ public class Cs1ScriptRunner {
 									if (cardMemory > 64) {
 										color = 16711680;
 									}
-									Fonts.p12Full.renderRight(JagString.concatenate(new JagString[]{Cheat.DEBUG_CARD, JagString.parseInt(cardMemory), Cheat.DEBUG_MEM_UNIT}), temp1, temp2, color, 0);
+									KillerUiText.drawRight(JagString.concatenate(new JagString[]{Cheat.DEBUG_CARD, JagString.parseInt(cardMemory), Cheat.DEBUG_MEM_UNIT}), KillerUiText.PLAIN_12, temp1, temp2, color, 0);
 									temp2 += 15;
 								}
 								cardMemory = 0;
@@ -525,7 +525,7 @@ public class Cs1ScriptRunner {
 								temp6 = temp4 * 10000 / cardMemory;
 								temp5 = objId * 100 / cardMemory;
 								@Pc(968) JagString cacheStatText = JagString.concatenate(new JagString[]{Cheat.DEBUG_CAHE, StringUtils.formatNumber(0, true, 2, temp6), CACHE_STAT_SEPARATOR, JagString.parseInt(temp5), CACHE_STAT_SUFFIX});
-								Fonts.p11Full.renderRight(cacheStatText, temp1, temp2, 16776960, 0);
+								KillerUiText.drawRight(cacheStatText, KillerUiText.PLAIN_11, temp1, temp2, 16776960, 0);
 								temp2 += 12;
 								InterfaceList.rectangleDirty[rectangle] = true;
 								InterfaceList.rectangleRedraw[rectangle] = true;
@@ -738,11 +738,8 @@ public class Cs1ScriptRunner {
 									}
 									PluginRepository.ComponentDraw(i, component, componentX, componentY);
 								} else {
-									@Pc(1921) Font font;
 									if (component.type == 4) {
-										font = component.getFont(Sprites.nameIcons);
-										if (font != null) {
-											@Pc(1934) JagString displayText = component.text;
+										@Pc(1934) JagString displayText = component.text;
 											if (isTrue(component)) {
 												temp2 = component.activeColor;
 												if (InterfaceList.hoveredComponent == component && component.activeOverColor != 0) {
@@ -774,11 +771,8 @@ public class Cs1ScriptRunner {
 											if (!component.if3) {
 												displayText = interpolate(component, displayText);
 											}
-											KillerUiText.drawComponent(displayText, component, componentX, componentY, temp2, component.shadowed ? 0 : -1);
-											PluginRepository.ComponentDraw(i, component, componentX, componentY);
-										} else if (Component.loadFailed) {
-											InterfaceList.redraw(component);
-										}
+										KillerUiText.drawComponent(displayText, component, componentX, componentY, temp2, component.shadowed ? 0 : -1);
+										PluginRepository.ComponentDraw(i, component, componentX, componentY);
 									} else if (component.type == 5) {
 										@Pc(2094) Sprite sprite = null;
 										if (component.if3) {
