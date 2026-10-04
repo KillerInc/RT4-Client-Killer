@@ -27,7 +27,6 @@ public final class GlFont extends Font {
 
 	@OriginalMember(owner = "client!mb", name = "Eb", descriptor = "I")
 	private int size = 0;
-	private boolean killerAlphaGlyphs = false;
 
 	@OriginalMember(owner = "client!mb", name = "<init>", descriptor = "([B[I[I[I[I[[B)V")
 	public GlFont(@OriginalArg(0) byte[] bytes, @OriginalArg(1) int[] xOffsets, @OriginalArg(2) int[] yOffsets, @OriginalArg(3) int[] innerWidths, @OriginalArg(4) int[] innerHeights, @OriginalArg(5) byte[][] pixels) {
@@ -38,7 +37,6 @@ public final class GlFont extends Font {
 
 	public GlFont(byte[] data, int[] xOffsets, int[] yOffsets, int[] innerWidths, int[] innerHeights, byte[][] pixels, double killerFontScale) {
 		super(data, xOffsets, yOffsets, innerWidths, innerHeights, killerFontScale);
-		this.killerAlphaGlyphs = true;
 		this.createTexture(pixels);
 		this.createLists();
 	}
@@ -196,13 +194,11 @@ public final class GlFont extends Font {
 			@Pc(108) byte[] src = pixels[i];
 			for (@Pc(110) int y = 0; y < height; y++) {
 				for (@Pc(115) int x = 0; x < width; x++) {
-					int raw = src[srcIndex++] & 0xFF;
-					if (raw == 0) {
+					if (src[srcIndex++] == 0) {
 						destIndex += 2;
 					} else {
-						int alpha = this.killerAlphaGlyphs ? (raw == 1 ? 255 : raw) : 255;
 						dest[destIndex++] = -1;
-						dest[destIndex++] = (byte) alpha;
+						dest[destIndex++] = -1;
 					}
 				}
 				destIndex += (this.powerOfTwoSize - width) * 2;
@@ -220,8 +216,7 @@ public final class GlFont extends Font {
 		gl.glTexImage2D(GL2.GL_TEXTURE_2D, 0, GL2.GL_LUMINANCE_ALPHA, this.powerOfTwoSize, this.powerOfTwoSize, 0, GL2.GL_LUMINANCE_ALPHA, GL2.GL_UNSIGNED_BYTE, buffer);
 		GlCleaner.onCard2d += buffer.limit() - this.size;
 		this.size = buffer.limit();
-		int filter = this.killerAlphaGlyphs ? GL2.GL_LINEAR : GL2.GL_NEAREST;
-		gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL2.GL_TEXTURE_MIN_FILTER, filter);
-		gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL2.GL_TEXTURE_MAG_FILTER, filter);
+		gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_NEAREST);
+		gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_NEAREST);
 	}
 }
