@@ -31,9 +31,22 @@ jobs:
           curl -fL "https://github.com/RuneStar/fonts/releases/download/1.103-0/RuneScape-Fonts.zip" -o "$FONT_ZIP"
           mkdir -p "$FONT_DIR" "$RESOURCE_DIR"
           unzip -q "$FONT_ZIP" -d "$FONT_DIR"
-          cp "$(find "$FONT_DIR" -type f -iname 'RuneScape-Plain-11.ttf' | head -1)" "$RESOURCE_DIR/RuneScape-Plain-11.ttf"
-          cp "$(find "$FONT_DIR" -type f -iname 'RuneScape-Plain-12.ttf' | head -1)" "$RESOURCE_DIR/RuneScape-Plain-12.ttf"
-          cp "$(find "$FONT_DIR" -type f -iname 'RuneScape-Bold-12.ttf' | head -1)" "$RESOURCE_DIR/RuneScape-Bold-12.ttf"
+          find "$FONT_DIR" -type f -iname 'RuneScape-*.ttf' -exec cp {} "$RESOURCE_DIR/" \;
+
+          for f in \
+            RuneScape-Plain-11.ttf \
+            RuneScape-Plain-12.ttf \
+            RuneScape-Bold-12.ttf \
+            RuneScape-Quill-8.ttf \
+            RuneScape-Quill.ttf \
+            RuneScape-Quill-Caps.ttf \
+            RuneScape-Fairy.ttf \
+            RuneScape-Fairy-Large.ttf \
+            RuneScape-Barbarian-Assault.ttf \
+            RuneScape-Surok.ttf
+          do
+            test -f "$RESOURCE_DIR/$f" || { echo "Missing required RuneStar font: $f"; exit 1; }
+          done
 
       - name: Build client
         shell: bash
