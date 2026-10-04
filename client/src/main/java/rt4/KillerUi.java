@@ -56,6 +56,23 @@ public final class KillerUi {
         return sign * Math.max(1, (int) Math.round((double) magnitude * scale()));
     }
 
+    /**
+     * Convert a rendered/scaled UI coordinate back into the native 1.0
+     * coordinate space used by cache scripts. This prevents CS2 interfaces
+     * from reading a scaled size and then feeding it back through a setter
+     * that scales the value a second time.
+     */
+    public static int logicalPx(int value) {
+        if (value == 0) {
+            return 0;
+        }
+        return (int) Math.round((double) value / scale());
+    }
+
+    public static int scriptGeometry(Component component, int value) {
+        return isWorldSurface(component) ? value : logicalPx(value);
+    }
+
     public static int fontTarget(int nativeSize) {
         return Math.max(1, (int) Math.floor((double) nativeSize * effectiveTextScale() + 0.000001D));
     }
@@ -97,11 +114,11 @@ public final class KillerUi {
             return false;
         }
 
-        // Scene viewport, alternate scene viewport, minimap and compass.
+        // Only the 3D game scene stays in native world coordinates.
+        // Minimap/compass are UI surfaces: their frame, viewport and hit mask
+        // must scale with the rest of the interface.
         return component.clientCode == 1337
-            || component.clientCode == 1403
-            || component.clientCode == 1338
-            || component.clientCode == 1339;
+            || component.clientCode == 1403;
     }
 
     /**
