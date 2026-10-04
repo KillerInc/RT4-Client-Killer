@@ -416,9 +416,9 @@ public class Cs1ScriptRunner {
 								if (temp1 < temp3 || temp1 > temp3 + component.clickMaskWidth[temp2]) {
 									continue;
 								}
-								temp2 -= component.height / 2;
+								temp2 = KillerUi.logicalPx(temp2 - component.height / 2);
 								memory = (int) Camera.yawTarget + MiniMap.compassAngleOffset & 0x7FF;
-								temp1 -= component.width / 2;
+								temp1 = KillerUi.logicalPx(temp1 - component.width / 2);
 								color = MathUtils.sin[memory];
 								cardMemory = MathUtils.cos[memory];
 								color = (MiniMap.zoomOffset + 256) * color >> 8;
