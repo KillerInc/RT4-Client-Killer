@@ -21,6 +21,30 @@ jobs:
           java-version: '8'
           distribution: 'temurin'
 
+      - name: Fetch RuneScape vector fonts
+        shell: bash
+        run: |
+          set -euo pipefail
+          FONT_ZIP="$RUNNER_TEMP/RuneScape-Fonts.zip"
+          FONT_DIR="$RUNNER_TEMP/runestar-fonts"
+          RESOURCE_DIR="client/src/main/resources/killer-fonts"
+
+          curl -fL "https://github.com/RuneStar/fonts/releases/download/1.103-0/RuneScape-Fonts.zip" -o "$FONT_ZIP"
+          mkdir -p "$FONT_DIR" "$RESOURCE_DIR"
+          unzip -q "$FONT_ZIP" -d "$FONT_DIR"
+
+          P11="$(find "$FONT_DIR" -type f -iname 'RuneScape-Plain-11.ttf' | head -1)"
+          P12="$(find "$FONT_DIR" -type f -iname 'RuneScape-Plain-12.ttf' | head -1)"
+          B12="$(find "$FONT_DIR" -type f -iname 'RuneScape-Bold-12.ttf' | head -1)"
+
+          test -n "$P11" && test -s "$P11"
+          test -n "$P12" && test -s "$P12"
+          test -n "$B12" && test -s "$B12"
+
+          cp "$P11" "$RESOURCE_DIR/RuneScape-Plain-11.ttf"
+          cp "$P12" "$RESOURCE_DIR/RuneScape-Plain-12.ttf"
+          cp "$B12" "$RESOURCE_DIR/RuneScape-Bold-12.ttf"
+
       - name: Build client
         shell: bash
         run: |
@@ -57,7 +81,7 @@ jobs:
           set -euo pipefail
           JAR=client/build/libs/rt4-client-killer.jar
           SHA=client/build/libs/rt4-client-killer.jar.sha256
-          NOTES="Killer RT4 Client v$VERSION\n\n- Based on the current 2009Scape RT4 client.\n- Adds fractional bitmap-font scaling via -DkillerTextScale."
+          NOTES="Killer RT4 Client v$VERSION\n\n- Based on the current 2009Scape RT4 client.\n- Restores original UI/window scaling behavior.\n- Generates p11_full, p12_full and b12_full glyph masks at startup from RuneStar vector fonts.\n- Text size is controlled independently with -DkillerTextScale.\n- Original cache fonts remain the fallback if vector generation fails."
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$JAR" "$SHA" --clobber
             gh release edit "$TAG" --title "Killer RT4 Client v$VERSION" --notes "$NOTES"
