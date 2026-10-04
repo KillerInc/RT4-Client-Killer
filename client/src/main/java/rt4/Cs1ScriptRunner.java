@@ -1026,40 +1026,31 @@ public class Cs1ScriptRunner {
 												PluginRepository.ComponentDraw(i, component, componentX + component.invMarginX + KillerUi.inventoryTextCellWidth(), componentY + component.invMarginY + KillerUi.inventoryTextCellHeight());
 											}
 											if (component.type == 8 && Protocol.tooltipComponent == component && Protocol.tooltipTimer == TOOLTIP_DISPLAY_DELAY) {
-												temp2 = 0;
-												temp1 = 0;
-												@Pc(3297) JagString tooltipText = component.text;
-												@Pc(3299) Font tooltipFont = Fonts.p12Full;
-												tooltipText = interpolate(component, tooltipText);
-												@Pc(3325) JagString tooltipLine;
-												while (tooltipText.length() > 0) {
-													cardMemory = tooltipText.indexOf(JagString.LINE_BREAK);
-													if (cardMemory == -1) {
-														tooltipLine = tooltipText;
-														tooltipText = JagString.EMPTY;
-													} else {
-														tooltipLine = tooltipText.substring(cardMemory, 0);
-														tooltipText = tooltipText.substring(cardMemory + 4);
-													}
-													temp4 = tooltipFont.getStringWidth(tooltipLine);
-													temp2 += tooltipFont.lineHeight + 1;
-													if (temp1 < temp4) {
-														temp1 = temp4;
-													}
-												}
-												temp4 = componentY + component.height + 5;
-												temp1 += 6;
-												temp2 += 7;
+												JagString tooltipText = interpolate(component, component.text);
+												int tooltipStyle = KillerUiText.PLAIN_12;
+												int tooltipPadX = KillerUi.px(3);
+												int tooltipPadY = KillerUi.px(3);
+												int tooltipGap = KillerUi.px(5);
+												temp1 = KillerUiText.measureWidth(tooltipText, tooltipStyle) + tooltipPadX * 2;
+												temp2 = KillerUiText.measureParagraphHeight(
+													tooltipText,
+													tooltipStyle,
+													Math.max(1, temp1 - tooltipPadX * 2),
+													1
+												) + tooltipPadY * 2;
+
+												temp4 = componentY + component.height + tooltipGap;
 												if (temp4 + temp2 > clipBottom) {
 													temp4 = clipBottom - temp2;
 												}
-												cardMemory = componentX + component.width - temp1 - 5;
-												if (cardMemory < componentX + 5) {
-													cardMemory = componentX + 5;
+												cardMemory = componentX + component.width - temp1 - tooltipGap;
+												if (cardMemory < componentX + tooltipGap) {
+													cardMemory = componentX + tooltipGap;
 												}
 												if (temp1 + cardMemory > clipRight) {
 													cardMemory = clipRight - temp1;
 												}
+
 												if (GlRenderer.enabled) {
 													GlRaster.fillRect(cardMemory, temp4, temp1, temp2, 16777120);
 													GlRaster.drawRect(cardMemory, temp4, temp1, temp2, 0);
@@ -1067,22 +1058,23 @@ public class Cs1ScriptRunner {
 													SoftwareRaster.fillRect(cardMemory, temp4, temp1, temp2, 16777120);
 													SoftwareRaster.drawRect(cardMemory, temp4, temp1, temp2, 0);
 												}
-												tooltipText = component.text;
-												objId = temp4 + tooltipFont.lineHeight + 2;
-												tooltipText = interpolate(component, tooltipText);
-												while (tooltipText.length() > 0) {
-													temp5 = tooltipText.indexOf(JagString.LINE_BREAK);
-													if (temp5 == -1) {
-														tooltipLine = tooltipText;
-														tooltipText = JagString.EMPTY;
-													} else {
-														tooltipLine = tooltipText.substring(temp5, 0);
-														tooltipText = tooltipText.substring(temp5 + 4);
-													}
-													tooltipFont.renderLeft(tooltipLine, cardMemory + 3, objId, 0, -1);
-													objId += tooltipFont.lineHeight + 1;
-												}
-												PluginRepository.ComponentDraw(i, component, cardMemory + 3, objId);
+
+												KillerUiText.draw(
+													tooltipText,
+													tooltipStyle,
+													cardMemory + tooltipPadX,
+													temp4 + tooltipPadY,
+													Math.max(1, temp1 - tooltipPadX * 2),
+													Math.max(1, temp2 - tooltipPadY * 2),
+													0,
+													-1,
+													256,
+													0,
+													0,
+													1,
+													KillerUiText.EFFECT_NONE
+												);
+												PluginRepository.ComponentDraw(i, component, cardMemory + tooltipPadX, temp4 + temp2 - tooltipPadY);
 											}
 											if (component.type == 9) {
 												if (component.lineFlipped) {
@@ -1165,38 +1157,46 @@ public class Cs1ScriptRunner {
 
 	@OriginalMember(owner = "client!fn", name = "a", descriptor = "(BIIIII)V")
 	public static void renderScrollbar(@OriginalArg(1) int scrollY, @OriginalArg(2) int scrollMax, @OriginalArg(3) int x, @OriginalArg(4) int y, @OriginalArg(5) int height) {
+		int barWidth = KillerUi.scrollbarWidth();
+		int arrowHeight = KillerUi.scrollbarArrowHeight();
+		int minThumb = KillerUi.px(8);
+
+		// Keep the original arrow artwork, but size the rewritten track/thumb
+		// around the scaled UI geometry.
 		Sprites.scrollbars[0].renderTransparent(x, y);
-		Sprites.scrollbars[1].renderTransparent(x, height + y - 16);
-		@Pc(35) int thumbHeight = height * (height - 32) / scrollMax;
-		if (thumbHeight < 8) {
-			thumbHeight = 8;
+		Sprites.scrollbars[1].renderTransparent(x, height + y - arrowHeight);
+
+		int trackHeight = Math.max(1, height - arrowHeight * 2);
+		int thumbHeight = height * trackHeight / Math.max(1, scrollMax);
+		if (thumbHeight < minThumb) {
+			thumbHeight = minThumb;
 		}
-		@Pc(54) int thumbY = scrollY * (height - thumbHeight - 32) / (scrollMax - height);
+		if (thumbHeight > trackHeight) {
+			thumbHeight = trackHeight;
+		}
+
+		int denominator = Math.max(1, scrollMax - height);
+		int thumbY = scrollY * Math.max(0, trackHeight - thumbHeight) / denominator;
+		int trackY = y + arrowHeight;
+		int thumbTop = trackY + thumbY;
+
 		if (!GlRenderer.enabled) {
-			SoftwareRaster.fillRect(x, y + 16, 16, height - 32, SCROLLBAR_TRACK_COLOR);
-			SoftwareRaster.fillRect(x, thumbY + y + 16, 16, thumbHeight, SCROLLBAR_THUMB_COLOR);
-			SoftwareRaster.drawVerticalLine(x, thumbY + y + 16, thumbHeight, SCROLLBAR_THUMB_HIGHLIGHT_COLOR);
-			SoftwareRaster.drawVerticalLine(x + 1, thumbY + 16 + y, thumbHeight, SCROLLBAR_THUMB_HIGHLIGHT_COLOR);
-			SoftwareRaster.drawHorizontalLine(x, y + thumbY + 16, 16, SCROLLBAR_THUMB_HIGHLIGHT_COLOR);
-			SoftwareRaster.drawHorizontalLine(x, y + thumbY + 17, 16, SCROLLBAR_THUMB_HIGHLIGHT_COLOR);
-			SoftwareRaster.drawVerticalLine(x + 15, thumbY + 16 + y, thumbHeight, SCROLLBAR_THUMB_SHADOW_COLOR);
-			SoftwareRaster.drawVerticalLine(x + 14, y - -17 - -thumbY, thumbHeight - 1, SCROLLBAR_THUMB_SHADOW_COLOR);
-			SoftwareRaster.drawHorizontalLine(x, thumbHeight + y + thumbY + 15, 16, SCROLLBAR_THUMB_SHADOW_COLOR);
-			SoftwareRaster.drawHorizontalLine(x + 1, thumbHeight + y - (-thumbY + -14), 15, SCROLLBAR_THUMB_SHADOW_COLOR);
+			SoftwareRaster.fillRect(x, trackY, barWidth, trackHeight, SCROLLBAR_TRACK_COLOR);
+			SoftwareRaster.fillRect(x, thumbTop, barWidth, thumbHeight, SCROLLBAR_THUMB_COLOR);
+			SoftwareRaster.drawVerticalLine(x, thumbTop, thumbHeight, SCROLLBAR_THUMB_HIGHLIGHT_COLOR);
+			SoftwareRaster.drawHorizontalLine(x, thumbTop, barWidth, SCROLLBAR_THUMB_HIGHLIGHT_COLOR);
+			SoftwareRaster.drawVerticalLine(x + barWidth - 1, thumbTop, thumbHeight, SCROLLBAR_THUMB_SHADOW_COLOR);
+			SoftwareRaster.drawHorizontalLine(x, thumbTop + thumbHeight - 1, barWidth, SCROLLBAR_THUMB_SHADOW_COLOR);
 			return;
 		}
-		GlRaster.fillRect(x, y + 16, 16, height - 32, SCROLLBAR_TRACK_COLOR);
-		GlRaster.fillRect(x, y + thumbY + 16, 16, thumbHeight, SCROLLBAR_THUMB_COLOR);
-		GlRaster.drawVerticalLine(x, thumbY + y + 16, thumbHeight, SCROLLBAR_THUMB_HIGHLIGHT_COLOR);
-		GlRaster.drawVerticalLine(x + 1, thumbY + 16 + y, thumbHeight, SCROLLBAR_THUMB_HIGHLIGHT_COLOR);
-		GlRaster.drawHorizontalLine(x, thumbY + y + 16, 16, SCROLLBAR_THUMB_HIGHLIGHT_COLOR);
-		GlRaster.drawHorizontalLine(x, thumbY + y + 17, 16, SCROLLBAR_THUMB_HIGHLIGHT_COLOR);
-		GlRaster.drawVerticalLine(x + 15, y + (16 - -thumbY), thumbHeight, SCROLLBAR_THUMB_SHADOW_COLOR);
-		GlRaster.drawVerticalLine(x + 14, y - -thumbY + 17, thumbHeight - 1, SCROLLBAR_THUMB_SHADOW_COLOR);
-		GlRaster.drawHorizontalLine(x, thumbHeight + y + thumbY + 15, 16, SCROLLBAR_THUMB_SHADOW_COLOR);
-		GlRaster.drawHorizontalLine(x + 1, y + 14 - -thumbY + thumbHeight, 15, SCROLLBAR_THUMB_SHADOW_COLOR);
-	}
 
+		GlRaster.fillRect(x, trackY, barWidth, trackHeight, SCROLLBAR_TRACK_COLOR);
+		GlRaster.fillRect(x, thumbTop, barWidth, thumbHeight, SCROLLBAR_THUMB_COLOR);
+		GlRaster.drawVerticalLine(x, thumbTop, thumbHeight, SCROLLBAR_THUMB_HIGHLIGHT_COLOR);
+		GlRaster.drawHorizontalLine(x, thumbTop, barWidth, SCROLLBAR_THUMB_HIGHLIGHT_COLOR);
+		GlRaster.drawVerticalLine(x + barWidth - 1, thumbTop, thumbHeight, SCROLLBAR_THUMB_SHADOW_COLOR);
+		GlRaster.drawHorizontalLine(x, thumbTop + thumbHeight - 1, barWidth, SCROLLBAR_THUMB_SHADOW_COLOR);
+	}
 	@OriginalMember(owner = "client!aa", name = "a", descriptor = "(BLclient!be;)V")
 	public static void applyClientCode(@OriginalArg(1) Component component) {
 		@Pc(16) int clientCode = component.clientCode;
