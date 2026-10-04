@@ -312,7 +312,22 @@ public final class client extends GameShell {
 			instance = c;
 			c.startApplication(modeWhat + 32, "runescape");
 			GameShell.frame.setLocationRelativeTo(null);
-			GameShell.frame.setSize(1024, 768); // set a reasonable size by default
+			double killerUiScale = 1.0D;
+			try {
+				killerUiScale = Double.parseDouble(System.getProperty("sun.java2d.uiScale", "1.0"));
+				if (killerUiScale <= 0.0D || Double.isNaN(killerUiScale) || Double.isInfinite(killerUiScale)) {
+					killerUiScale = 1.0D;
+				}
+			} catch (NumberFormatException ignored) {
+				killerUiScale = 1.0D;
+			}
+			// AWT scales the native window as well as the canvas when sun.java2d.uiScale
+			// is fractional. Compensate the logical frame size so the physical window
+			// footprint remains the same while the game content receives the scale.
+			GameShell.frame.setSize(
+				Math.max(765, (int) Math.round(1024.0D / killerUiScale)),
+				Math.max(503, (int) Math.round(768.0D / killerUiScale))
+			);
 		} catch (@Pc(167) Exception ex) {
 			TracingException.report(null, ex);
 		}
