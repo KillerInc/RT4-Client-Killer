@@ -2,6 +2,15 @@
 
 This file tracks **Killer RT4 client changes only**. Upstream 2009Scape/Pazaz history and changelogs are intentionally left untouched.
 
+## v0.8.0 — 2026-10-04
+
+- Split UI geometry scaling from the independent Font Scale control.
+- UI geometry now follows `sun.java2d.uiScale` only; changing Font Scale no longer resizes panels, sprites, slots, scrollbars, minimap framing, login parchment, or other UI layout.
+- Font Scale now acts as a text-only multiplier through `killerFontScale`.
+- Effective text scale is `UI Scale × Font Scale`, so the UI scaler can still grow text together with the rest of the interface.
+- Normal mouse-over/action tooltip text is static again; explicit RuneScape wave/wave2/shake effects remain available only on text that actually requests them.
+- Runtime UI diagnostics now log UI Scale, Font Scale, and effective text scale separately.
+
 ## v0.4.0 — 2026-10-04
 
 - Replaced the experimental RT4 bitmap-font conversion approach with a direct TTF rendering path.
