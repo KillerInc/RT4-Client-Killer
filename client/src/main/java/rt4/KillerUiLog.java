@@ -67,8 +67,9 @@ public final class KillerUiLog {
         write("p12Target=" + KillerUi.fontTarget(12));
         write("uiTextEngine=KillerUiText");
         write("fallbackPolicy=DISABLED_FAIL_HARD");
-        write("stockRt4FontRole=WORLD_SCENE_ONLY");
-        write("worldRenderer=UNCHANGED");
+        write("stockRt4TextRenderer=FORBIDDEN");
+        write("worldGeometryRenderer=UNCHANGED");
+        write("worldOverlayText=KillerUiText");
     }
 
     public static synchronized void write(String message) {
