@@ -407,9 +407,9 @@ public class InterfaceList {
 			redrawScreen(menuX, menuWidth, menuY, menuHeight);
 		} else {
 			redrawScreen(menuX, menuWidth, menuY, menuHeight);
-			maxWidth = Fonts.b12Full.getStringWidth(LocalizedText.CHOOSE_OPTION);
+			maxWidth = KillerUiText.measureWidth(LocalizedText.CHOOSE_OPTION, KillerUiText.BOLD_12);
 			for (@Pc(75) int i = 0; i < MiniMenu.size; i++) {
-				@Pc(88) int opWidth = Fonts.b12Full.getStringWidth(MiniMenu.getOp(i));
+				@Pc(88) int opWidth = KillerUiText.measureWidth(MiniMenu.getOp(i), KillerUiText.BOLD_12);
 				if (maxWidth < opWidth) {
 					maxWidth = opWidth;
 				}
