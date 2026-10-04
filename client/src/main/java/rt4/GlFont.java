@@ -35,12 +35,6 @@ public final class GlFont extends Font {
 		this.createLists();
 	}
 
-	public GlFont(byte[] data, KillerVectorFont.GlyphSet glyphs) {
-		super(data, glyphs);
-		this.createTexture(glyphs.pixels);
-		this.createLists();
-	}
-
 	@OriginalMember(owner = "client!dj", name = "a", descriptor = "()V")
 	public static void clearLineMask() {
 		masked = null;
