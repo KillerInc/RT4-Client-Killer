@@ -44,9 +44,14 @@ public class LoadingBarAwt {
 				loadingBarGraphics.setColor(Color.black);
 				loadingBarGraphics.drawRect(1, 1, 301, 31);
 				loadingBarGraphics.fillRect(progress * 3 + 2, 2, 300 - progress * 3, 30);
-				loadingBarGraphics.setFont(font);
-				loadingBarGraphics.setColor(Color.white);
-				text.drawString(22, (304 - text.stringWidth(fontMetrics)) / 2, loadingBarGraphics);
+				KillerUiText.drawAwtCentered(
+					loadingBarGraphics,
+					text,
+					KillerUiText.BOLD_12,
+					152,
+					22,
+					0xFFFFFF
+				);
 				g.drawImage(loadingBar, GameShell.canvasWidth / 2 - 152, GameShell.canvasHeight / 2 + -18, null);
 			} catch (@Pc(134) Exception ignored) {
 				@Pc(140) int x = GameShell.canvasWidth / 2 - 152;
@@ -57,14 +62,24 @@ public class LoadingBarAwt {
 				g.setColor(Color.black);
 				g.drawRect(x + 1, y - -1, 301, 31);
 				g.fillRect(progress * 3 + x + 2, y + 2, 300 - progress * 3, 30);
-				g.setFont(font);
-				g.setColor(Color.white);
-				text.drawString(y + 22, x + (-text.stringWidth(fontMetrics) + 304) / 2, g);
+				KillerUiText.drawAwtCentered(
+					g,
+					text,
+					KillerUiText.BOLD_12,
+					x + 152,
+					y + 22,
+					0xFFFFFF
+				);
 			}
 			if (client.mainLoadPrimaryText != null) {
-				g.setFont(font);
-				g.setColor(Color.white);
-				client.mainLoadPrimaryText.drawString(GameShell.canvasHeight / 2 - 26, GameShell.canvasWidth / 2 - client.mainLoadPrimaryText.stringWidth(fontMetrics) / 2, g);
+				KillerUiText.drawAwtCentered(
+					g,
+					client.mainLoadPrimaryText,
+					KillerUiText.BOLD_12,
+					GameShell.canvasWidth / 2,
+					GameShell.canvasHeight / 2 - KillerUi.px(26),
+					0xFFFFFF
+				);
 			}
 		} catch (@Pc(252) Exception ignored) {
 			GameShell.canvas.repaint();
