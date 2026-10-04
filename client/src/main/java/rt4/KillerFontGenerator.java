@@ -24,8 +24,6 @@ import java.util.Map;
  * height) while the existing UI scaler continues to scale the whole client.
  */
 public final class KillerFontGenerator {
-    private static final int BINARY_THRESHOLD = 96;
-
     public static final String PLAIN_11 = "/killer-fonts/RuneScape-Plain-11.ttf";
     public static final String PLAIN_12 = "/killer-fonts/RuneScape-Plain-12.ttf";
     public static final String BOLD_12 = "/killer-fonts/RuneScape-Bold-12.ttf";
@@ -273,8 +271,8 @@ public final class KillerFontGenerator {
                     + ", maxSourceRaster=" + maxSourceWidth + "x" + maxSourceHeight
                     + ", outputFontScale=" + fontScale
                     + ", output=scaled RT4 glyph boxes"
-                    + ", mask=binary"
-                    + ", threshold=" + BINARY_THRESHOLD
+                    + ", mask=alpha8"
+                    + ", rendererAlpha=enabled"
             );
             return generated;
         } catch (Throwable ex) {
@@ -335,7 +333,7 @@ public final class KillerFontGenerator {
         for (int y = 0; y < targetHeight; y++) {
             for (int x = 0; x < targetWidth; x++) {
                 int value = target.getRaster().getSample(x, y, 0);
-                mask[p++] = value >= BINARY_THRESHOLD ? (byte) 1 : (byte) 0;
+                mask[p++] = (byte) value;
             }
         }
 
@@ -377,7 +375,7 @@ public final class KillerFontGenerator {
             int sy = Math.min(sourceHeight - 1, (int) ((long) y * sourceHeight / targetHeight));
             for (int x = 0; x < targetWidth; x++) {
                 int sx = Math.min(sourceWidth - 1, (int) ((long) x * sourceWidth / targetWidth));
-                result[y * targetWidth + x] = source[sy * sourceWidth + sx] == 0 ? (byte) 0 : (byte) 1;
+                result[y * targetWidth + x] = source[sy * sourceWidth + sx] == 0 ? (byte) 0 : (byte) 0xFF;
             }
         }
         return result;
@@ -450,7 +448,7 @@ public final class KillerFontGenerator {
         log(
             "START",
             "Killer font generator session; UI scaling remains unchanged; "
-                + "supersample=true; mask=binary; threshold=" + BINARY_THRESHOLD
+                + "supersample=true; mask=alpha8; rendererAlpha=enabled"
                 + "; uiScale=" + readUiScale()
                 + "; fontScale=" + readFontScale()
         );
