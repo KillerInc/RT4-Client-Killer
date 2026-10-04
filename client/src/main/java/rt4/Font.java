@@ -124,6 +124,7 @@ public abstract class Font extends SecondaryNode {
 		this.spriteInnerWidths = arg3;
 		this.spriteInnerHeights = arg4;
 		this.decode(arg0);
+		this.applyKillerTextScale();
 		@Pc(21) int local21 = Integer.MAX_VALUE;
 		@Pc(23) int local23 = Integer.MIN_VALUE;
 		for (@Pc(25) int local25 = 0; local25 < 256; local25++) {
@@ -141,6 +142,7 @@ public abstract class Font extends SecondaryNode {
 	@OriginalMember(owner = "client!rk", name = "<init>", descriptor = "([B)V")
 	public Font(@OriginalArg(0) byte[] arg0) {
 		this.decode(arg0);
+		this.applyKillerTextScale();
 	}
 
 	@OriginalMember(owner = "client!rk", name = "c", descriptor = "(Lclient!na;)Lclient!na;")
@@ -204,6 +206,7 @@ public abstract class Font extends SecondaryNode {
 		if (arg0 == null) {
 			return null;
 		}
+		KillerTextScale.scaleLoadedFontSprites();
 		@Pc(27) Font local27;
 		if (GlRenderer.enabled) {
 			local27 = new GlFont(arg0, SpriteLoader.xOffsets, SpriteLoader.yOffsets, SpriteLoader.innerWidths, SpriteLoader.innerHeights, SpriteLoader.pixels);
@@ -773,6 +776,21 @@ public abstract class Font extends SecondaryNode {
 			this.setColors(arg3, arg4);
 			this.render(arg0, arg1 - this.getStringWidth(arg0) / 2, arg2);
 		}
+	}
+
+	private void applyKillerTextScale() {
+		if (!KillerTextScale.isEnabled()) {
+			return;
+		}
+		for (int i = 0; i < this.glyphWidths.length; i++) {
+			this.glyphWidths[i] = KillerTextScale.scale(this.glyphWidths[i]);
+		}
+		if (this.kerning != null) {
+			for (int i = 0; i < this.kerning.length; i++) {
+				this.kerning[i] = KillerTextScale.scaleSignedByte(this.kerning[i]);
+			}
+		}
+		this.lineHeight = KillerTextScale.scale(this.lineHeight);
 	}
 
 	@OriginalMember(owner = "client!rk", name = "a", descriptor = "([B)V")
