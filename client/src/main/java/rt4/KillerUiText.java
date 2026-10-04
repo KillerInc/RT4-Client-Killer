@@ -19,10 +19,10 @@ import java.util.Map;
 /**
  * Killer UI text engine.
  *
- * UI-only replacement for RT4's cache-font text path. It parses the text
- * markup first, then renders the selected RuneScape TTF with Java2D into an
- * ARGB sprite which is composited through the existing software/OpenGL sprite
- * paths. World/scene text does not use this class.
+ * Replacement for every visible RT4 text path. It parses Jagex markup first,
+ * then renders the selected RuneScape TTF with Java2D into an ARGB sprite
+ * composited through the existing software/OpenGL sprite paths. The 3D world
+ * renderer is untouched; screen-space text over that world uses this class.
  */
 public final class KillerUiText {
     public static final int PLAIN_11 = 0;
@@ -82,6 +82,60 @@ public final class KillerUiText {
         for (int i = 0; i < SCALED_FONTS.length; i++) {
             SCALED_FONTS[i] = null;
         }
+    }
+
+    public static void forbidStockRenderer(String operation) {
+        KillerUiLog.write("FATAL stockTextRendererUsed operation=" + operation);
+        throw new IllegalStateException(
+            "Stock RT4 text renderer is forbidden by Killer UI rewrite: " + operation
+        );
+    }
+
+    public static java.awt.Font getAwtFont(int style) {
+        return getFont(style);
+    }
+
+    public static int styleForFontId(int fontId) {
+        Integer registered = CACHE_FONT_STYLES.get(fontId);
+        if (registered != null) {
+            return registered;
+        }
+        if (fontId == Sprites.p11FullId) {
+            return PLAIN_11;
+        }
+        if (fontId == Sprites.p12FullId) {
+            return PLAIN_12;
+        }
+        if (fontId == Sprites.b12FullId) {
+            return BOLD_12;
+        }
+
+        String knownName = CACHE_FONT_NAMES.get(fontId);
+        KillerUiLog.write(
+            "FATAL unsupportedUiFontId fontId=" + fontId
+                + " cacheName=" + (knownName == null ? "UNKNOWN" : knownName)
+        );
+        throw new IllegalStateException(
+            "Unsupported Killer text font id " + fontId
+                + (knownName == null ? "" : " (" + knownName + ")")
+        );
+    }
+
+    public static int getParagraphLineCount(int fontId, JagString text, int width) {
+        int style = styleForFontId(fontId);
+        ParsedText parsed = parse(text, style, 0xFFFFFF, -1, 256, EFFECT_NONE, 0);
+        return layout(parsed, Math.max(1, width), 0).size();
+    }
+
+    public static int getMaxLineWidth(int fontId, JagString text, int width) {
+        int style = styleForFontId(fontId);
+        ParsedText parsed = parse(text, style, 0xFFFFFF, -1, 256, EFFECT_NONE, 0);
+        List<Line> lines = layout(parsed, Math.max(1, width), 0);
+        int max = 0;
+        for (Line line : lines) {
+            max = Math.max(max, line.width);
+        }
+        return max;
     }
 
     public static synchronized void verifyReady() {
@@ -245,7 +299,7 @@ public final class KillerUiText {
     }
 
     public static int measureWidth(JagString text, int style) {
-        ParsedText parsed = parse(text, style, 0xFFFFFF, -1, 256, EFFECT_NONE);
+        ParsedText parsed = parse(text, style, 0xFFFFFF, -1, 256, EFFECT_NONE, 0);
         List<Line> lines = layout(parsed, Integer.MAX_VALUE / 4, 0);
         int max = 0;
         for (Line line : lines) {
@@ -321,6 +375,163 @@ public final class KillerUiText {
             h, color, shadow, 256, 2, 0, 0, EFFECT_NONE);
     }
 
+    public static void drawWave(JagString text, int style, int centerX, int baselineY, int color, int shadow) {
+        drawBaselineEffect(text, style, centerX, baselineY, color, shadow, EFFECT_WAVE, 0);
+    }
+
+    public static void drawWave2(JagString text, int style, int centerX, int baselineY, int color, int shadow) {
+        drawBaselineEffect(text, style, centerX, baselineY, color, shadow, EFFECT_WAVE2, 0);
+    }
+
+    public static void drawShake(JagString text, int style, int centerX, int baselineY, int color, int shadow, int amplitude) {
+        drawBaselineEffect(text, style, centerX, baselineY, color, shadow, EFFECT_SHAKE, amplitude);
+    }
+
+    private static void drawBaselineEffect(
+        JagString text,
+        int style,
+        int centerX,
+        int baselineY,
+        int color,
+        int shadow,
+        int effect,
+        int effectParam
+    ) {
+        int pad = Math.max(KillerUi.px(8), 8);
+        int textWidth = Math.max(1, measureWidth(text, style));
+        int h = lineHeight(style) + pad * 2;
+        int w = textWidth + pad * 2;
+        draw(
+            text,
+            style,
+            centerX - w / 2,
+            baselineY - ascent(style) - pad,
+            w,
+            h,
+            color,
+            shadow,
+            256,
+            1,
+            0,
+            0,
+            effect,
+            effectParam
+        );
+    }
+
+    public static void drawSoftwareLeft(
+        JagString text,
+        int style,
+        int x,
+        int baselineY,
+        int color,
+        int shadow
+    ) {
+        if (text == null) {
+            return;
+        }
+
+        ParsedText parsed = parse(text, style, color, shadow, 256, EFFECT_NONE, 0);
+        int width = Math.max(1, measureWidth(text, style) + KillerUi.px(4));
+        int height = lineHeight(style) + KillerUi.px(4);
+        List<Line> lines = layout(parsed, width, 0);
+        RenderedText rendered = rasterize(parsed, lines, width, height, 0, 0);
+        rendered.renderSoftware(x, baselineY - ascent(style));
+    }
+
+    public static int splitExplicitLines(JagString text, JagString[] output) {
+        if (text == null || output == null || output.length == 0) {
+            return 0;
+        }
+
+        String raw = toJavaString(text);
+        String[] parts = raw.split("(?i)<br>", -1);
+        int count = Math.min(parts.length, output.length);
+        for (int i = 0; i < count; i++) {
+            output[i] = JagString.of(parts[i]);
+        }
+        return count;
+    }
+
+    public static int measureWidthSized(JagString text, int style, int nativeSize) {
+        java.awt.Font font = getSizedFont(style, nativeSize);
+        String plain = plainText(text);
+        GlyphVector gv = font.createGlyphVector(FRC, plain);
+        return Math.max(0, (int) Math.ceil(gv.getLogicalBounds().getBounds2D().getWidth()));
+    }
+
+    public static int lineHeightSized(int style, int nativeSize) {
+        java.awt.Font font = getSizedFont(style, nativeSize);
+        return Math.max(1, (int) Math.ceil(font.getLineMetrics("Ag", FRC).getHeight()));
+    }
+
+    public static int ascentSized(int style, int nativeSize) {
+        java.awt.Font font = getSizedFont(style, nativeSize);
+        return Math.max(1, (int) Math.ceil(font.getLineMetrics("Ag", FRC).getAscent()));
+    }
+
+    public static void drawCenterSized(
+        JagString text,
+        int style,
+        int nativeSize,
+        int centerX,
+        int baselineY,
+        int color,
+        int shadow
+    ) {
+        if (text == null) {
+            return;
+        }
+
+        java.awt.Font font = getSizedFont(style, nativeSize);
+        String plain = plainText(text);
+        int pad = Math.max(2, KillerUi.px(2));
+        int width = Math.max(1, measureWidthSized(text, style, nativeSize) + pad * 2);
+        int height = lineHeightSized(style, nativeSize) + pad * 2;
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = image.createGraphics();
+        try {
+            g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+            GlyphVector gv = font.createGlyphVector(FRC, plain);
+            int x = pad;
+            int y = pad + ascentSized(style, nativeSize);
+            if (shadow >= 0) {
+                g.setColor(new Color(shadow & 0xFFFFFF));
+                g.drawGlyphVector(gv, x + KillerUi.px(1), y + KillerUi.px(1));
+            }
+            g.setColor(new Color(color & 0xFFFFFF));
+            g.drawGlyphVector(gv, x, y);
+        } finally {
+            g.dispose();
+        }
+
+        int[] pixels = image.getRGB(0, 0, width, height, null, 0, width);
+        RenderedText rendered = new RenderedText(width, height, pixels, new ArrayList<IconPlacement>());
+        rendered.render(centerX - width / 2, baselineY - ascentSized(style, nativeSize) - pad);
+    }
+
+    private static java.awt.Font getSizedFont(int style, int nativeSize) {
+        ensureFonts();
+        if (style < 0 || style >= BASE_FONTS.length || BASE_FONTS[style] == null) {
+            KillerUiLog.write("FATAL invalidSizedFontStyle=" + style);
+            throw new IllegalArgumentException("Invalid Killer text style " + style);
+        }
+        return BASE_FONTS[style].deriveFont((float) KillerUi.fontTarget(nativeSize));
+    }
+
+    private static String plainText(JagString text) {
+        if (text == null) {
+            return "";
+        }
+        String raw = toJavaString(text);
+        raw = raw.replace("<lt>", "<").replace("<gt>", ">")
+            .replace("<nbsp>", "\u00A0").replace("<shy>", "\u00AD")
+            .replace("<times>", "\u00D7").replace("<euro>", "\u20AC")
+            .replace("<copy>", "\u00A9").replace("<reg>", "\u00AE");
+        return raw.replaceAll("<[^>]*>", "");
+    }
+
     public static void drawWavy(
         JagString text,
         int style,
@@ -352,6 +563,25 @@ public final class KillerUiText {
         int vpadding,
         int effect
     ) {
+        draw(text, style, x, y, width, height, color, shadow, alpha, halign, valign, vpadding, effect, 0);
+    }
+
+    public static void draw(
+        JagString text,
+        int style,
+        int x,
+        int y,
+        int width,
+        int height,
+        int color,
+        int shadow,
+        int alpha,
+        int halign,
+        int valign,
+        int vpadding,
+        int effect,
+        int effectParam
+    ) {
         if (text == null || width <= 0 || height <= 0) {
             return;
         }
@@ -362,7 +592,7 @@ public final class KillerUiText {
             "COMPOSITOR=" + (GlRenderer.enabled ? "OPENGL" : "SOFTWARE")
         );
 
-        ParsedText parsed = parse(text, style, color, shadow, alpha, effect);
+        ParsedText parsed = parse(text, style, color, shadow, alpha, effect, effectParam);
         int padding = KillerUi.px(vpadding);
         List<Line> lines = layout(parsed, width, padding);
 
@@ -460,8 +690,8 @@ public final class KillerUiText {
 
                     char ch = token.ch;
                     java.awt.Font font = getFont(token.style.fontStyle);
-                    int waveY = effectYOffset(parsed.effect, charIndex);
-                    int waveX = effectXOffset(parsed.effect, charIndex);
+                    int waveY = effectYOffset(parsed.effect, parsed.effectParam, charIndex);
+                    int waveX = effectXOffset(parsed.effect, parsed.effectParam, charIndex);
                     int drawX = x + waveX;
                     int drawY = baseline + waveY;
 
@@ -512,25 +742,30 @@ public final class KillerUiText {
         g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, (float) a / 256.0F));
     }
 
-    private static int effectYOffset(int effect, int index) {
-        double t = (double) client.loop / 5.0D;
+    private static int effectYOffset(int effect, int effectParam, int index) {
+        double tick = (double) client.loop;
+        double scale = KillerUi.scale();
         if (effect == EFFECT_WAVE) {
-            return (int) Math.round(Math.sin((double) index / 2.0D + t) * KillerUi.px(2));
+            return (int) Math.round(Math.sin((double) index / 2.0D + tick / 5.0D) * 5.0D * scale);
         }
         if (effect == EFFECT_WAVE2) {
-            return (int) Math.round(Math.sin((double) index / 1.5D + t) * KillerUi.px(3));
+            return (int) Math.round(Math.sin((double) index / 3.0D + tick / 5.0D) * 5.0D * scale);
         }
         if (effect == EFFECT_SHAKE) {
-            int seed = index * 1103515245 + client.loop * 12345;
-            return ((seed >>> 16) & 3) - 1;
+            double wave = 7.0D - (double) effectParam / 8.0D;
+            if (wave < 0.0D) {
+                wave = 0.0D;
+            }
+            return (int) Math.round(Math.sin((double) index / 1.5D + tick) * wave * scale);
         }
         return 0;
     }
 
-    private static int effectXOffset(int effect, int index) {
-        if (effect == EFFECT_SHAKE) {
-            int seed = index * 214013 + client.loop * 2531011;
-            return ((seed >>> 17) & 3) - 1;
+    private static int effectXOffset(int effect, int effectParam, int index) {
+        if (effect == EFFECT_WAVE2) {
+            return (int) Math.round(
+                Math.sin((double) index / 5.0D + (double) client.loop / 5.0D) * 5.0D * KillerUi.scale()
+            );
         }
         return 0;
     }
@@ -627,7 +862,8 @@ public final class KillerUiText {
         int baseColor,
         int baseShadow,
         int baseAlpha,
-        int requestedEffect
+        int requestedEffect,
+        int requestedEffectParam
     ) {
         String text = toJavaString(input);
         int effect = requestedEffect;
@@ -732,7 +968,7 @@ public final class KillerUiText {
             }
         }
 
-        return new ParsedText(tokens, fontStyle, effect);
+        return new ParsedText(tokens, fontStyle, effect, requestedEffectParam);
     }
 
     private static PrefixResult parsePrefix(String text, int color, int effect) {
@@ -966,12 +1202,14 @@ public final class KillerUiText {
         final List<Token> tokens;
         final int fontStyle;
         final int effect;
+        final int effectParam;
         int linePadding;
 
-        ParsedText(List<Token> tokens, int fontStyle, int effect) {
+        ParsedText(List<Token> tokens, int fontStyle, int effect, int effectParam) {
             this.tokens = tokens;
             this.fontStyle = fontStyle;
             this.effect = effect;
+            this.effectParam = effectParam;
         }
     }
 
@@ -1111,6 +1349,21 @@ public final class KillerUiText {
             this.height = height;
             this.pixels = pixels;
             this.icons = icons;
+        }
+
+        void renderSoftware(int x, int y) {
+            if (this.softwareSprite == null) {
+                this.softwareSprite = new SoftwareAlphaSprite(
+                    this.width,
+                    this.height,
+                    0,
+                    0,
+                    this.width,
+                    this.height,
+                    this.pixels
+                );
+            }
+            this.softwareSprite.render(x, y);
         }
 
         void render(int x, int y) {
