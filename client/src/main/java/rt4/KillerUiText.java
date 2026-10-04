@@ -1142,10 +1142,10 @@ public final class KillerUiText {
             wordWidth += token.advance;
         }
 
-        current = flushWord(lines, current, word, wordWidth, maxWidth, parsed.fontStyle);
+        current = flushWord(lines, current, word, wordWidth, maxWidth, parsed.fontStyle, parsed.legacyMetrics);
 
         if (!current.tokens.isEmpty() || lines.isEmpty()) {
-            current.finish(parsed.fontStyle);
+            current.finish(parsed.fontStyle, parsed.legacyMetrics);
             lines.add(current);
         }
 
