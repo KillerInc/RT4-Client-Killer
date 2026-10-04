@@ -537,7 +537,8 @@ public final class Component {
 
 	@OriginalMember(owner = "client!be", name = "a", descriptor = "(I)Z")
 	public final boolean buildClickMask() {
-		if (this.clickMaskStart != null) {
+		boolean scalableMask = this.clientCode == 1338 || this.clientCode == 1339;
+		if (this.clickMaskStart != null && (!scalableMask || this.clickMaskStart.length == Math.max(1, this.height))) {
 			return true;
 		}
 		@Pc(18) SoftwareIndexedSprite sprite = SpriteLoader.loadSoftwareIndexedSprite(this.spriteId, InterfaceList.spriteProvider);
@@ -545,26 +546,52 @@ public final class Component {
 			return false;
 		}
 		sprite.trim();
-		this.clickMaskStart = new int[sprite.height];
-		this.clickMaskWidth = new int[sprite.height];
-		for (@Pc(37) int y = 0; y < sprite.height; y++) {
+
+		int nativeHeight = sprite.height;
+		int nativeWidth = sprite.width;
+		int[] nativeStart = new int[nativeHeight];
+		int[] nativeWidthMask = new int[nativeHeight];
+		for (@Pc(37) int y = 0; y < nativeHeight; y++) {
 			@Pc(47) int startX = 0;
-			@Pc(50) int endX = sprite.width;
+			@Pc(50) int endX = nativeWidth;
 			@Pc(52) int x;
-			for (x = 0; x < sprite.width; x++) {
-				if (sprite.pixels[sprite.width * y + x] != 0) {
+			for (x = 0; x < nativeWidth; x++) {
+				if (sprite.pixels[nativeWidth * y + x] != 0) {
 					startX = x;
 					break;
 				}
 			}
-			for (x = startX; x < sprite.width; x++) {
-				if (sprite.pixels[y * sprite.width + x] == 0) {
+			for (x = startX; x < nativeWidth; x++) {
+				if (sprite.pixels[y * nativeWidth + x] == 0) {
 					endX = x;
 					break;
 				}
 			}
-			this.clickMaskStart[y] = startX;
-			this.clickMaskWidth[y] = endX - startX;
+			nativeStart[y] = startX;
+			nativeWidthMask[y] = endX - startX;
+		}
+
+		if (!scalableMask || Math.abs(KillerUi.scale() - 1.0D) <= 0.000001D) {
+			this.clickMaskStart = nativeStart;
+			this.clickMaskWidth = nativeWidthMask;
+			return true;
+		}
+
+		// The minimap and compass artwork are masks as well as sprites. Once the
+		// UI viewport grows, resample the native mask into the component's scaled
+		// rectangle so drawing and mouse hit-testing use the same geometry.
+		int targetHeight = Math.max(1, this.height);
+		int targetWidth = Math.max(1, this.width);
+		this.clickMaskStart = new int[targetHeight];
+		this.clickMaskWidth = new int[targetHeight];
+		for (int y = 0; y < targetHeight; y++) {
+			int sourceY = Math.min(nativeHeight - 1, y * nativeHeight / targetHeight);
+			int sourceStart = nativeStart[sourceY];
+			int sourceEnd = sourceStart + nativeWidthMask[sourceY];
+			int scaledStart = (int) Math.round((double) sourceStart * (double) targetWidth / (double) nativeWidth);
+			int scaledEnd = (int) Math.round((double) sourceEnd * (double) targetWidth / (double) nativeWidth);
+			this.clickMaskStart[y] = scaledStart;
+			this.clickMaskWidth[y] = Math.max(0, scaledEnd - scaledStart);
 		}
 		return true;
 	}
