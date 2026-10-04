@@ -2,6 +2,13 @@
 
 This file tracks **Killer RT4 client changes only**. Upstream 2009Scape/Pazaz history and changelogs are intentionally left untouched.
 
+## v0.2.1 — 2026-10-04
+
+- Removed the separate text-scaling property path.
+- Generated RuneScape vector fonts now read the same `sun.java2d.uiScale` value used by the client.
+- UI and generated text are again driven by a single scale setting.
+- Keeps the startup glyph-generation and session caching added in v0.2.0.
+
 ## v0.2.0 — 2026-10-04
 
 - Based on the current 2009Scape RT4 client.
@@ -12,7 +19,7 @@ This file tracks **Killer RT4 client changes only**. Upstream 2009Scape/Pazaz hi
 - Vector fonts are fetched from the RuneStar font release during the client build and bundled into the client resources.
 - Text generation occurs during RT4's normal startup font-loading phase (around `mainLoadState == 65`, roughly 45% loading).
 - Generated glyphs are cached for the rest of the process so display-mode/fullscreen resource reloads do not regenerate them.
-- Added independent `-DkillerTextScale` control.
+- Initial vector-font build used an independent text-scale property; superseded by v0.2.1.
 - Preserved original cache fonts as a fallback if vector generation fails.
 - Added generated glyph metrics support to both software and OpenGL font renderers.
 - Preserved RT4 baseline/line-height behavior while applying generated glyph metrics.
