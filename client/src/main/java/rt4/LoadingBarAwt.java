@@ -22,8 +22,9 @@ public class LoadingBarAwt {
 		try {
 			@Pc(6) Graphics g = GameShell.canvas.getGraphics();
 			if (font == null) {
-				font = new Font("Helvetica", 1, 13);
+				font = KillerUiText.getAwtFont(KillerUiText.BOLD_12);
 				fontMetrics = GameShell.canvas.getFontMetrics(font);
+				KillerUiLog.once("awt-loading-text", "ROUTE awtLoadingText=KillerUiTextTTF");
 			}
 			if (redraw) {
 				g.setColor(Color.black);
