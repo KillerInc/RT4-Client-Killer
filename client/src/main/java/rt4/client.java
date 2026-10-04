@@ -223,6 +223,10 @@ public final class client extends GameShell {
 
 	@OriginalMember(owner = "client!client", name = "main", descriptor = "([Ljava/lang/String;)V")
 	public static void main(@OriginalArg(0) String[] args) {
+		// Deliberately outside every startup catch: if the Killer UI engine,
+		// its required TTFs, or its audit log are unavailable, terminate.
+		KillerUiText.verifyReady();
+		KillerUiLog.once("build-id", "BUILD=UI-REWRITE-STRICT-20261004B");
     try {
       String configPath = GlobalConfig.EXTENDED_CONFIG_PATH;
       boolean helpRequested = false;
@@ -313,6 +317,7 @@ public final class client extends GameShell {
 			c.startApplication(modeWhat + 32, "runescape");
 			GameShell.frame.setLocationRelativeTo(null);
 			GameShell.frame.setSize(1024, 768); // set a reasonable size by default
+			GameShell.frame.setTitle(GameShell.frame.getTitle() + " [UI REWRITE STRICT]");
 		} catch (@Pc(167) Exception ex) {
 			TracingException.report(null, ex);
 		}
@@ -1134,7 +1139,6 @@ public final class client extends GameShell {
 		if (modeWhere != 0) {
 			//Cheat.displayFps = true;
 		}
-		KillerUiText.verifyReady();
 		PluginRepository.Init();
 	}
 
