@@ -333,6 +333,7 @@ public final class SoftwareIndexedSprite extends IndexedSprite {
 	}
 
 	@OriginalMember(owner = "client!ek", name = "a", descriptor = "(IIII)V")
+	@Override
 	public final void renderScaled(@OriginalArg(0) int x, @OriginalArg(1) int y, @OriginalArg(2) int scaledWidth, @OriginalArg(3) int scaledHeight) {
 		@Pc(2) int spriteWidth = this.width;
 		@Pc(5) int spriteHeight = this.height;
