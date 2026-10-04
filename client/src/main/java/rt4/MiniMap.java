@@ -227,6 +227,10 @@ public class MiniMap {
 	}
 
 	@OriginalMember(owner = "client!ed", name = "a", descriptor = "(IBIILclient!be;)V")
+	private static int scaledUiZoom() {
+		return Math.max(1, (int) Math.round((double) (zoomOffset + 256) / KillerUi.scale()));
+	}
+
 	public static void render(@OriginalArg(0) int mapAngle, @OriginalArg(2) int y, @OriginalArg(3) int x, @OriginalArg(4) Component component) {
 		client.audioLoop();
 		if (GlRenderer.enabled) {
@@ -239,9 +243,9 @@ public class MiniMap {
 			@Pc(57) int playerMapX = PlayerList.self.xFine / 32 + 48;
 			@Pc(67) int playerMapY = 464 - PlayerList.self.yFine / 32;
 			if (GlRenderer.enabled) {
-				((GlSprite) sprite).renderRotatedTransparent(x, y, component.width, component.height, playerMapX, playerMapY, totalAngle, zoomOffset + 256, (GlSprite) component.getSprite(false));
+				((GlSprite) sprite).renderRotatedTransparent(x, y, component.width, component.height, playerMapX, playerMapY, totalAngle, scaledUiZoom(), (GlSprite) component.getSprite(false));
 			} else {
-				((SoftwareSprite) sprite).renderRotated(x, y, component.width, component.height, playerMapX, playerMapY, totalAngle, zoomOffset + 256, component.clickMaskStart, component.clickMaskWidth);
+				((SoftwareSprite) sprite).renderRotated(x, y, component.width, component.height, playerMapX, playerMapY, totalAngle, scaledUiZoom(), component.clickMaskStart, component.clickMaskWidth);
 			}
 			@Pc(146) int i;
 			@Pc(181) int j;
@@ -258,9 +262,9 @@ public class MiniMap {
 						sinAngle = MathUtils.sin[totalAngle];
 						cosAngle = MathUtils.cos[totalAngle];
 						@Pc(156) int labelStyle = KillerUiText.PLAIN_11;
-						@Pc(164) int scaledSin = sinAngle * 256 / (zoomOffset + 256);
+						@Pc(164) int scaledSin = sinAngle * 256 / scaledUiZoom();
 						j = (LoginManager.mapElementList.coordY[k] - Camera.originY) * 4 + 2 - PlayerList.self.yFine / 32;
-						@Pc(189) int scaledCos = cosAngle * 256 / (zoomOffset + 256);
+						@Pc(189) int scaledCos = cosAngle * 256 / scaledUiZoom();
 						screenDY = j * scaledCos - i * scaledSin >> 16;
 						if (LoginManager.mapElementList.getLabelSize(k) == 1) {
 							labelStyle = KillerUiText.PLAIN_12;
@@ -421,7 +425,7 @@ public class MiniMap {
 		} else if (GlRenderer.enabled) {
 			@Pc(1041) Sprite bgSprite = component.getSprite(false);
 			if (bgSprite != null) {
-				bgSprite.render(x, y);
+				bgSprite.renderResized(x, y, component.width, component.height);
 			}
 		} else {
 			SoftwareRaster.clearMaskedRegion(x, y, component.clickMaskStart, component.clickMaskWidth);
@@ -441,9 +445,9 @@ public class MiniMap {
 			return;
 		}
 		@Pc(50) int sinRaw = MathUtils.sin[mapAngle];
-		@Pc(58) int scaledSin = sinRaw * 256 / (zoomOffset + 256);
+		@Pc(58) int scaledSin = sinRaw * 256 / scaledUiZoom();
 		@Pc(62) int cosRaw = MathUtils.cos[mapAngle];
-		@Pc(70) int scaledCos = cosRaw * 256 / (zoomOffset + 256);
+		@Pc(70) int scaledCos = cosRaw * 256 / scaledUiZoom();
 		@Pc(81) int screenX = scaledSin * dx + dy * scaledCos >> 16;
 		@Pc(92) int screenY = scaledCos * dx - dy * scaledSin >> 16;
 		if (GlRenderer.enabled) {
@@ -468,8 +472,8 @@ public class MiniMap {
 		@Pc(58) int mapAngle = compassAngleOffset + (int) Camera.yawTarget & 0x7FF;
 		@Pc(62) int cosRaw = MathUtils.cos[mapAngle];
 		@Pc(66) int sinRaw = MathUtils.sin[mapAngle];
-		@Pc(74) int scaledSin = sinRaw * 256 / (zoomOffset + 256);
-		@Pc(82) int scaledCos = cosRaw * 256 / (zoomOffset + 256);
+		@Pc(74) int scaledSin = sinRaw * 256 / scaledUiZoom();
+		@Pc(82) int scaledCos = cosRaw * 256 / scaledUiZoom();
 		@Pc(93) int screenX = dx * scaledSin + scaledCos * dy >> 16;
 		@Pc(104) int screenY = dx * scaledCos - scaledSin * dy >> 16;
 		@Pc(110) double angle = Math.atan2(screenX, screenY);
