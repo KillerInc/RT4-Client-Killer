@@ -95,6 +95,36 @@ public final class KillerUiText {
         return getFont(style);
     }
 
+    public static void drawAwtCentered(
+        java.awt.Graphics graphics,
+        JagString text,
+        int style,
+        int centerX,
+        int baselineY,
+        int color
+    ) {
+        if (graphics == null || text == null) {
+            return;
+        }
+
+        java.awt.Font font = getFont(style);
+        String plain = plainText(text);
+        graphics.setFont(font);
+        graphics.setColor(new Color(color & 0xFFFFFF));
+
+        if (graphics instanceof Graphics2D) {
+            Graphics2D g2 = (Graphics2D) graphics;
+            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            g2.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+            GlyphVector gv = font.createGlyphVector(FRC, plain);
+            int width = (int) Math.ceil(gv.getLogicalBounds().getBounds2D().getWidth());
+            g2.drawGlyphVector(gv, centerX - width / 2, baselineY);
+        } else {
+            java.awt.FontMetrics metrics = graphics.getFontMetrics(font);
+            graphics.drawString(plain, centerX - metrics.stringWidth(plain) / 2, baselineY);
+        }
+    }
+
     public static int styleForFontId(int fontId) {
         Integer registered = CACHE_FONT_STYLES.get(fontId);
         if (registered != null) {
