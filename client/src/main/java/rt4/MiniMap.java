@@ -451,7 +451,7 @@ public class MiniMap {
 		@Pc(81) int screenX = scaledSin * dx + dy * scaledCos >> 16;
 		@Pc(92) int screenY = scaledCos * dx - dy * scaledSin >> 16;
 		if (GlRenderer.enabled) {
-			((GlSprite) icon).renderClipped(component.width / 2 + offsetX + screenX - icon.innerWidth / 2, component.height / 2 + offsetY - (screenY + icon.innerHeight / 2), (GlSprite) component.getSprite(false));
+			((GlSprite) icon).renderClippedScaledMask(component.width / 2 + offsetX + screenX - icon.innerWidth / 2, component.height / 2 + offsetY - (screenY + icon.innerHeight / 2), (GlSprite) component.getSprite(false), component.width, component.height);
 		} else {
 			((SoftwareSprite) icon).drawClipped(component.width / 2 + offsetX + screenX - icon.innerWidth / 2, -(icon.innerHeight / 2) + component.height / 2 + offsetY + -screenY, component.clickMaskStart, component.clickMaskWidth);
 		}
