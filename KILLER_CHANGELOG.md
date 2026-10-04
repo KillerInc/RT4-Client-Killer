@@ -2,6 +2,14 @@
 
 This file tracks **Killer RT4 client changes only**. Upstream 2009Scape/Pazaz history and changelogs are intentionally left untouched.
 
+## v0.3.2 — 2026-10-04
+
+- Added launcher-controlled `killerFontScale` for per-display font raster tuning.
+- Final vector raster size is now `native font size × UI Scale × Font Scale`.
+- UI/window scaling code remains untouched.
+- Font diagnostics now record `uiScale`, `fontScale`, and final `rasterSize` for every generated font.
+- Keeps the original RT4 glyph boxes and font layout while tuning the source rasterization quality.
+
 ## v0.3.1 — 2026-10-04
 
 - Supersamples RuneScape vector glyphs at the active UI scale while leaving the existing UI scaler untouched.
