@@ -2,6 +2,18 @@
 
 This file tracks **Killer RT4 client changes only**. Upstream 2009Scape/Pazaz history and changelogs are intentionally left untouched.
 
+## v0.3.0 — 2026-10-04
+
+- Reintroduced the font generator without touching the existing UI scaling path.
+- UI Scale remains the single scaler and continues to control the whole client the old way.
+- The generator preserves the original RT4 cache font metrics, kerning, offsets, line height, glyph box sizes and layout.
+- Only the glyph pixel masks are regenerated from RuneScape Plain 11, Plain 12 and Bold 12 vector fonts.
+- Vector glyphs are generated at the native font sizes (11/12/12) and fitted into the exact cache-provided glyph boxes.
+- Added session caching so display-mode/fullscreen reloads reuse generated glyph masks instead of rasterizing again.
+- Added dedicated font diagnostics at `logs/killer-font.log`.
+- The font log records START, SUCCESS, FALLBACK and FAILED entries for each font.
+- Any failed vector font or glyph generation falls back to the original cache glyph pixels.
+
 ## v0.2.2 — 2026-10-04
 
 - Fully removed the experimental vector/generated-font rendering path.
