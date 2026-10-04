@@ -9,6 +9,7 @@ This file tracks **Killer RT4 client changes only**. Upstream 2009Scape/Pazaz hi
 - Makes the minimap and compass true UI-scaled surfaces while leaving the 3D game viewport unscaled.
 - Resamples minimap/compass click masks to the scaled viewport so drawing and mouse hit-testing use matching geometry.
 - Compensates minimap source zoom for UI scale so the enlarged map does not simply reveal a larger world area.
+- Converts scaled minimap clicks back to native map units and keeps map-icon/hint world-radius tests scale-independent.
 - Scales minimap/compass fallback artwork to the component bounds.
 
 ## v0.8.1 — 2026-10-04
