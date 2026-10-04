@@ -317,7 +317,55 @@ public final class KillerUiText {
         );
     }
 
+    /**
+     * Notify the TTF engine that the original cache fonts are available for
+     * metrics-only calibration. Their render methods remain hard-disabled.
+     */
+    public static synchronized void notifyLegacyMetricsReady() {
+        synchronized (CACHE) {
+            CACHE.clear();
+        }
+        KillerUiLog.once(
+            "legacy-metrics-ready",
+            "METRICS_ONLY legacyCacheFonts=READY"
+                + " p11LineHeight=" + (Fonts.p11Full == null ? -1 : Fonts.p11Full.lineHeight)
+                + " p12LineHeight=" + (Fonts.p12Full == null ? -1 : Fonts.p12Full.lineHeight)
+                + " b12LineHeight=" + (Fonts.b12Full == null ? -1 : Fonts.b12Full.lineHeight)
+                + " stockRendering=false"
+        );
+    }
+
+    private static Font legacyMetricsForStyle(int style) {
+        if (style == PLAIN_11) {
+            return Fonts.p11Full;
+        }
+        if (style == PLAIN_12) {
+            return Fonts.p12Full;
+        }
+        if (style == BOLD_12) {
+            return Fonts.b12Full;
+        }
+        return null;
+    }
+
+    private static double metricScaleForStyle(int style) {
+        int nativeSize = nativeSizeForStyle(style);
+        return (double) KillerUi.fontTarget(nativeSize) / (double) nativeSize;
+    }
+
+    private static int scaleLegacyMetric(int value, int style) {
+        if (value == 0) {
+            return 0;
+        }
+        return Math.max(1, (int) Math.round((double) value * metricScaleForStyle(style)));
+    }
+
     public static int lineHeight(int style) {
+        Font legacy = legacyMetricsForStyle(style);
+        if (legacy != null && legacy.lineHeight > 0) {
+            return scaleLegacyMetric(legacy.lineHeight, style);
+        }
+
         java.awt.Font font = getFont(style);
         LineMetrics metrics = font.getLineMetrics("Ag", FRC);
         return Math.max(1, (int) Math.ceil(metrics.getHeight()));
@@ -325,7 +373,19 @@ public final class KillerUiText {
 
     public static int ascent(int style) {
         java.awt.Font font = getFont(style);
-        return Math.max(1, (int) Math.ceil(font.getLineMetrics("Ag", FRC).getAscent()));
+        LineMetrics metrics = font.getLineMetrics("Ag", FRC);
+        int targetHeight = lineHeight(style);
+        double rawHeight = metrics.getHeight();
+        if (rawHeight <= 0.0D) {
+            return Math.max(1, targetHeight);
+        }
+
+        // Keep the TTF's ascent/descent ratio, but force its logical line box
+        // to the cache font's original pixel line height at scale 1.0.
+        return Math.max(1, Math.min(
+            targetHeight,
+            (int) Math.round((double) targetHeight * (double) metrics.getAscent() / rawHeight)
+        ));
     }
 
     public static int measureWidth(JagString text, int style) {
@@ -1033,9 +1093,14 @@ public final class KillerUiText {
 
         flushPlain(tokens, plain, state);
 
+        Font legacyMetrics = legacyMetricsForStyle(fontStyle);
+        int previousChar = 0;
         for (Token token : tokens) {
             if (token.kind == Token.CHARACTER) {
-                token.advance = charAdvance(token.ch, token.style.fontStyle);
+                token.advance = charAdvance(token.ch, token.style.fontStyle, previousChar, legacyMetrics);
+                previousChar = token.ch;
+            } else {
+                previousChar = 0;
             }
         }
 
@@ -1096,7 +1161,15 @@ public final class KillerUiText {
         return new String(text.chars, 0, text.length, WINDOWS_1252);
     }
 
-    private static int charAdvance(char ch, int style) {
+    private static int charAdvance(char ch, int style, int previousChar, Font legacyMetrics) {
+        if (legacyMetrics != null) {
+            int advance = legacyMetrics.killerGlyphAdvance(ch);
+            if (previousChar != 0) {
+                advance += legacyMetrics.killerKerning(previousChar, ch);
+            }
+            return Math.max(0, (int) Math.round((double) advance * metricScaleForStyle(style)));
+        }
+
         java.awt.Font font = getFont(style);
         GlyphVector gv = font.createGlyphVector(FRC, new char[]{ch});
         return Math.max(0, (int) Math.round(gv.getGlyphMetrics(0).getAdvanceX()));
