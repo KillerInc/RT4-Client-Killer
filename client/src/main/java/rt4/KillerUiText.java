@@ -124,6 +124,7 @@ public final class KillerUiText {
         if (component == null) {
             return;
         }
+        KillerUiLog.once("component-text", "ROUTE componentText=KillerUiText");
         draw(
             text,
             styleForComponent(component),
@@ -142,12 +143,14 @@ public final class KillerUiText {
     }
 
     public static void drawLeft(JagString text, int style, int x, int baselineY, int color, int shadow) {
+        KillerUiLog.once("left-text", "ROUTE leftAlignedUiText=KillerUiText");
         int h = lineHeight(style) + KillerUi.px(4);
         draw(text, style, x, baselineY - ascent(style), Math.max(1, measureWidth(text, style) + KillerUi.px(4)),
             h, color, shadow, 256, 0, 0, 0, EFFECT_NONE);
     }
 
     public static void drawCenter(JagString text, int style, int centerX, int baselineY, int color, int shadow) {
+        KillerUiLog.once("center-text", "ROUTE centeredUiText=KillerUiText");
         int width = measureWidth(text, style);
         int h = lineHeight(style) + KillerUi.px(4);
         draw(text, style, centerX - width / 2, baselineY - ascent(style), Math.max(1, width + KillerUi.px(4)),
@@ -155,6 +158,7 @@ public final class KillerUiText {
     }
 
     public static void drawRight(JagString text, int style, int rightX, int baselineY, int color, int shadow) {
+        KillerUiLog.once("right-text", "ROUTE rightAlignedUiText=KillerUiText");
         int width = measureWidth(text, style);
         int h = lineHeight(style) + KillerUi.px(4);
         draw(text, style, rightX - width, baselineY - ascent(style), Math.max(1, width + KillerUi.px(4)),
@@ -173,6 +177,7 @@ public final class KillerUiText {
         int halign,
         int valign
     ) {
+        KillerUiLog.once("wavy-text", "ROUTE animatedUiText=KillerUiText");
         draw(text, style, x, y, width, height, color, shadow, 256, halign, valign, 0, EFFECT_WAVE);
     }
 
@@ -194,6 +199,12 @@ public final class KillerUiText {
         if (text == null || width <= 0 || height <= 0) {
             return;
         }
+
+        KillerUiLog.start();
+        KillerUiLog.once(
+            GlRenderer.enabled ? "renderer-gl" : "renderer-software",
+            "COMPOSITOR=" + (GlRenderer.enabled ? "OPENGL" : "SOFTWARE")
+        );
 
         ParsedText parsed = parse(text, style, color, shadow, alpha, effect);
         int padding = KillerUi.px(vpadding);
@@ -647,6 +658,12 @@ public final class KillerUiText {
         SCALED_FONTS[PLAIN_11] = BASE_FONTS[PLAIN_11].deriveFont((float) KillerUi.fontTarget(11));
         SCALED_FONTS[PLAIN_12] = BASE_FONTS[PLAIN_12].deriveFont((float) KillerUi.fontTarget(12));
         SCALED_FONTS[BOLD_12] = BASE_FONTS[BOLD_12].deriveFont((float) KillerUi.fontTarget(12));
+        KillerUiLog.once(
+            "font-targets-" + currentScale,
+            "TTF_TARGETS p11=" + KillerUi.fontTarget(11)
+                + " p12=" + KillerUi.fontTarget(12)
+                + " b12=" + KillerUi.fontTarget(12)
+        );
         loadedScale = currentScale;
         synchronized (CACHE) {
             CACHE.clear();
@@ -661,12 +678,22 @@ public final class KillerUiText {
         try (InputStream in = KillerUiText.class.getResourceAsStream(resource)) {
             if (in != null) {
                 BASE_FONTS[style] = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, in);
+                KillerUiLog.once(
+                    "font-" + style,
+                    "TTF_LOADED style=" + style + " resource=" + resource
+                        + " family=" + BASE_FONTS[style].getFamily()
+                        + " name=" + BASE_FONTS[style].getFontName()
+                );
                 return;
             }
         } catch (Throwable ignored) {
         }
 
         BASE_FONTS[style] = new java.awt.Font("SansSerif", fallbackStyle, style == PLAIN_11 ? 11 : 12);
+        KillerUiLog.once(
+            "font-fallback-" + style,
+            "TTF_FALLBACK style=" + style + " resource=" + resource + " fallback=SansSerif"
+        );
     }
 
     private static int parseHex(String text, int fallback) {
