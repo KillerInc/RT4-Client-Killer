@@ -219,6 +219,29 @@ public abstract class Font extends SecondaryNode {
 		return SpriteLoader.decode(spriteJs5, 0, fontId) ? createFont(fontJs5.fetchFile(fontId, 0)) : null;
 	}
 
+	/**
+	 * Legacy cache metrics exposed for KillerUiText calibration only.
+	 * These values may be read, but the stock Font renderer remains forbidden.
+	 */
+	public final int killerGlyphAdvance(int ch) {
+		return this.glyphWidths == null ? 0 : this.glyphWidths[ch & 0xFF];
+	}
+
+	public final int killerKerning(int left, int right) {
+		if (this.kerning == null || left == 0 || right == 0) {
+			return 0;
+		}
+		return this.kerning[((left & 0xFF) << 8) + (right & 0xFF)];
+	}
+
+	public final int killerParagraphTopPadding() {
+		return this.paragraphTopPadding;
+	}
+
+	public final int killerParagraphBottomPadding() {
+		return this.paragraphBottomPadding;
+	}
+
 	@OriginalMember(owner = "client!rk", name = "a", descriptor = "(Lclient!na;IIIIIIIII)I")
 	public final int drawInterfaceText(@OriginalArg(0) JagString text, @OriginalArg(1) int x, @OriginalArg(2) int y, @OriginalArg(3) int w, @OriginalArg(4) int h, @OriginalArg(5) int color, @OriginalArg(6) int shadow, @OriginalArg(7) int alpha, @OriginalArg(8) int valign, @OriginalArg(9) int halign) {
 		return this.renderParagraphAlpha(text, x, y, w, h, color, shadow, alpha, valign, halign);
