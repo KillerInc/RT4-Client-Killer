@@ -26,56 +26,67 @@ public final class KillerUiLog {
         if (initialized) {
             return;
         }
-        initialized = true;
+
+        File home = resolveClientHome();
+        File logs = new File(home, "logs");
+
+        if (!logs.exists() && !logs.mkdirs()) {
+            throw new IllegalStateException(
+                "Killer UI could not create log directory: " + logs.getAbsolutePath()
+            );
+        }
+        if (!logs.isDirectory()) {
+            throw new IllegalStateException(
+                "Killer UI log path is not a directory: " + logs.getAbsolutePath()
+            );
+        }
+
+        logFile = new File(logs, "killer-ui.log");
 
         try {
-            File home = resolveClientHome();
-            File logs = new File(home, "logs");
-            if (!logs.exists()) {
-                logs.mkdirs();
-            }
-
-            logFile = new File(logs, "killer-ui.log");
-            if (logFile.exists()) {
-                logFile.delete();
-            }
-
-            write("START Killer UI Rewrite");
-            write("fontScale=" + KillerUi.scale());
-            write("p11Target=" + KillerUi.fontTarget(11));
-            write("p12Target=" + KillerUi.fontTarget(12));
-            write("uiTextEngine=KillerUiText");
-            write("fallbackPolicy=DISABLED_FAIL_HARD");
-            write("stockRt4FontRole=WORLD_SCENE_ONLY");
-            write("worldRenderer=UNCHANGED");
-        } catch (Throwable ignored) {
-            logFile = null;
+            FileWriter truncate = new FileWriter(logFile, false);
+            truncate.close();
+        } catch (IOException ex) {
+            throw new IllegalStateException(
+                "Killer UI could not create log file: " + logFile.getAbsolutePath(),
+                ex
+            );
         }
+
+        initialized = true;
+
+        System.out.println("[KILLER-UI] log=" + logFile.getAbsolutePath());
+        System.out.println("[KILLER-UI] fallbackPolicy=DISABLED_FAIL_HARD");
+
+        write("START Killer UI Rewrite");
+        write("logPath=" + logFile.getAbsolutePath());
+        write("clientHomeOverride=" + System.getProperty("clientHomeOverride"));
+        write("workingDirectory=" + System.getProperty("user.dir"));
+        write("fontScale=" + KillerUi.scale());
+        write("p11Target=" + KillerUi.fontTarget(11));
+        write("p12Target=" + KillerUi.fontTarget(12));
+        write("uiTextEngine=KillerUiText");
+        write("fallbackPolicy=DISABLED_FAIL_HARD");
+        write("stockRt4FontRole=WORLD_SCENE_ONLY");
+        write("worldRenderer=UNCHANGED");
     }
 
     public static synchronized void write(String message) {
         if (!initialized) {
             start();
         }
-        if (logFile == null) {
-            return;
-        }
 
-        FileWriter writer = null;
-        try {
-            writer = new FileWriter(logFile, true);
+        try (FileWriter writer = new FileWriter(logFile, true)) {
             writer.write(timestamp());
             writer.write(" ");
             writer.write(message);
             writer.write(System.lineSeparator());
-        } catch (IOException ignored) {
-        } finally {
-            if (writer != null) {
-                try {
-                    writer.close();
-                } catch (IOException ignored) {
-                }
-            }
+            writer.flush();
+        } catch (IOException ex) {
+            throw new IllegalStateException(
+                "Killer UI could not write log file: " + logFile.getAbsolutePath(),
+                ex
+            );
         }
     }
 
