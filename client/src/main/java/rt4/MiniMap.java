@@ -440,7 +440,7 @@ public class MiniMap {
 		}
 		@Pc(21) int distSq = dy * dy + dx * dx;
 		@Pc(27) int mapAngle = compassAngleOffset + (int) Camera.yawTarget & 0x7FF;
-		@Pc(39) int maxRadius = Math.max(component.width / 2, component.height / 2) + 10;
+		@Pc(39) int maxRadius = KillerUi.logicalPx(Math.max(component.width / 2, component.height / 2)) + 10;
 		if (maxRadius * maxRadius < distSq) {
 			return;
 		}
@@ -463,12 +463,12 @@ public class MiniMap {
 		if (distSq > 360000) {
 			return;
 		}
-		@Pc(30) int minRadius = Math.min(component.width / 2, component.height / 2);
-		if (minRadius * minRadius >= distSq) {
+		@Pc(30) int logicalRadius = KillerUi.logicalPx(Math.min(component.width / 2, component.height / 2));
+		if (logicalRadius * logicalRadius >= distSq) {
 			renderMapIcon(component, Sprites.mapmarkhints[hintId], dx, dy, offsetY, offsetX);
 			return;
 		}
-		minRadius -= 10;
+		int minRadius = Math.max(1, Math.min(component.width / 2, component.height / 2) - KillerUi.px(10));
 		@Pc(58) int mapAngle = compassAngleOffset + (int) Camera.yawTarget & 0x7FF;
 		@Pc(62) int cosRaw = MathUtils.cos[mapAngle];
 		@Pc(66) int sinRaw = MathUtils.sin[mapAngle];
