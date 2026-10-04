@@ -136,6 +136,7 @@ public final class SoftwareFont extends Font {
 		if (arg0 == null) {
 			return null;
 		} else {
+			KillerTextScale.scaleLoadedFontSprites();
 			@Pc(22) SoftwareFont local22 = new SoftwareFont(arg0, SpriteLoader.xOffsets, SpriteLoader.yOffsets, SpriteLoader.innerWidths, SpriteLoader.innerHeights, SpriteLoader.pixels);
 			SpriteLoader.clear();
 			return local22;
