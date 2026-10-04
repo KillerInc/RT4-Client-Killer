@@ -66,15 +66,26 @@ public final class KillerUiText {
     }
 
     public static int styleForComponent(Component component) {
-        if (component != null) {
-            if (component.font == Sprites.p11FullId) {
-                return PLAIN_11;
-            }
-            if (component.font == Sprites.b12FullId) {
-                return BOLD_12;
-            }
+        if (component == null) {
+            KillerUiLog.write("FATAL componentStyle=null component");
+            throw new IllegalStateException("Killer UI text requested for a null component");
         }
-        return PLAIN_12;
+        if (component.font == Sprites.p11FullId) {
+            return PLAIN_11;
+        }
+        if (component.font == Sprites.p12FullId) {
+            return PLAIN_12;
+        }
+        if (component.font == Sprites.b12FullId) {
+            return BOLD_12;
+        }
+
+        KillerUiLog.write(
+            "FATAL unsupportedUiFont component=" + component.id + " fontId=" + component.font
+        );
+        throw new IllegalStateException(
+            "Unsupported UI font id " + component.font + " on component " + component.id
+        );
     }
 
     public static int lineHeight(int style) {
@@ -641,8 +652,15 @@ public final class KillerUiText {
 
     private static synchronized java.awt.Font getFont(int style) {
         ensureFonts();
-        int safeStyle = style < 0 || style >= SCALED_FONTS.length ? PLAIN_12 : style;
-        return SCALED_FONTS[safeStyle];
+        if (style < 0 || style >= SCALED_FONTS.length) {
+            KillerUiLog.write("FATAL invalidUiFontStyle=" + style);
+            throw new IllegalArgumentException("Invalid Killer UI font style " + style);
+        }
+        if (SCALED_FONTS[style] == null) {
+            KillerUiLog.write("FATAL uiFontNotLoaded style=" + style);
+            throw new IllegalStateException("Killer UI font style " + style + " was not loaded");
+        }
+        return SCALED_FONTS[style];
     }
 
     private static void ensureFonts() {
@@ -676,24 +694,27 @@ public final class KillerUiText {
         }
 
         try (InputStream in = KillerUiText.class.getResourceAsStream(resource)) {
-            if (in != null) {
-                BASE_FONTS[style] = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, in);
-                KillerUiLog.once(
-                    "font-" + style,
-                    "TTF_LOADED style=" + style + " resource=" + resource
-                        + " family=" + BASE_FONTS[style].getFamily()
-                        + " name=" + BASE_FONTS[style].getFontName()
-                );
-                return;
+            if (in == null) {
+                KillerUiLog.write("FATAL missingTtf style=" + style + " resource=" + resource);
+                throw new IllegalStateException("Missing required Killer UI TTF resource: " + resource);
             }
-        } catch (Throwable ignored) {
-        }
 
-        BASE_FONTS[style] = new java.awt.Font("SansSerif", fallbackStyle, style == PLAIN_11 ? 11 : 12);
-        KillerUiLog.once(
-            "font-fallback-" + style,
-            "TTF_FALLBACK style=" + style + " resource=" + resource + " fallback=SansSerif"
-        );
+            BASE_FONTS[style] = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, in);
+            KillerUiLog.once(
+                "font-" + style,
+                "TTF_LOADED style=" + style + " resource=" + resource
+                    + " family=" + BASE_FONTS[style].getFamily()
+                    + " name=" + BASE_FONTS[style].getFontName()
+            );
+        } catch (RuntimeException ex) {
+            throw ex;
+        } catch (Throwable ex) {
+            KillerUiLog.write(
+                "FATAL ttfLoadFailure style=" + style + " resource=" + resource
+                    + " error=" + ex.getClass().getName() + ": " + ex.getMessage()
+            );
+            throw new IllegalStateException("Could not load required Killer UI TTF: " + resource, ex);
+        }
     }
 
     private static int parseHex(String text, int fallback) {
