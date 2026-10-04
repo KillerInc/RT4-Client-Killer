@@ -68,6 +68,8 @@ public final class KillerUiLog {
         write("uiTextEngine=KillerUiText");
         write("fallbackPolicy=DISABLED_FAIL_HARD");
         write("stockRt4TextRenderer=FORBIDDEN");
+        write("allVisibleText=KillerUiText");
+        write("scale1Compatibility=LEGACY_CACHE_METRICS_ONLY");
         write("worldGeometryRenderer=UNCHANGED");
         write("worldOverlayText=KillerUiText");
     }
