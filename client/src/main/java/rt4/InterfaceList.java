@@ -414,8 +414,9 @@ public class InterfaceList {
 					maxWidth = opWidth;
 				}
 			}
-			menuHeight = MiniMenu.size * 15 + (useStyledMenu ? 26 : 22);
-			menuWidth = maxWidth + 8;
+			menuHeight = MiniMenu.size * KillerUi.menuRowHeight()
+				+ KillerUi.menuHeaderHeight() + KillerUi.menuPadding();
+			menuWidth = maxWidth + KillerUi.menuPadding() * 2;
 		}
 		if (topLevelInterface != -1) {
 			runScripts(1, topLevelInterface);
@@ -493,9 +494,9 @@ public class InterfaceList {
 			component.width = component.baseWidth * parentW >> 14;
 		} else if (component.dynamicWidthValue == 3) {
 			if (component.type == 2) {
-				component.width = component.baseWidth * 32 + (component.baseWidth - 1) * component.invMarginX;
+				component.width = KillerUi.scaledGridWidth(component);
 			} else if (component.type == 7) {
-				component.width = component.baseWidth * 115 + component.invMarginX * (component.baseWidth - 1);
+				component.width = KillerUi.scaledTextGridWidth(component);
 			}
 		}
 		if (component.dynamicHeightValue == 0) {
@@ -506,9 +507,9 @@ public class InterfaceList {
 			component.height = parentH * component.baseHeight >> 14;
 		} else if (component.dynamicHeightValue == 3) {
 			if (component.type == 2) {
-				component.height = (component.baseHeight - 1) * component.invMarginY + component.baseHeight * 32;
+				component.height = KillerUi.scaledGridHeight(component);
 			} else if (component.type == 7) {
-				component.height = component.baseHeight * 12 + (component.baseHeight - 1) * component.invMarginY;
+				component.height = KillerUi.scaledTextGridHeight(component);
 			}
 		}
 		if (component.dynamicWidthValue == 4) {
@@ -1198,20 +1199,24 @@ public class InterfaceList {
 		}
 		scrollbarDragging = false;
 		@Pc(139) int thumbSize;
+		int scrollbarWidth = KillerUi.scrollbarWidth();
+		int arrowHeight = KillerUi.scrollbarArrowHeight();
+		int minThumb = KillerUi.px(8);
+		int scrollStep = KillerUi.px(4);
 		if (Mouse.pressedButton != 0) {
-			if (barX <= mouseX && barX + 16 > mouseX && mouseY >= barY && barY + 16 > mouseY) {
-				component.scrollY -= 4;
+			if (barX <= mouseX && barX + scrollbarWidth > mouseX && mouseY >= barY && barY + arrowHeight > mouseY) {
+				component.scrollY -= scrollStep;
 				redraw(component);
-			} else if (mouseX >= barX && mouseX < barX + 16 && mouseY >= scrollbarH + barY - 16 && scrollbarH + barY > mouseY) {
-				component.scrollY += 4;
+			} else if (mouseX >= barX && mouseX < barX + scrollbarWidth && mouseY >= scrollbarH + barY - arrowHeight && scrollbarH + barY > mouseY) {
+				component.scrollY += scrollStep;
 				redraw(component);
-			} else if (mouseX >= barX - scrollbarDragMargin && mouseX < barX + scrollbarDragMargin + 16 && mouseY >= barY + 16 && scrollbarH + barY - 16 > mouseY) {
-				thumbSize = scrollbarH * (scrollbarH - 32) / scrollRange;
-				if (thumbSize < 8) {
-					thumbSize = 8;
+			} else if (mouseX >= barX - scrollbarDragMargin && mouseX < barX + scrollbarDragMargin + scrollbarWidth && mouseY >= barY + arrowHeight && scrollbarH + barY - arrowHeight > mouseY) {
+				thumbSize = scrollbarH * (scrollbarH - arrowHeight * 2) / scrollRange;
+				if (thumbSize < minThumb) {
+					thumbSize = minThumb;
 				}
-				@Pc(150) int trackRange = scrollbarH - thumbSize - 32;
-				@Pc(162) int thumbPos = mouseY - thumbSize / 2 - barY - 16;
+				@Pc(150) int trackRange = scrollbarH - thumbSize - arrowHeight * 2;
+				@Pc(162) int thumbPos = mouseY - thumbSize / 2 - barY - arrowHeight;
 				component.scrollY = (scrollRange - scrollbarH) * thumbPos / trackRange;
 				redraw(component);
 				scrollbarDragging = true;
@@ -1221,8 +1226,8 @@ public class InterfaceList {
 			return;
 		}
 		thumbSize = component.width;
-		if (barX - thumbSize <= mouseX && barY <= mouseY && mouseX < barX + 16 && scrollbarH + barY >= mouseY) {
-			component.scrollY += MouseWheel.wheelRotation * 45;
+		if (barX - thumbSize <= mouseX && barY <= mouseY && mouseX < barX + scrollbarWidth && scrollbarH + barY >= mouseY) {
+			component.scrollY += MouseWheel.wheelRotation * KillerUi.px(45);
 			redraw(component);
 		}
 	}
