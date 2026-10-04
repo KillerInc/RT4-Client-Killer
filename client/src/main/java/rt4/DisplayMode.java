@@ -175,7 +175,7 @@ public final class DisplayMode {
 				SoftwareRaster.frameBuffer = FrameBuffer.create(GameShell.canvasHeight, GameShell.canvasWidth, GameShell.canvas);
 				SoftwareRaster.clear();
 				if (client.gameState == 5) {
-					LoadingBar.render(true, Fonts.b12Full);
+					LoadingBar.render(true);
 				} else {
 					Fonts.drawTextOnScreen(false, LocalizedText.LOADING);
 				}
