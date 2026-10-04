@@ -62,7 +62,9 @@ public final class KillerUiLog {
         write("logPath=" + logFile.getAbsolutePath());
         write("clientHomeOverride=" + System.getProperty("clientHomeOverride"));
         write("workingDirectory=" + System.getProperty("user.dir"));
-        write("fontScale=" + KillerUi.scale());
+        write("uiScale=" + KillerUi.scale());
+        write("fontScale=" + KillerUi.textScale());
+        write("effectiveTextScale=" + KillerUi.effectiveTextScale());
         write("p11Target=" + KillerUi.fontTarget(11));
         write("p12Target=" + KillerUi.fontTarget(12));
         write("uiTextEngine=KillerUiText");
