@@ -110,6 +110,7 @@ public final class KillerUiText {
         CACHE_FONT_STYLES.clear();
         CACHE_FONT_NAMES.clear();
 
+        // Core RuneScape UI fonts with exact RuneStar vector equivalents.
         registerCacheFont(provider, "p11_full", PLAIN_11);
         registerCacheFont(provider, "p12_full", PLAIN_12);
         registerCacheFont(provider, "b12_full", BOLD_12);
@@ -121,19 +122,39 @@ public final class KillerUiText {
         registerCacheFont(provider, "barbassault_font", BARBARIAN_ASSAULT);
         registerCacheFont(provider, "surok_font", SUROK);
 
-        // Known Jagex UI font with no separate RuneStar vector face.
-        // This is an explicit compatibility map, never a runtime fallback.
+        // Additional Jagex UI fonts present in the 634/667-era caches.
+        // These are deliberate compatibility mappings into the replacement
+        // TTF engine. None of them call Component.getFont() or the stock
+        // bitmap renderer.
+        registerCacheFont(provider, "friendslist_font", PLAIN_11);
+        registerCacheFont(provider, "tutorial_font", PLAIN_12);
+        registerCacheFont(provider, "welcome_font_small", PLAIN_11);
+        registerCacheFont(provider, "welcome_font_large", BOLD_12);
+        registerCacheFont(provider, "tutorial_font_big", BOLD_12);
         registerCacheFont(provider, "menu_font_small", PLAIN_11);
+        registerCacheFont(provider, "tzhaar_numbers", BOLD_12);
+        registerCacheFont(provider, "verdana_11pt_regular", PLAIN_11);
+        registerCacheFont(provider, "verdana_11pt_bold", BOLD_12);
+        registerCacheFont(provider, "verdana_13pt_regular", PLAIN_12);
+        registerCacheFont(provider, "verdana_13pt_bold", BOLD_12);
+        registerCacheFont(provider, "verdana_15pt_regular", BOLD_12);
 
-        discoverUnsupportedFont(provider, "tutorial_font_big");
-        discoverUnsupportedFont(provider, "tzhaar_numbers");
-        discoverUnsupportedFont(provider, "verdana_11pt_regular");
-        discoverUnsupportedFont(provider, "verdana_13pt_regular");
-        discoverUnsupportedFont(provider, "verdana_15pt_regular");
+        // The 667 cache contains additional font archives whose cache names
+        // are not all known. Register their documented numeric IDs explicitly
+        // so they stay inside KillerUiText instead of causing repeated CTDs.
+        registerCompatibilityFontId(1591, PLAIN_12, "font_1591");
+        registerCompatibilityFontId(2244, PLAIN_12, "font_2244");
+        registerCompatibilityFontId(2710, PLAIN_12, "font_2710");
+        registerCompatibilityFontId(3237, PLAIN_12, "font_3237");
+        registerCompatibilityFontId(3794, BOLD_12, "font_3794");
+        registerCompatibilityFontId(5419, PLAIN_12, "font_5419");
+        registerCompatibilityFontId(5631, PLAIN_12, "font_5631");
+        registerCompatibilityFontId(13120, PLAIN_12, "font_13120");
+        registerCompatibilityFontId(13121, PLAIN_12, "font_13121");
 
         KillerUiLog.write(
             "FONT_REGISTRY supportedCacheFontIds=" + CACHE_FONT_STYLES.size()
-                + " unsupportedKnownFontsRemainStrict=true"
+                + " strictUnknownFontPolicy=true stockBitmapFallback=false"
         );
     }
 
@@ -152,16 +173,18 @@ public final class KillerUiText {
         );
     }
 
-    private static void discoverUnsupportedFont(Js5 provider, String cacheName) {
-        int id = provider.getGroupId(JagString.parse(cacheName));
-        if (id >= 0) {
-            CACHE_FONT_NAMES.put(id, cacheName);
-            KillerUiLog.write(
-                "FONT_DISCOVERED_UNSUPPORTED fontId=" + id + " cacheName=" + cacheName
-                    + " action=HARD_FAIL_IF_RENDERED"
-            );
+    private static void registerCompatibilityFontId(int id, int style, String cacheName) {
+        if (CACHE_FONT_STYLES.containsKey(id)) {
+            return;
         }
+        CACHE_FONT_STYLES.put(id, style);
+        CACHE_FONT_NAMES.put(id, cacheName);
+        KillerUiLog.write(
+            "FONT_COMPAT_MAP fontId=" + id + " cacheName=" + cacheName
+                + " style=" + style + " resource=" + resourceForStyle(style)
+        );
     }
+
 
     public static int styleForComponent(Component component) {
         if (component == null) {
