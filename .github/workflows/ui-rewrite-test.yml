@@ -59,7 +59,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: rt4-source-audit
-          path: client/src/main/java/rt4
+          path: client/src/main/java
 
       - name: Stage runtime client
         shell: bash
