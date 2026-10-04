@@ -25,6 +25,8 @@ import java.util.Map;
  * The normal UI scaler therefore remains the only scaling system.
  */
 public final class KillerFontGenerator {
+    private static final int BINARY_THRESHOLD = 96;
+
     public static final String PLAIN_11 = "/killer-fonts/RuneScape-Plain-11.ttf";
     public static final String PLAIN_12 = "/killer-fonts/RuneScape-Plain-12.ttf";
     public static final String BOLD_12 = "/killer-fonts/RuneScape-Bold-12.ttf";
@@ -227,6 +229,8 @@ public final class KillerFontGenerator {
                     + ", rasterSize=" + rasterSize
                     + ", maxSourceRaster=" + maxSourceWidth + "x" + maxSourceHeight
                     + ", output=original RT4 glyph boxes"
+                    + ", mask=binary"
+                    + ", threshold=" + BINARY_THRESHOLD
             );
             return generated;
         } catch (Throwable ex) {
@@ -287,7 +291,7 @@ public final class KillerFontGenerator {
         for (int y = 0; y < targetHeight; y++) {
             for (int x = 0; x < targetWidth; x++) {
                 int value = target.getRaster().getSample(x, y, 0);
-                mask[p++] = (byte) value;
+                mask[p++] = value >= BINARY_THRESHOLD ? (byte) 1 : (byte) 0;
             }
         }
 
@@ -346,7 +350,11 @@ public final class KillerFontGenerator {
             return;
         }
         sessionStarted = true;
-        log("START", "Killer font generator session; UI scaling remains unchanged");
+        log(
+            "START",
+            "Killer font generator session; UI scaling remains unchanged; "
+                + "supersample=true; mask=binary; threshold=" + BINARY_THRESHOLD
+        );
     }
 
     private static synchronized void log(String status, String message) {
