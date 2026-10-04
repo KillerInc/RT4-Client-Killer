@@ -1468,19 +1468,22 @@ public final class ScriptRunner {
 
 	@OriginalMember(owner = "client!sf", name = "b", descriptor = "(B)V")
 	public static void layoutMiniMenu() {
-		@Pc(16) int menuWidth = Fonts.b12Full.getStringWidth(LocalizedText.CHOOSE_OPTION);
-		@Pc(18) int menuHeight;
-		@Pc(27) int menuX;
-		for (menuHeight = 0; menuHeight < MiniMenu.size; menuHeight++) {
-			menuX = Fonts.b12Full.getStringWidth(MiniMenu.getOp(menuHeight));
-			if (menuX > menuWidth) {
-				menuWidth = menuX;
+		int menuWidth = KillerUiText.measureWidth(LocalizedText.CHOOSE_OPTION, KillerUiText.BOLD_12);
+		for (int i = 0; i < MiniMenu.size; i++) {
+			int optionWidth = KillerUiText.measureWidth(MiniMenu.getOp(i), KillerUiText.BOLD_12);
+			if (optionWidth > menuWidth) {
+				menuWidth = optionWidth;
 			}
 		}
-		menuHeight = MiniMenu.size * 15 + 21;
-		@Pc(43) int menuY = interfaceMouseY;
-		menuWidth += 8;
-		menuX = interfaceMouseX - menuWidth / 2;
+
+		int rowHeight = KillerUi.menuRowHeight();
+		int headerHeight = KillerUi.menuHeaderHeight();
+		int menuHeight = MiniMenu.size * rowHeight + headerHeight + KillerUi.menuPadding();
+		menuWidth += KillerUi.menuPadding() * 2;
+
+		int menuY = interfaceMouseY;
+		int menuX = interfaceMouseX - menuWidth / 2;
+
 		if (menuY + menuHeight > GameShell.canvasHeight) {
 			menuY = GameShell.canvasHeight - menuHeight;
 		}
@@ -1493,9 +1496,10 @@ public final class ScriptRunner {
 		if (menuY < 0) {
 			menuY = 0;
 		}
+
 		if (MiniMenu.clickProcessingState == 1) {
 			if (interfaceMouseX == Mouse.lastHandledClickX && Mouse.lastHandledClickY == interfaceMouseY) {
-				InterfaceList.menuHeight = MiniMenu.size * 15 + (InterfaceList.useStyledMenu ? 26 : 22);
+				InterfaceList.menuHeight = menuHeight;
 				MiniMenu.clickProcessingState = 0;
 				InterfaceList.menuY = menuY;
 				InterfaceList.menuX = menuX;
@@ -1507,7 +1511,7 @@ public final class ScriptRunner {
 			MiniMenu.clickProcessingState = 0;
 			InterfaceList.menuWidth = menuWidth;
 			InterfaceList.menuY = menuY;
-			InterfaceList.menuHeight = (InterfaceList.useStyledMenu ? 26 : 22) + MiniMenu.size * 15;
+			InterfaceList.menuHeight = menuHeight;
 			Cs1ScriptRunner.isMenuOpen = true;
 		} else {
 			Mouse.lastHandledClickY = Mouse.clickY;
@@ -1515,7 +1519,6 @@ public final class ScriptRunner {
 			MiniMenu.clickProcessingState = 1;
 		}
 	}
-
 	@OriginalMember(owner = "client!gn", name = "b", descriptor = "(Z)V")
 	public static void forceRedrawAllRectangles() {
 		for (@Pc(11) int i = 0; i < 100; i++) {
@@ -2308,14 +2311,14 @@ public final class ScriptRunner {
 								}
 								if (opcode == Cs2Opcodes.setScrollPos) {
 									isp -= 2;
-									component.scrollX = intStack[isp];
+									component.scrollX = KillerUi.isWorldSurface(component) ? intStack[isp] : KillerUi.px(intStack[isp]);
 									if (component.scrollX > component.scrollMaxH - component.width) {
 										component.scrollX = component.scrollMaxH - component.width;
 									}
 									if (component.scrollX < 0) {
 										component.scrollX = 0;
 									}
-									component.scrollY = intStack[isp + 1];
+									component.scrollY = KillerUi.isWorldSurface(component) ? intStack[isp + 1] : KillerUi.px(intStack[isp + 1]);
 									if (component.scrollY > component.scrollMaxV - component.height) {
 										component.scrollY = component.scrollMaxV - component.height;
 									}
@@ -2351,7 +2354,7 @@ public final class ScriptRunner {
 								}
 								if (opcode == Cs2Opcodes.setLineWid) {
 									isp--;
-									component.lineWidth = intStack[isp];
+									component.lineWidth = KillerUi.isWorldSurface(component) ? intStack[isp] : Math.max(1, KillerUi.px(intStack[isp]));
 									InterfaceList.redraw(component);
 									continue;
 								}
@@ -2441,7 +2444,7 @@ public final class ScriptRunner {
 									isp -= 3;
 									component.halign = intStack[isp];
 									component.valign = intStack[isp + 1];
-									component.vpadding = intStack[isp + 2];
+									component.vpadding = KillerUi.isWorldSurface(component) ? intStack[isp + 2] : KillerUi.px(intStack[isp + 2]);
 									InterfaceList.redraw(component);
 									continue;
 								}
@@ -2477,8 +2480,8 @@ public final class ScriptRunner {
 								}
 								if (opcode == Cs2Opcodes.setScrollMax) {
 									isp -= 2;
-									component.scrollMaxH = intStack[isp];
-									component.scrollMaxV = intStack[isp + 1];
+									component.scrollMaxH = KillerUi.isWorldSurface(component) ? intStack[isp] : KillerUi.px(intStack[isp]);
+									component.scrollMaxV = KillerUi.isWorldSurface(component) ? intStack[isp + 1] : KillerUi.px(intStack[isp + 1]);
 									InterfaceList.redraw(component);
 									if (component.type == 0) {
 										InterfaceList.layoutComponent(component, false);
@@ -5861,8 +5864,8 @@ public final class ScriptRunner {
 							}
 							if (opcode == Cs2Opcodes.setPosition) {
 								isp -= 4;
-								component.baseX = intStack[isp];
-								component.baseY = intStack[isp + 1];
+								int rawBaseX = intStack[isp];
+								int rawBaseY = intStack[isp + 1];
 								int2 = intStack[isp + 3];
 								if (int2 < 0) {
 									int2 = 0;
@@ -5877,6 +5880,8 @@ public final class ScriptRunner {
 								}
 								component.xMode = (byte) int2;
 								component.yMode = (byte) int3;
+								component.baseX = !KillerUi.isWorldSurface(component) && component.yMode <= 2 ? KillerUi.px(rawBaseX) : rawBaseX;
+								component.baseY = !KillerUi.isWorldSurface(component) && component.xMode <= 2 ? KillerUi.px(rawBaseY) : rawBaseY;
 								InterfaceList.redraw(component);
 								InterfaceList.update(component);
 								if (component.createdComponentId == -1) {
@@ -5886,8 +5891,8 @@ public final class ScriptRunner {
 							}
 							if (opcode == Cs2Opcodes.setSize) {
 								isp -= 4;
-								component.baseWidth = intStack[isp];
-								component.baseHeight = intStack[isp + 1];
+								int rawBaseWidth = intStack[isp];
+								int rawBaseHeight = intStack[isp + 1];
 								component.modelViewportWidth = 0;
 								component.modelViewportHeight = 0;
 								int3 = intStack[isp + 2];
@@ -5904,6 +5909,8 @@ public final class ScriptRunner {
 									int3 = 4;
 								}
 								component.dynamicWidthValue = (byte) int3;
+								component.baseWidth = !KillerUi.isWorldSurface(component) && component.dynamicWidthValue <= 1 ? KillerUi.px(rawBaseWidth) : rawBaseWidth;
+								component.baseHeight = !KillerUi.isWorldSurface(component) && component.dynamicHeightValue <= 1 ? KillerUi.px(rawBaseHeight) : rawBaseHeight;
 								InterfaceList.redraw(component);
 								InterfaceList.update(component);
 								if (component.type == 0) {
