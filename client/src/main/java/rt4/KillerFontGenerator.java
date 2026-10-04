@@ -3,9 +3,9 @@ package rt4;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.geom.AffineTransform;
 import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
-import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileWriter;
@@ -169,14 +169,18 @@ public final class KillerFontGenerator {
                 return null;
             }
 
+            double uiScale = readUiScale();
+            float rasterSize = (float) (nativeSize * uiScale);
             java.awt.Font vector = java.awt.Font
                 .createFont(java.awt.Font.TRUETYPE_FONT, in)
-                .deriveFont(nativeSize);
+                .deriveFont(rasterSize);
 
-            FontRenderContext frc = new FontRenderContext(new AffineTransform(), false, false);
+            FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
             byte[][] generated = new byte[256][];
             int generatedCount = 0;
             int originalCount = 0;
+            int maxSourceWidth = 0;
+            int maxSourceHeight = 0;
 
             for (int i = 0; i < 256; i++) {
                 int targetWidth = targetWidths[i];
@@ -189,7 +193,16 @@ public final class KillerFontGenerator {
                 }
 
                 char ch = decodeCp1252(i);
-                byte[] mask = rasterizeToExactBox(vector, frc, ch, targetWidth, targetHeight);
+                RasterResult raster = rasterizeToExactBox(vector, frc, ch, targetWidth, targetHeight);
+                byte[] mask = raster == null ? null : raster.pixels;
+                if (raster != null) {
+                    if (raster.sourceWidth > maxSourceWidth) {
+                        maxSourceWidth = raster.sourceWidth;
+                    }
+                    if (raster.sourceHeight > maxSourceHeight) {
+                        maxSourceHeight = raster.sourceHeight;
+                    }
+                }
                 if (mask == null || !containsInk(mask)) {
                     generated[i] = originalPixels[i];
                     originalCount++;
@@ -209,8 +222,11 @@ public final class KillerFontGenerator {
                 "SUCCESS",
                 label + ": vector source loaded; generated=" + generatedCount
                     + ", original-fallback=" + originalCount
-                    + ", nativeSize=" + nativeSize
-                    + ", uiScale=" + System.getProperty("sun.java2d.uiScale", "1.0")
+                    + ", logicalSize=" + nativeSize
+                    + ", uiScale=" + uiScale
+                    + ", rasterSize=" + rasterSize
+                    + ", maxSourceRaster=" + maxSourceWidth + "x" + maxSourceHeight
+                    + ", output=original RT4 glyph boxes"
             );
             return generated;
         } catch (Throwable ex) {
@@ -220,7 +236,7 @@ public final class KillerFontGenerator {
         }
     }
 
-    private static byte[] rasterizeToExactBox(
+    private static RasterResult rasterizeToExactBox(
         java.awt.Font font,
         FontRenderContext frc,
         char ch,
@@ -237,8 +253,8 @@ public final class KillerFontGenerator {
         BufferedImage source = new BufferedImage(bounds.width, bounds.height, BufferedImage.TYPE_BYTE_GRAY);
         Graphics2D g = source.createGraphics();
         try {
-            g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
-            g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
+            g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
             g.setColor(Color.WHITE);
             g.setFont(font);
             g.drawGlyphVector(glyphVector, -bounds.x, -bounds.y);
@@ -246,32 +262,48 @@ public final class KillerFontGenerator {
             g.dispose();
         }
 
+        BufferedImage target = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_BYTE_GRAY);
+        Graphics2D out = target.createGraphics();
+        try {
+            out.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+            out.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+
+            double scaleX = (double) targetWidth / (double) bounds.width;
+            double scaleY = (double) targetHeight / (double) bounds.height;
+            double scale = Math.min(scaleX, scaleY);
+
+            int drawWidth = Math.max(1, Math.min(targetWidth, (int) Math.round(bounds.width * scale)));
+            int drawHeight = Math.max(1, Math.min(targetHeight, (int) Math.round(bounds.height * scale)));
+            int offsetX = (targetWidth - drawWidth) / 2;
+            int offsetY = targetHeight - drawHeight;
+
+            out.drawImage(source, offsetX, offsetY, drawWidth, drawHeight, null);
+        } finally {
+            out.dispose();
+        }
+
         byte[] mask = new byte[targetWidth * targetHeight];
-
-        // Fit the vector raster inside the exact cache-provided glyph box.
-        // Aspect ratio is preserved and the glyph is bottom-centered because
-        // RT4's original Y offsets/line metrics remain authoritative.
-        double scaleX = (double) targetWidth / (double) bounds.width;
-        double scaleY = (double) targetHeight / (double) bounds.height;
-        double scale = Math.min(scaleX, scaleY);
-
-        int drawWidth = Math.max(1, Math.min(targetWidth, (int) Math.round(bounds.width * scale)));
-        int drawHeight = Math.max(1, Math.min(targetHeight, (int) Math.round(bounds.height * scale)));
-        int offsetX = (targetWidth - drawWidth) / 2;
-        int offsetY = targetHeight - drawHeight;
-
-        for (int y = 0; y < drawHeight; y++) {
-            int srcY = Math.min(bounds.height - 1, (int) ((long) y * bounds.height / drawHeight));
-            for (int x = 0; x < drawWidth; x++) {
-                int srcX = Math.min(bounds.width - 1, (int) ((long) x * bounds.width / drawWidth));
-                int value = source.getRaster().getSample(srcX, srcY, 0);
-                if (value != 0) {
-                    mask[(offsetY + y) * targetWidth + offsetX + x] = 1;
-                }
+        int p = 0;
+        for (int y = 0; y < targetHeight; y++) {
+            for (int x = 0; x < targetWidth; x++) {
+                int value = target.getRaster().getSample(x, y, 0);
+                mask[p++] = (byte) value;
             }
         }
 
-        return mask;
+        return new RasterResult(mask, bounds.width, bounds.height);
+    }
+
+    private static double readUiScale() {
+        try {
+            double scale = Double.parseDouble(System.getProperty("sun.java2d.uiScale", "1.0"));
+            if (Double.isNaN(scale) || Double.isInfinite(scale) || scale <= 0.0D) {
+                return 1.0D;
+            }
+            return Math.max(0.5D, Math.min(4.0D, scale));
+        } catch (NumberFormatException ignored) {
+            return 1.0D;
+        }
     }
 
     private static boolean containsInk(byte[] pixels) {
@@ -295,6 +327,18 @@ public final class KillerFontGenerator {
             return ch == '\u0000' ? '?' : ch;
         }
         return (char) value;
+    }
+
+    private static final class RasterResult {
+        private final byte[] pixels;
+        private final int sourceWidth;
+        private final int sourceHeight;
+
+        private RasterResult(byte[] pixels, int sourceWidth, int sourceHeight) {
+            this.pixels = pixels;
+            this.sourceWidth = sourceWidth;
+            this.sourceHeight = sourceHeight;
+        }
     }
 
     private static synchronized void startSession() {
