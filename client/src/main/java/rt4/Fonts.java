@@ -59,26 +59,47 @@ public class Fonts {
 
 	@OriginalMember(owner = "client!j", name = "a", descriptor = "(BZLclient!na;)V")
 	public static void drawTextOnScreen(@OriginalArg(1) boolean swapBuffers, @OriginalArg(2) JagString text) {
-		@Pc(24) int maxWidth = p12Full.getMaxLineWidth(text, 250);
-		@Pc(31) int textHeight = p12Full.getParagraphLineCount(text, 250) * 13;
+		KillerUiLog.once("screen-message-text", "ROUTE screenMessageText=KillerUiText");
+		int wrapWidth = KillerUi.px(250);
+		int maxWidth = KillerUiText.getMaxLineWidth(Sprites.p12FullId, text, wrapWidth);
+		int textHeight = KillerUiText.getParagraphLineCount(Sprites.p12FullId, text, wrapWidth)
+			* KillerUiText.lineHeight(KillerUiText.PLAIN_12);
+		int outerPad = KillerUi.px(4);
+
 		if (GlRenderer.enabled) {
-			GlRaster.fillRect(6, 6, maxWidth + 4 + 4, textHeight + 8, 0);
-			GlRaster.drawRect(6, 6, maxWidth + 4 + 4, textHeight + 4 + 4, 16777215);
+			GlRaster.fillRect(KillerUi.px(6), KillerUi.px(6), maxWidth + outerPad * 2, textHeight + outerPad * 2, 0);
+			GlRaster.drawRect(KillerUi.px(6), KillerUi.px(6), maxWidth + outerPad * 2, textHeight + outerPad * 2, 16777215);
 		} else {
-			SoftwareRaster.fillRect(6, 6, maxWidth + 4 + 4, textHeight + 8, 0);
-			SoftwareRaster.drawRect(6, 6, maxWidth + 8, 4 + 4 + textHeight, 16777215);
+			SoftwareRaster.fillRect(KillerUi.px(6), KillerUi.px(6), maxWidth + outerPad * 2, textHeight + outerPad * 2, 0);
+			SoftwareRaster.drawRect(KillerUi.px(6), KillerUi.px(6), maxWidth + outerPad * 2, textHeight + outerPad * 2, 16777215);
 		}
-		p12Full.drawInterfaceText(text, 10, 10, maxWidth, textHeight, 16777215, -1, 1, 1, 0);
-		InterfaceList.redrawScreen(6, maxWidth + 8, 6, textHeight + 4 + 4);
+
+		KillerUiText.draw(
+			text,
+			KillerUiText.PLAIN_12,
+			KillerUi.px(10),
+			KillerUi.px(10),
+			Math.max(1, maxWidth),
+			Math.max(1, textHeight),
+			16777215,
+			-1,
+			256,
+			1,
+			1,
+			0,
+			KillerUiText.EFFECT_NONE
+		);
+
+		InterfaceList.redrawScreen(KillerUi.px(6), maxWidth + outerPad * 2, KillerUi.px(6), textHeight + outerPad * 2);
 		if (!swapBuffers) {
-			InterfaceList.forceRedrawScreen(10, 10, textHeight, maxWidth);
+			InterfaceList.forceRedrawScreen(KillerUi.px(10), KillerUi.px(10), textHeight, maxWidth);
 		} else if (GlRenderer.enabled) {
 			GlRenderer.swapBuffers();
 		} else {
 			try {
-				@Pc(159) Graphics graphics = GameShell.canvas.getGraphics();
+				Graphics graphics = GameShell.canvas.getGraphics();
 				SoftwareRaster.frameBuffer.draw(graphics);
-			} catch (@Pc(167) Exception ex) {
+			} catch (Exception ex) {
 				GameShell.canvas.repaint();
 			}
 		}
