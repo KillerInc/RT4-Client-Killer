@@ -47,14 +47,33 @@ public class Fonts {
 
 	@OriginalMember(owner = "client!hn", name = "a", descriptor = "(Lclient!ve;ILclient!ve;)V")
 	public static void load(@OriginalArg(0) Js5 fontArchive, @OriginalArg(2) Js5 metricsArchive) {
-		p11Full = Font.load(Sprites.p11FullId, metricsArchive, fontArchive);
+		byte[] p11Metrics = fontArchive.fetchFile(Sprites.p11FullId, 0);
+		byte[] p12Metrics = fontArchive.fetchFile(Sprites.p12FullId, 0);
+		byte[] b12Metrics = fontArchive.fetchFile(Sprites.b12FullId, 0);
+
+		p11Full = KillerVectorFont.create(p11Metrics, KillerVectorFont.PLAIN_11);
+		if (p11Full == null) {
+			p11Full = Font.load(Sprites.p11FullId, metricsArchive, fontArchive);
+		}
+
 		if (GlRenderer.enabled) {
-			p11FullSoftware = SoftwareFont.load(Sprites.p11FullId, fontArchive, metricsArchive);
+			p11FullSoftware = KillerVectorFont.createSoftware(p11Metrics, KillerVectorFont.PLAIN_11);
+			if (p11FullSoftware == null) {
+				p11FullSoftware = SoftwareFont.load(Sprites.p11FullId, fontArchive, metricsArchive);
+			}
 		} else {
 			p11FullSoftware = (SoftwareFont) p11Full;
 		}
-		p12Full = Font.load(Sprites.p12FullId, metricsArchive, fontArchive);
-		b12Full = Font.load(Sprites.b12FullId, metricsArchive, fontArchive);
+
+		p12Full = KillerVectorFont.create(p12Metrics, KillerVectorFont.PLAIN_12);
+		if (p12Full == null) {
+			p12Full = Font.load(Sprites.p12FullId, metricsArchive, fontArchive);
+		}
+
+		b12Full = KillerVectorFont.create(b12Metrics, KillerVectorFont.BOLD_12);
+		if (b12Full == null) {
+			b12Full = Font.load(Sprites.b12FullId, metricsArchive, fontArchive);
+		}
 	}
 
 	@OriginalMember(owner = "client!j", name = "a", descriptor = "(BZLclient!na;)V")
