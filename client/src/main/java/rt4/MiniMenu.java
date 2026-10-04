@@ -1731,6 +1731,7 @@ public class MiniMenu {
 	}
 
 	private static void drawKillerMenu(boolean styled) {
+		KillerUiLog.once("context-menu", "ROUTE contextMenu=KillerUiText");
 		int menuX = InterfaceList.menuX;
 		int menuY = InterfaceList.menuY;
 		int menuWidth = InterfaceList.menuWidth;
