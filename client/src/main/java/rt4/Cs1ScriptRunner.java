@@ -591,18 +591,19 @@ public class Cs1ScriptRunner {
 
 							if (component.type != 1) {
 								if (component.type == 2) {
+									int killerSlotSize = KillerUi.inventorySlotSize();
 									temp1 = 0;
 									for (temp2 = 0; temp2 < component.baseHeight; temp2++) {
 										for (temp3 = 0; temp3 < component.baseWidth; temp3++) {
-											int y = componentY + temp2 * (component.invMarginY + 32);
-											int x = (component.invMarginX + 32) * temp3 + componentX;
+											int y = componentY + temp2 * (component.invMarginY + killerSlotSize);
+											int x = (component.invMarginX + killerSlotSize) * temp3 + componentX;
 											if (temp1 < 20) {
 												y += component.invOffsetY[temp1];
 												x += component.invOffsetX[temp1];
 											}
 											if (component.objTypes[temp1] > 0) {
 												objId = component.objTypes[temp1] - 1;
-												if (clipLeft < x + 32 && x < clipRight && clipTop < y + 32 && y < clipBottom || component == InterfaceList.clickedInventoryComponent && InterfaceList.mouseOverInventoryObjectIndex == temp1) {
+												if (clipLeft < x + killerSlotSize && x < clipRight && clipTop < y + killerSlotSize && y < clipBottom || component == InterfaceList.clickedInventoryComponent && InterfaceList.mouseOverInventoryObjectIndex == temp1) {
 													@Pc(1476) Sprite sprite;
 
 													if (MiniMenu.itemTargetMode == 1 && MiniMenu.selectedObjSlot == temp1 && component.id == MiniMap.selectedComponentId) {
@@ -635,7 +636,7 @@ public class Cs1ScriptRunner {
 														}
 
 														// draw dragged icon (at half opacity)
-														sprite.renderAlpha(x + dragX, y + dragY, 128);
+														sprite.renderAlpha(x + dragX, y + dragY, killerSlotSize, killerSlotSize, 128);
 
 														if (layer != -1) {
 															@Pc(1571) Component scrollParent = components[layer & 0xFFFF];
@@ -666,8 +667,8 @@ public class Cs1ScriptRunner {
 																InterfaceList.redraw(scrollParent);
 															}
 
-															if (bottom < dragY + y + 32 && scrollParent.scrollY < scrollParent.scrollMaxV - scrollParent.height) {
-																scrollAmount = (y + dragY + 32 - bottom) * Protocol.sceneDelta / 3;
+															if (bottom < dragY + y + killerSlotSize && scrollParent.scrollY < scrollParent.scrollMaxV - scrollParent.height) {
+																scrollAmount = (y + dragY + killerSlotSize - bottom) * Protocol.sceneDelta / 3;
 																if (scrollAmount > Protocol.sceneDelta * 10) {
 																	scrollAmount = Protocol.sceneDelta * 10;
 																}
@@ -682,11 +683,9 @@ public class Cs1ScriptRunner {
 															}
 														}
 													} else if (component == MiniMenu.pressedInventoryComponent && temp1 == MiniMenu.pressedSlotIndex) {
-														sprite.renderAlpha(x, y, 128);
+														sprite.renderAlpha(x, y, killerSlotSize, killerSlotSize, 128);
 													} else {
-														sprite.render(x, y);
-														// downscale:
-														// sprite.renderResized(x, y, 36, 32);
+														sprite.renderResized(x, y, killerSlotSize, killerSlotSize);
 													}
 												}
 											} else if (component.invSprite != null && temp1 < 20) {
@@ -775,7 +774,7 @@ public class Cs1ScriptRunner {
 											if (!component.if3) {
 												displayText = interpolate(component, displayText);
 											}
-											font.drawInterfaceText(displayText, componentX, componentY, component.width, component.height, temp2, component.shadowed ? 0 : -1, component.halign, component.valign, component.vpadding);
+											KillerUiText.drawComponent(displayText, component, componentX, componentY, temp2, component.shadowed ? 0 : -1);
 											PluginRepository.ComponentDraw(i, component, componentX, componentY);
 										} else if (Component.loadFailed) {
 											InterfaceList.redraw(component);
@@ -879,7 +878,7 @@ public class Cs1ScriptRunner {
 										} else {
 											sprite = component.getSprite(isTrue(component));
 											if (sprite != null) {
-												sprite.render(componentX, componentY);
+												sprite.renderResized(componentX, componentY, component.width, component.height);
 											} else if (Component.loadFailed) {
 												InterfaceList.redraw(component);
 											}
@@ -1011,20 +1010,20 @@ public class Cs1ScriptRunner {
 															} else {
 																itemText = JagString.concatenate(new JagString[]{MiniMenu.COLOR_ITEM_ORANGE, objDef.name, JagString.CLOSE_COLOR_TIMES, formatItemCount(component.objCounts[temp2])});
 															}
-															temp4 = componentX + memory * (component.invMarginX + 115);
-															objId = (component.invMarginY + 12) * temp3 + componentY;
+															temp4 = componentX + memory * (component.invMarginX + KillerUi.inventoryTextCellWidth());
+															objId = (component.invMarginY + KillerUi.inventoryTextCellHeight()) * temp3 + componentY;
 															if (component.halign == 0) {
-																font.renderLeft(itemText, temp4, objId, component.color, component.shadowed ? 0 : -1);
+																KillerUiText.drawLeft(itemText, KillerUiText.styleForComponent(component), temp4, objId, component.color, component.shadowed ? 0 : -1);
 															} else if (component.halign == 1) {
-																font.renderCenter(itemText, temp4 + 57, objId, component.color, component.shadowed ? 0 : -1);
+																KillerUiText.drawCenter(itemText, KillerUiText.styleForComponent(component), temp4 + KillerUi.inventoryTextCellWidth() / 2, objId, component.color, component.shadowed ? 0 : -1);
 															} else {
-																font.renderRight(itemText, temp4 + 115 - 1, objId, component.color, component.shadowed ? 0 : -1);
+																KillerUiText.drawRight(itemText, KillerUiText.styleForComponent(component), temp4 + KillerUi.inventoryTextCellWidth() - KillerUi.px(1), objId, component.color, component.shadowed ? 0 : -1);
 															}
 														}
 														temp2++;
 													}
 												}
-												PluginRepository.ComponentDraw(i, component, componentX + component.invMarginX + 115, componentY + component.invMarginY + 12);
+												PluginRepository.ComponentDraw(i, component, componentX + component.invMarginX + KillerUi.inventoryTextCellWidth(), componentY + component.invMarginY + KillerUi.inventoryTextCellHeight());
 											}
 											if (component.type == 8 && Protocol.tooltipComponent == component && Protocol.tooltipTimer == TOOLTIP_DISPLAY_DELAY) {
 												temp2 = 0;
