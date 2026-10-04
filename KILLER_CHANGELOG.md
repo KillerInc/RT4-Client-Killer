@@ -2,6 +2,14 @@
 
 This file tracks **Killer RT4 client changes only**. Upstream 2009Scape/Pazaz history and changelogs are intentionally left untouched.
 
+## v0.3.1 — 2026-10-04
+
+- Supersamples RuneScape vector glyphs at the active UI scale while leaving the existing UI scaler untouched.
+- Downsamples the high-resolution vector raster into the original RT4 glyph box.
+- Converts the result back to RT4's expected binary glyph-mask format so software/OpenGL font renderers do not treat grayscale edge pixels as fully solid.
+- Added log fields for `logicalSize`, `uiScale`, `rasterSize`, `maxSourceRaster`, mask mode, and threshold.
+- Font log START entries now explicitly confirm supersampling is enabled and UI scaling is unchanged.
+
 ## v0.3.0 — 2026-10-04
 
 - Reintroduced the font generator without touching the existing UI scaling path.
