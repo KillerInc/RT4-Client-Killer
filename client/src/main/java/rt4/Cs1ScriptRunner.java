@@ -986,13 +986,7 @@ public class Cs1ScriptRunner {
 											PluginRepository.ComponentDraw(i, component, componentX + component.width / 2, componentY + component.height / 2);
 										} else {
 											if (component.type == 7) {
-												font = component.getFont(Sprites.nameIcons);
-												if (font == null) {
-													if (Component.loadFailed) {
-														InterfaceList.redraw(component);
-													}
-													continue;
-												}
+												KillerUiLog.once("item-list", "ROUTE itemListText=KillerUiText STRICT");
 												temp2 = 0;
 												for (temp3 = 0; temp3 < component.baseHeight; temp3++) {
 													for (memory = 0; memory < component.baseWidth; memory++) {
