@@ -524,23 +524,29 @@ public final class ScriptRunner {
 						setOverheadScreenCoordinateOffsets(height >> 1, zoomH, entity, zoomV, overheadHeight, width >> 1);
 						if (screenX > -1) {
 							if (yOffset == 1) {
-								screenY -= 20;
+								screenY -= KillerUi.px(20);
 							}
 							if (yOffset == 2) {
-								screenY -= 10;
-								screenX -= 15;
+								screenY -= KillerUi.px(10);
+								screenX -= KillerUi.px(15);
 							}
 							if (yOffset == 3) {
-								screenY -= 10;
-								screenX += 15;
+								screenY -= KillerUi.px(10);
+								screenX += KillerUi.px(15);
 							}
-							Sprites.hitmarks[entity.hitTypes[yOffset]].render(left + screenX - 12, top + screenY - 12);
+							int hitmarkSize = KillerUi.px(24);
+							Sprites.hitmarks[entity.hitTypes[yOffset]].renderResized(
+								left + screenX - hitmarkSize / 2,
+								top + screenY - hitmarkSize / 2,
+								hitmarkSize,
+								hitmarkSize
+							);
 							KillerUiLog.once("hit-text", "ROUTE hitDamageText=KillerUiText");
 							KillerUiText.drawCenter(
 								JagString.parseInt(entity.hitDamages[yOffset]),
 								KillerUiText.PLAIN_11,
 								screenX + left - 1,
-								screenY + 3 + top,
+								screenY + KillerUi.px(3) + top,
 								16777215,
 								0
 							);
