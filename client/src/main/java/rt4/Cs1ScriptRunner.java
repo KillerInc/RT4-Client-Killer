@@ -1026,6 +1026,7 @@ public class Cs1ScriptRunner {
 												PluginRepository.ComponentDraw(i, component, componentX + component.invMarginX + KillerUi.inventoryTextCellWidth(), componentY + component.invMarginY + KillerUi.inventoryTextCellHeight());
 											}
 											if (component.type == 8 && Protocol.tooltipComponent == component && Protocol.tooltipTimer == TOOLTIP_DISPLAY_DELAY) {
+												KillerUiLog.once("tooltip", "ROUTE tooltip=KillerUiText");
 												JagString tooltipText = interpolate(component, component.text);
 												int tooltipStyle = KillerUiText.PLAIN_12;
 												int tooltipPadX = KillerUi.px(3);
