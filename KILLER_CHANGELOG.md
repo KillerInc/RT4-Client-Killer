@@ -2,6 +2,12 @@
 
 This file tracks **Killer RT4 client changes only**. Upstream 2009Scape/Pazaz history and changelogs are intentionally left untouched.
 
+## v0.8.3 — 2026-10-04
+
+- Fixes OpenGL minimap icons disappearing early when UI Scale is above 1.0.
+- Maps icon clipping coordinates from the scaled minimap viewport back into the native circular mask texture.
+- Leaves minimap zoom, world radius, click conversion, and the validated text scaler unchanged.
+
 ## v0.8.2 — 2026-10-04
 
 - Keeps the validated independent text scaler unchanged.
