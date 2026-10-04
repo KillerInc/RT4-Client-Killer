@@ -638,9 +638,19 @@ public final class ScriptRunner {
 					spriteHeight = (150 - OverheadChat.loops[entityIndex])
 						* (KillerUiText.measureWidth(chatMessage, KillerUiText.BOLD_12) + KillerUi.px(100)) / 150;
 					if (GlRenderer.enabled) {
-						GlRaster.setClipRegion(screenX + left - 50, top, screenX + left + 50, height + top);
+						GlRaster.setClipRegion(
+							screenX + left - KillerUi.px(50),
+							top,
+							screenX + left + KillerUi.px(50),
+							height + top
+						);
 					} else {
-						SoftwareRaster.shrinkClip(left + screenX - 50, top, screenX + left + 50, height + top);
+						SoftwareRaster.shrinkClip(
+							left + screenX - KillerUi.px(50),
+							top,
+							screenX + left + KillerUi.px(50),
+							height + top
+						);
 					}
 					KillerUiText.drawLeft(
 						chatMessage,
