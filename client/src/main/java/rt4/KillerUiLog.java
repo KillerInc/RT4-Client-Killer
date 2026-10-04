@@ -45,6 +45,7 @@ public final class KillerUiLog {
             write("p11Target=" + KillerUi.fontTarget(11));
             write("p12Target=" + KillerUi.fontTarget(12));
             write("uiTextEngine=KillerUiText");
+            write("fallbackPolicy=DISABLED_FAIL_HARD");
             write("stockRt4FontRole=WORLD_SCENE_ONLY");
             write("worldRenderer=UNCHANGED");
         } catch (Throwable ignored) {
