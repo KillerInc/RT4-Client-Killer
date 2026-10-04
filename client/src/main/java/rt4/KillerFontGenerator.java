@@ -172,7 +172,8 @@ public final class KillerFontGenerator {
             }
 
             double uiScale = readUiScale();
-            float rasterSize = (float) (nativeSize * uiScale);
+            double fontScale = readFontScale();
+            float rasterSize = (float) (nativeSize * uiScale * fontScale);
             java.awt.Font vector = java.awt.Font
                 .createFont(java.awt.Font.TRUETYPE_FONT, in)
                 .deriveFont(rasterSize);
@@ -226,6 +227,7 @@ public final class KillerFontGenerator {
                     + ", original-fallback=" + originalCount
                     + ", logicalSize=" + nativeSize
                     + ", uiScale=" + uiScale
+                    + ", fontScale=" + fontScale
                     + ", rasterSize=" + rasterSize
                     + ", maxSourceRaster=" + maxSourceWidth + "x" + maxSourceHeight
                     + ", output=original RT4 glyph boxes"
@@ -310,6 +312,18 @@ public final class KillerFontGenerator {
         }
     }
 
+    private static double readFontScale() {
+        try {
+            double scale = Double.parseDouble(System.getProperty("killerFontScale", "1.0"));
+            if (Double.isNaN(scale) || Double.isInfinite(scale) || scale <= 0.0D) {
+                return 1.0D;
+            }
+            return Math.max(0.5D, Math.min(2.0D, scale));
+        } catch (NumberFormatException ignored) {
+            return 1.0D;
+        }
+    }
+
     private static boolean containsInk(byte[] pixels) {
         for (byte pixel : pixels) {
             if (pixel != 0) {
@@ -354,6 +368,8 @@ public final class KillerFontGenerator {
             "START",
             "Killer font generator session; UI scaling remains unchanged; "
                 + "supersample=true; mask=binary; threshold=" + BINARY_THRESHOLD
+                + "; uiScale=" + readUiScale()
+                + "; fontScale=" + readFontScale()
         );
     }
 
