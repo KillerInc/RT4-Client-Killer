@@ -124,6 +124,7 @@ public class InterfaceList {
 		InterfaceList.fontProvider = fontProvider;
 		InterfaceList.interfaceProvider = interfaceProvider;
 		InterfaceList.modelProvider = modelProvider;
+		KillerUiText.registerCacheFonts(fontProvider);
 		components = new Component[interfaceProvider.capacity()][];
 		interfaceLoaded = new boolean[interfaceProvider.capacity()];
 	}
