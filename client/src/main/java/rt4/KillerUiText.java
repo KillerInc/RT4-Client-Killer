@@ -1122,7 +1122,7 @@ public final class KillerUiText {
             }
 
             if (token.kind == Token.CHARACTER && token.ch == ' ') {
-                current = flushWord(lines, current, word, wordWidth, maxWidth, parsed.fontStyle);
+                current = flushWord(lines, current, word, wordWidth, maxWidth, parsed.fontStyle, parsed.legacyMetrics);
                 word.clear();
                 wordWidth = 0;
 
@@ -1130,7 +1130,7 @@ public final class KillerUiText {
                     if (current.width + token.advance <= maxWidth) {
                         current.add(token, parsed.legacyMetrics);
                     } else {
-                        current.finish(parsed.fontStyle);
+                        current.finish(parsed.fontStyle, parsed.legacyMetrics);
                         lines.add(current);
                         current = new Line();
                     }
@@ -1174,7 +1174,7 @@ public final class KillerUiText {
 
         for (Token token : word) {
             if (current.width + token.advance > maxWidth && !current.tokens.isEmpty()) {
-                current.finish(fallbackStyle);
+                current.finish(fallbackStyle, legacyMetrics);
                 lines.add(current);
                 current = new Line();
             }
