@@ -382,19 +382,18 @@ public final class KillerUiText {
 
         for (Token token : parsed.tokens) {
             if (token.kind == Token.BREAK) {
-                flushWord(lines, current, word, wordWidth, maxWidth);
+                current = flushWord(lines, current, word, wordWidth, maxWidth, parsed.fontStyle);
                 word.clear();
                 wordWidth = 0;
-                if (!current.tokens.isEmpty() || lines.isEmpty()) {
-                    current.finish(parsed.fontStyle);
-                    lines.add(current);
-                }
+
+                current.finish(parsed.fontStyle);
+                lines.add(current);
                 current = new Line();
                 continue;
             }
 
             if (token.kind == Token.CHARACTER && token.ch == ' ') {
-                flushWord(lines, current, word, wordWidth, maxWidth);
+                current = flushWord(lines, current, word, wordWidth, maxWidth, parsed.fontStyle);
                 word.clear();
                 wordWidth = 0;
 
@@ -414,7 +413,7 @@ public final class KillerUiText {
             wordWidth += token.advance;
         }
 
-        flushWord(lines, current, word, wordWidth, maxWidth);
+        current = flushWord(lines, current, word, wordWidth, maxWidth, parsed.fontStyle);
 
         if (!current.tokens.isEmpty() || lines.isEmpty()) {
             current.finish(parsed.fontStyle);
@@ -425,38 +424,34 @@ public final class KillerUiText {
         return lines;
     }
 
-    private static void flushWord(
+    private static Line flushWord(
         List<Line> lines,
         Line current,
         List<Token> word,
         int wordWidth,
-        int maxWidth
+        int maxWidth,
+        int fallbackStyle
     ) {
         if (word.isEmpty()) {
-            return;
+            return current;
         }
 
         if (!current.tokens.isEmpty() && current.width + wordWidth > maxWidth) {
-            current.finish(word.get(0).style.fontStyle);
+            current.finish(fallbackStyle);
             lines.add(current);
-
-            current.tokens.clear();
-            current.width = 0;
-            current.height = 0;
-            current.ascent = 0;
+            current = new Line();
         }
 
         for (Token token : word) {
             if (current.width + token.advance > maxWidth && !current.tokens.isEmpty()) {
-                current.finish(token.style.fontStyle);
+                current.finish(fallbackStyle);
                 lines.add(current);
-                current.tokens.clear();
-                current.width = 0;
-                current.height = 0;
-                current.ascent = 0;
+                current = new Line();
             }
             current.add(token);
         }
+
+        return current;
     }
 
     private static ParsedText parse(
