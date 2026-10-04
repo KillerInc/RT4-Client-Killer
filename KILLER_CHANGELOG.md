@@ -2,6 +2,15 @@
 
 This file tracks **Killer RT4 client changes only**. Upstream 2009Scape/Pazaz history and changelogs are intentionally left untouched.
 
+## v0.8.2 — 2026-10-04
+
+- Keeps the validated independent text scaler unchanged.
+- Returns scaled UI coordinates to CS2 scripts in native 1.0 logical units so script-built interfaces do not double-scale their own layout.
+- Makes the minimap and compass true UI-scaled surfaces while leaving the 3D game viewport unscaled.
+- Resamples minimap/compass click masks to the scaled viewport so drawing and mouse hit-testing use matching geometry.
+- Compensates minimap source zoom for UI scale so the enlarged map does not simply reveal a larger world area.
+- Scales minimap/compass fallback artwork to the component bounds.
+
 ## v0.8.1 — 2026-10-04
 
 - Kept the validated TTF text scaler unchanged.
