@@ -93,8 +93,22 @@ public final class KillerUiText {
             return BOLD_12;
         }
 
+        // Jagex's login/game-menu interface uses a separate small menu font.
+        // It is explicitly supported by the replacement UI engine rather than
+        // falling back to Component.getFont()/the stock bitmap renderer.
+        if (component.font == 591) {
+            KillerUiLog.once(
+                "font-alias-591",
+                "FONT_MAP fontId=591 cacheName=menu_font_small -> RuneScape-Plain-11.ttf"
+            );
+            return PLAIN_11;
+        }
+
         KillerUiLog.write(
             "FATAL unsupportedUiFont component=" + component.id + " fontId=" + component.font
+                + " p11Id=" + Sprites.p11FullId
+                + " p12Id=" + Sprites.p12FullId
+                + " b12Id=" + Sprites.b12FullId
         );
         throw new IllegalStateException(
             "Unsupported UI font id " + component.font + " on component " + component.id
