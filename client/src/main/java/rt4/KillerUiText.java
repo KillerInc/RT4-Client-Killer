@@ -511,6 +511,47 @@ public final class KillerUiText {
         rendered.render(centerX - width / 2, baselineY - ascentSized(style, nativeSize) - pad);
     }
 
+    public static void drawCenterSizedSoftware(
+        JagString text,
+        int style,
+        int nativeSize,
+        int centerX,
+        int baselineY,
+        int color,
+        int shadow
+    ) {
+        if (text == null) {
+            return;
+        }
+
+        java.awt.Font font = getSizedFont(style, nativeSize);
+        String plain = plainText(text);
+        int pad = Math.max(2, KillerUi.px(2));
+        int width = Math.max(1, measureWidthSized(text, style, nativeSize) + pad * 2);
+        int height = lineHeightSized(style, nativeSize) + pad * 2;
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = image.createGraphics();
+        try {
+            g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+            GlyphVector gv = font.createGlyphVector(FRC, plain);
+            int x = pad;
+            int y = pad + ascentSized(style, nativeSize);
+            if (shadow >= 0) {
+                g.setColor(new Color(shadow & 0xFFFFFF));
+                g.drawGlyphVector(gv, x + KillerUi.px(1), y + KillerUi.px(1));
+            }
+            g.setColor(new Color(color & 0xFFFFFF));
+            g.drawGlyphVector(gv, x, y);
+        } finally {
+            g.dispose();
+        }
+
+        int[] pixels = image.getRGB(0, 0, width, height, null, 0, width);
+        RenderedText rendered = new RenderedText(width, height, pixels, new ArrayList<IconPlacement>());
+        rendered.renderSoftware(centerX - width / 2, baselineY - ascentSized(style, nativeSize) - pad);
+    }
+
     private static java.awt.Font getSizedFont(int style, int nativeSize) {
         ensureFonts();
         if (style < 0 || style >= BASE_FONTS.length || BASE_FONTS[style] == null) {
