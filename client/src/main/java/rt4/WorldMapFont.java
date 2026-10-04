@@ -76,6 +76,7 @@ public final class WorldMapFont {
 
 	@OriginalMember(owner = "client!fd", name = "a", descriptor = "(Lclient!na;IIIZ)V")
 	private void renderString(@OriginalArg(0) JagString s, @OriginalArg(1) int x, @OriginalArg(2) int y, @OriginalArg(3) int color, @OriginalArg(4) boolean shadow) {
+		KillerUiText.forbidStockRenderer("WorldMapFont.renderString");
 		if (this.grayscale || color == 0) {
 			shadow = false;
 		}
