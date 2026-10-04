@@ -1134,6 +1134,7 @@ public final class client extends GameShell {
 		if (modeWhere != 0) {
 			//Cheat.displayFps = true;
 		}
+		KillerUiText.verifyReady();
 		PluginRepository.Init();
 	}
 
