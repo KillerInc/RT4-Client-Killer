@@ -348,6 +348,27 @@ public final class KillerUiText {
         return null;
     }
 
+    private static Font legacyMetricsForComponent(Component component) {
+        Font metrics = component.getFont(Sprites.nameIcons);
+        if (metrics == null) {
+            KillerUiLog.write(
+                "FATAL legacyMetricFontUnavailable component=" + component.id + " fontId=" + component.font
+            );
+            throw new IllegalStateException(
+                "Could not load cache metrics for UI font " + component.font + " on component " + component.id
+            );
+        }
+
+        KillerUiLog.once(
+            "metrics-font-" + component.font,
+            "METRICS_ONLY fontId=" + component.font
+                + " cacheName=" + CACHE_FONT_NAMES.get(component.font)
+                + " lineHeight=" + metrics.lineHeight
+                + " stockRendering=false"
+        );
+        return metrics;
+    }
+
     private static double metricScaleForStyle(int style) {
         int nativeSize = nativeSizeForStyle(style);
         return (double) KillerUi.fontTarget(nativeSize) / (double) nativeSize;
@@ -361,9 +382,12 @@ public final class KillerUiText {
     }
 
     public static int lineHeight(int style) {
-        Font legacy = legacyMetricsForStyle(style);
-        if (legacy != null && legacy.lineHeight > 0) {
-            return scaleLegacyMetric(legacy.lineHeight, style);
+        return lineHeight(style, legacyMetricsForStyle(style));
+    }
+
+    private static int lineHeight(int style, Font legacyMetrics) {
+        if (legacyMetrics != null && legacyMetrics.lineHeight > 0) {
+            return scaleLegacyMetric(legacyMetrics.lineHeight, style);
         }
 
         java.awt.Font font = getFont(style);
@@ -372,16 +396,20 @@ public final class KillerUiText {
     }
 
     public static int ascent(int style) {
+        return ascent(style, legacyMetricsForStyle(style));
+    }
+
+    private static int ascent(int style, Font legacyMetrics) {
         java.awt.Font font = getFont(style);
         LineMetrics metrics = font.getLineMetrics("Ag", FRC);
-        int targetHeight = lineHeight(style);
+        int targetHeight = lineHeight(style, legacyMetrics);
         double rawHeight = metrics.getHeight();
         if (rawHeight <= 0.0D) {
             return Math.max(1, targetHeight);
         }
 
         // Keep the TTF's ascent/descent ratio, but force its logical line box
-        // to the cache font's original pixel line height at scale 1.0.
+        // to the exact cache-font line height at scale 1.0.
         return Math.max(1, Math.min(
             targetHeight,
             (int) Math.round((double) targetHeight * (double) metrics.getAscent() / rawHeight)
@@ -425,9 +453,11 @@ public final class KillerUiText {
             return;
         }
         KillerUiLog.once("component-text", "ROUTE componentText=KillerUiText");
-        draw(
+        int style = styleForComponent(component);
+        Font legacyMetrics = legacyMetricsForComponent(component);
+        drawWithMetrics(
             text,
-            styleForComponent(component),
+            style,
             x,
             y,
             component.width,
@@ -438,7 +468,10 @@ public final class KillerUiText {
             component.halign,
             component.valign,
             component.vpadding,
-            EFFECT_NONE
+            EFFECT_NONE,
+            0,
+            legacyMetrics,
+            component.font
         );
     }
 
