@@ -47,42 +47,75 @@ public class Fonts {
 
 	@OriginalMember(owner = "client!hn", name = "a", descriptor = "(Lclient!ve;ILclient!ve;)V")
 	public static void load(@OriginalArg(0) Js5 fontArchive, @OriginalArg(2) Js5 metricsArchive) {
-		p11Full = KillerFontGenerator.load(
-			Sprites.p11FullId,
-			metricsArchive,
-			fontArchive,
-			KillerFontGenerator.PLAIN_11,
+		KillerTtfFontData p11Data = KillerTtfFontData.load(
+			KillerTtfFontData.PLAIN_11,
 			11.0F,
 			"p11_full"
 		);
-		if (GlRenderer.enabled) {
-			p11FullSoftware = KillerFontGenerator.loadSoftware(
-				Sprites.p11FullId,
-				metricsArchive,
-				fontArchive,
-				KillerFontGenerator.PLAIN_11,
-				11.0F,
-				"p11_full"
-			);
-		} else {
-			p11FullSoftware = (SoftwareFont) p11Full;
-		}
-		p12Full = KillerFontGenerator.load(
-			Sprites.p12FullId,
-			metricsArchive,
-			fontArchive,
-			KillerFontGenerator.PLAIN_12,
+		KillerTtfFontData p12Data = KillerTtfFontData.load(
+			KillerTtfFontData.PLAIN_12,
 			12.0F,
 			"p12_full"
 		);
-		b12Full = KillerFontGenerator.load(
-			Sprites.b12FullId,
-			metricsArchive,
-			fontArchive,
-			KillerFontGenerator.BOLD_12,
+		KillerTtfFontData b12Data = KillerTtfFontData.load(
+			KillerTtfFontData.BOLD_12,
 			12.0F,
 			"b12_full"
 		);
+
+		if (p11Data != null) {
+			p11Full = GlRenderer.enabled
+				? new KillerGlTtfFont(p11Data)
+				: new KillerSoftwareTtfFont(p11Data);
+			p11FullSoftware = new KillerSoftwareTtfFont(p11Data);
+			KillerTtfFontData.logRenderer(
+				"SUCCESS",
+				"p11_full install=DIRECT_TTF parser=RT4 effects=RT4"
+			);
+		} else {
+			p11Full = Font.load(Sprites.p11FullId, metricsArchive, fontArchive);
+			if (GlRenderer.enabled) {
+				p11FullSoftware = SoftwareFont.load(Sprites.p11FullId, fontArchive, metricsArchive);
+			} else {
+				p11FullSoftware = (SoftwareFont) p11Full;
+			}
+			KillerTtfFontData.logRenderer(
+				"FALLBACK",
+				"p11_full install=CACHE_FONT"
+			);
+		}
+
+		if (p12Data != null) {
+			p12Full = GlRenderer.enabled
+				? new KillerGlTtfFont(p12Data)
+				: new KillerSoftwareTtfFont(p12Data);
+			KillerTtfFontData.logRenderer(
+				"SUCCESS",
+				"p12_full install=DIRECT_TTF parser=RT4 effects=RT4"
+			);
+		} else {
+			p12Full = Font.load(Sprites.p12FullId, metricsArchive, fontArchive);
+			KillerTtfFontData.logRenderer(
+				"FALLBACK",
+				"p12_full install=CACHE_FONT"
+			);
+		}
+
+		if (b12Data != null) {
+			b12Full = GlRenderer.enabled
+				? new KillerGlTtfFont(b12Data)
+				: new KillerSoftwareTtfFont(b12Data);
+			KillerTtfFontData.logRenderer(
+				"SUCCESS",
+				"b12_full install=DIRECT_TTF parser=RT4 effects=RT4"
+			);
+		} else {
+			b12Full = Font.load(Sprites.b12FullId, metricsArchive, fontArchive);
+			KillerTtfFontData.logRenderer(
+				"FALLBACK",
+				"b12_full install=CACHE_FONT"
+			);
+		}
 	}
 
 	@OriginalMember(owner = "client!j", name = "a", descriptor = "(BZLclient!na;)V")
