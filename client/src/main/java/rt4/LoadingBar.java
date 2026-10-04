@@ -14,7 +14,15 @@ public class LoadingBar {
 			TitleScreen.titleBg.renderResized((GameShell.canvasWidth - bgWidth) / 2, 0, bgWidth, y);
 			TitleScreen.logo.renderTransparent(GameShell.canvasWidth / 2 - TitleScreen.logo.width / 2, 18);
 		}
-		font.renderCenter(LocalizedText.GAME0_LOADING, GameShell.canvasWidth / 2, GameShell.canvasHeight / 2 - 26, 16777215, -1);
+		KillerUiLog.once("loading-bar-text", "ROUTE loadingBarText=KillerUiText");
+		KillerUiText.drawCenter(
+			LocalizedText.GAME0_LOADING,
+			KillerUiText.BOLD_12,
+			GameShell.canvasWidth / 2,
+			GameShell.canvasHeight / 2 - KillerUi.px(26),
+			16777215,
+			-1
+		);
 		y = GameShell.canvasHeight / 2 - 18;
 		if (GlRenderer.enabled) {
 			GlRaster.drawRect(GameShell.canvasWidth / 2 - 152, y, 304, 34, 9179409);
@@ -27,6 +35,13 @@ public class LoadingBar {
 			SoftwareRaster.fillRect(GameShell.canvasWidth / 2 - 150, y + 2, client.mainLoadPercentage * 3, 30, 9179409);
 			SoftwareRaster.fillRect(client.mainLoadPercentage * 3 + GameShell.canvasWidth / 2 - 150, y + 2, 300 - client.mainLoadPercentage * 3, 30, 0);
 		}
-		font.renderCenter(client.mainLoadSecondaryText, GameShell.canvasWidth / 2, GameShell.canvasHeight / 2 + 4, 16777215, -1);
+		KillerUiText.drawCenter(
+			client.mainLoadSecondaryText,
+			KillerUiText.BOLD_12,
+			GameShell.canvasWidth / 2,
+			GameShell.canvasHeight / 2 + KillerUi.px(4),
+			16777215,
+			-1
+		);
 	}
 }
