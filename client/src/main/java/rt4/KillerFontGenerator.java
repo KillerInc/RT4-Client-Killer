@@ -19,10 +19,9 @@ import java.util.Map;
 /**
  * Killer Edition font generator.
  *
- * Important: this does NOT scale RT4 layout or font metrics. It keeps the
- * original cache-provided offsets, dimensions, advances, kerning and line
- * height. Only each glyph's bitmap mask is regenerated from a vector source.
- * The normal UI scaler therefore remains the only scaling system.
+ * UI scaling remains untouched. Font Scale is independent: it scales only
+ * generated font geometry (glyph boxes, offsets, advances, kerning and line
+ * height) while the existing UI scaler continues to scale the whole client.
  */
 public final class KillerFontGenerator {
     private static final int BINARY_THRESHOLD = 96;
@@ -57,42 +56,55 @@ public final class KillerFontGenerator {
             return null;
         }
 
+        double fontScale = readFontScale();
+        int[] originalWidths = SpriteLoader.innerWidths;
+        int[] originalHeights = SpriteLoader.innerHeights;
         byte[][] originalPixels = SpriteLoader.pixels;
+
+        int[] scaledXOffsets = scaleArray(SpriteLoader.xOffsets, fontScale);
+        int[] scaledYOffsets = scaleArray(SpriteLoader.yOffsets, fontScale);
+        int[] scaledWidths = scaleDimensions(originalWidths, fontScale);
+        int[] scaledHeights = scaleDimensions(originalHeights, fontScale);
+
         byte[][] replacement = generate(
             resource,
             nativeSize,
-            SpriteLoader.innerWidths,
-            SpriteLoader.innerHeights,
+            originalWidths,
+            originalHeights,
+            scaledWidths,
+            scaledHeights,
             originalPixels,
             label
         );
 
-        byte[][] selected = replacement == null ? originalPixels : replacement;
         Font font;
-        if (GlRenderer.enabled) {
+        if (replacement == null) {
+            font = GlRenderer.enabled
+                ? new GlFont(metrics, SpriteLoader.xOffsets, SpriteLoader.yOffsets, originalWidths, originalHeights, originalPixels)
+                : new SoftwareFont(metrics, SpriteLoader.xOffsets, SpriteLoader.yOffsets, originalWidths, originalHeights, originalPixels);
+            log("FALLBACK", label + ": original cache font installed unscaled");
+        } else if (GlRenderer.enabled) {
             font = new GlFont(
                 metrics,
-                SpriteLoader.xOffsets,
-                SpriteLoader.yOffsets,
-                SpriteLoader.innerWidths,
-                SpriteLoader.innerHeights,
-                selected
+                scaledXOffsets,
+                scaledYOffsets,
+                scaledWidths,
+                scaledHeights,
+                replacement,
+                fontScale
             );
+            log("SUCCESS", label + ": generated vector font installed; logical metrics scaled by fontScale=" + fontScale);
         } else {
             font = new SoftwareFont(
                 metrics,
-                SpriteLoader.xOffsets,
-                SpriteLoader.yOffsets,
-                SpriteLoader.innerWidths,
-                SpriteLoader.innerHeights,
-                selected
+                scaledXOffsets,
+                scaledYOffsets,
+                scaledWidths,
+                scaledHeights,
+                replacement,
+                fontScale
             );
-        }
-
-        if (replacement == null) {
-            log("FALLBACK", label + ": original cache glyph pixels installed");
-        } else {
-            log("SUCCESS", label + ": generated vector glyph pixels installed; original RT4 metrics preserved");
+            log("SUCCESS", label + ": generated vector font installed; logical metrics scaled by fontScale=" + fontScale);
         }
 
         SpriteLoader.clear();
@@ -119,30 +131,49 @@ public final class KillerFontGenerator {
             return null;
         }
 
+        double fontScale = readFontScale();
+        int[] originalWidths = SpriteLoader.innerWidths;
+        int[] originalHeights = SpriteLoader.innerHeights;
         byte[][] originalPixels = SpriteLoader.pixels;
+
+        int[] scaledXOffsets = scaleArray(SpriteLoader.xOffsets, fontScale);
+        int[] scaledYOffsets = scaleArray(SpriteLoader.yOffsets, fontScale);
+        int[] scaledWidths = scaleDimensions(originalWidths, fontScale);
+        int[] scaledHeights = scaleDimensions(originalHeights, fontScale);
+
         byte[][] replacement = generate(
             resource,
             nativeSize,
-            SpriteLoader.innerWidths,
-            SpriteLoader.innerHeights,
+            originalWidths,
+            originalHeights,
+            scaledWidths,
+            scaledHeights,
             originalPixels,
             label
         );
 
-        byte[][] selected = replacement == null ? originalPixels : replacement;
-        SoftwareFont font = new SoftwareFont(
-            metrics,
-            SpriteLoader.xOffsets,
-            SpriteLoader.yOffsets,
-            SpriteLoader.innerWidths,
-            SpriteLoader.innerHeights,
-            selected
-        );
-
+        SoftwareFont font;
         if (replacement == null) {
-            log("FALLBACK", label + " software: original cache glyph pixels installed");
+            font = new SoftwareFont(
+                metrics,
+                SpriteLoader.xOffsets,
+                SpriteLoader.yOffsets,
+                originalWidths,
+                originalHeights,
+                originalPixels
+            );
+            log("FALLBACK", label + " software: original cache font installed unscaled");
         } else {
-            log("SUCCESS", label + " software: generated vector glyph pixels installed");
+            font = new SoftwareFont(
+                metrics,
+                scaledXOffsets,
+                scaledYOffsets,
+                scaledWidths,
+                scaledHeights,
+                replacement,
+                fontScale
+            );
+            log("SUCCESS", label + " software: generated vector font installed at fontScale=" + fontScale);
         }
 
         SpriteLoader.clear();
@@ -152,14 +183,20 @@ public final class KillerFontGenerator {
     private static synchronized byte[][] generate(
         String resource,
         float nativeSize,
+        int[] originalWidths,
+        int[] originalHeights,
         int[] targetWidths,
         int[] targetHeights,
         byte[][] originalPixels,
         String label
     ) {
-        byte[][] cached = CACHE.get(resource);
+        double uiScale = readUiScale();
+        double fontScale = readFontScale();
+        String cacheKey = resource + "|ui=" + uiScale + "|font=" + fontScale;
+
+        byte[][] cached = CACHE.get(cacheKey);
         if (cached != null) {
-            log("SUCCESS", label + ": reused generated glyph cache");
+            log("SUCCESS", label + ": reused generated glyph cache for uiScale=" + uiScale + ", fontScale=" + fontScale);
             return cached;
         }
 
@@ -171,8 +208,6 @@ public final class KillerFontGenerator {
                 return null;
             }
 
-            double uiScale = readUiScale();
-            double fontScale = readFontScale();
             float rasterSize = (float) (nativeSize * uiScale * fontScale);
             java.awt.Font vector = java.awt.Font
                 .createFont(java.awt.Font.TRUETYPE_FONT, in)
@@ -207,7 +242,13 @@ public final class KillerFontGenerator {
                     }
                 }
                 if (mask == null || !containsInk(mask)) {
-                    generated[i] = originalPixels[i];
+                    generated[i] = scaleOriginalMask(
+                        originalPixels[i],
+                        originalWidths[i],
+                        originalHeights[i],
+                        targetWidth,
+                        targetHeight
+                    );
                     originalCount++;
                 } else {
                     generated[i] = mask;
@@ -220,7 +261,7 @@ public final class KillerFontGenerator {
                 return null;
             }
 
-            CACHE.put(resource, generated);
+            CACHE.put(cacheKey, generated);
             log(
                 "SUCCESS",
                 label + ": vector source loaded; generated=" + generatedCount
@@ -230,7 +271,8 @@ public final class KillerFontGenerator {
                     + ", fontScale=" + fontScale
                     + ", rasterSize=" + rasterSize
                     + ", maxSourceRaster=" + maxSourceWidth + "x" + maxSourceHeight
-                    + ", output=original RT4 glyph boxes"
+                    + ", outputFontScale=" + fontScale
+                    + ", output=scaled RT4 glyph boxes"
                     + ", mask=binary"
                     + ", threshold=" + BINARY_THRESHOLD
             );
@@ -298,6 +340,47 @@ public final class KillerFontGenerator {
         }
 
         return new RasterResult(mask, bounds.width, bounds.height);
+    }
+
+    private static int[] scaleArray(int[] source, double scale) {
+        int[] result = new int[source.length];
+        for (int i = 0; i < source.length; i++) {
+            result[i] = (int) Math.round(source[i] * scale);
+        }
+        return result;
+    }
+
+    private static int[] scaleDimensions(int[] source, double scale) {
+        int[] result = new int[source.length];
+        for (int i = 0; i < source.length; i++) {
+            if (source[i] <= 0) {
+                result[i] = 0;
+            } else {
+                result[i] = Math.max(1, (int) Math.round(source[i] * scale));
+            }
+        }
+        return result;
+    }
+
+    private static byte[] scaleOriginalMask(
+        byte[] source,
+        int sourceWidth,
+        int sourceHeight,
+        int targetWidth,
+        int targetHeight
+    ) {
+        if (source == null || sourceWidth <= 0 || sourceHeight <= 0 || targetWidth <= 0 || targetHeight <= 0) {
+            return source;
+        }
+        byte[] result = new byte[targetWidth * targetHeight];
+        for (int y = 0; y < targetHeight; y++) {
+            int sy = Math.min(sourceHeight - 1, (int) ((long) y * sourceHeight / targetHeight));
+            for (int x = 0; x < targetWidth; x++) {
+                int sx = Math.min(sourceWidth - 1, (int) ((long) x * sourceWidth / targetWidth));
+                result[y * targetWidth + x] = source[sy * sourceWidth + sx] == 0 ? (byte) 0 : (byte) 1;
+            }
+        }
+        return result;
     }
 
     private static double readUiScale() {
