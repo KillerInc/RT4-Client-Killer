@@ -78,13 +78,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          7z a -t7z -mx=9 "$RUNNER_TEMP/2009scape_v0.3.7z" "$RUNNER_TEMP/2009scape.jar"
+          7z a -t7z -mx=9 "$RUNNER_TEMP/2009scape_v0.4.7z" "$RUNNER_TEMP/2009scape.jar"
 
       - name: Upload versioned 7z test package
         uses: actions/upload-artifact@v4
         with:
-          name: 2009scape_v0.3
-          path: ${{ runner.temp }}/2009scape_v0.3.7z
+          name: 2009scape_v0.4
+          path: ${{ runner.temp }}/2009scape_v0.4.7z
 
       - name: Build overwrite patch
         shell: bash
@@ -92,20 +92,40 @@ jobs:
           set -euo pipefail
           PATCH="$RUNNER_TEMP/KillerUIRewrite"
           mkdir -p "$PATCH/client/src/main/java/rt4"
+          mkdir -p "$PATCH/client/src/main/java/plugin/api"
           mkdir -p "$PATCH/client/src/main/resources/killer-fonts"
 
-          for f in             Component.java             InterfaceList.java             Cs1ScriptRunner.java             ScriptRunner.java             MiniMenu.java             Fonts.java             KillerUi.java             KillerUiText.java
+          for f in \
+            client.java \
+            Component.java \
+            InterfaceList.java \
+            Cs1ScriptRunner.java \
+            ScriptRunner.java \
+            MiniMenu.java \
+            Fonts.java \
+            Font.java \
+            KillerUi.java \
+            KillerUiLog.java \
+            KillerUiText.java \
+            MiniMap.java \
+            Inv.java \
+            Protocol.java \
+            LoadingBar.java \
+            LoadingBarAwt.java \
+            DisplayMode.java \
+            WorldMap.java
           do
             cp "client/src/main/java/rt4/$f" "$PATCH/client/src/main/java/rt4/$f"
           done
 
+          cp "client/src/main/java/plugin/api/API.java" "$PATCH/client/src/main/java/plugin/api/API.java"
           cp client/src/main/resources/killer-fonts/*.ttf "$PATCH/client/src/main/resources/killer-fonts/"
 
           cd "$PATCH"
-          zip -qr "$RUNNER_TEMP/KillerUIRewrite_v0.1.zip" client
+          zip -qr "$RUNNER_TEMP/KillerUIRewrite_v0.4.zip" client
 
       - name: Upload overwrite patch
         uses: actions/upload-artifact@v4
         with:
           name: KillerUIRewrite_v0.1
-          path: ${{ runner.temp }}/KillerUIRewrite_v0.1.zip
+          path: ${{ runner.temp }}/KillerUIRewrite_v0.4.zip
