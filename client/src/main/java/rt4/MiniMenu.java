@@ -1669,12 +1669,12 @@ public class MiniMenu {
 				0,
 				0,
 				0,
-				KillerUiText.EFFECT_WAVE
+				KillerUiText.EFFECT_NONE
 			);
 			InterfaceList.redrawScreen(x + KillerUi.px(4), tooltipWidth, y, tooltipHeight);
 			return;
 		}
-		KillerUiText.drawWavy(
+		KillerUiText.draw(
 			tooltipText,
 			KillerUiText.styleForComponent(component),
 			x,
@@ -1683,8 +1683,11 @@ public class MiniMenu {
 			component.height,
 			component.color,
 			component.shadowColor,
+			256,
 			component.halign,
-			component.valign
+			component.valign,
+			0,
+			KillerUiText.EFFECT_NONE
 		);
 		InterfaceList.redrawScreen(x, component.width, y, component.height);
 	}
