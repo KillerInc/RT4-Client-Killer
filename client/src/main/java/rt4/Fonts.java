@@ -55,6 +55,7 @@ public class Fonts {
 		}
 		p12Full = Font.load(Sprites.p12FullId, metricsArchive, fontArchive);
 		b12Full = Font.load(Sprites.b12FullId, metricsArchive, fontArchive);
+		KillerUiText.notifyLegacyMetricsReady();
 	}
 
 	@OriginalMember(owner = "client!j", name = "a", descriptor = "(BZLclient!na;)V")
