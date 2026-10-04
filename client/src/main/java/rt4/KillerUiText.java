@@ -65,6 +65,19 @@ public final class KillerUiText {
         }
     }
 
+    public static synchronized void verifyReady() {
+        KillerUiLog.start();
+        ensureFonts();
+
+        if (BASE_FONTS[PLAIN_11] == null || BASE_FONTS[PLAIN_12] == null || BASE_FONTS[BOLD_12] == null
+            || SCALED_FONTS[PLAIN_11] == null || SCALED_FONTS[PLAIN_12] == null || SCALED_FONTS[BOLD_12] == null) {
+            KillerUiLog.write("FATAL uiTextEngineVerificationFailed");
+            throw new IllegalStateException("Killer UI text engine failed startup verification");
+        }
+
+        KillerUiLog.once("verified", "VERIFY uiTextEngine=READY allRequiredTtfLoaded=true fallback=false");
+    }
+
     public static int styleForComponent(Component component) {
         if (component == null) {
             KillerUiLog.write("FATAL componentStyle=null component");
