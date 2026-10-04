@@ -2,6 +2,16 @@
 
 This file tracks **Killer RT4 client changes only**. Upstream 2009Scape/Pazaz history and changelogs are intentionally left untouched.
 
+## v0.3.3 — 2026-10-04
+
+- Font Scale now changes the actual generated RT4 font size instead of only the source rasterization quality.
+- Scales generated glyph boxes, X/Y offsets, advances, kerning, and line height by Font Scale.
+- UI Scale remains untouched and continues to control the whole client exactly as before.
+- Vector rasterization still uses `native size × UI Scale × Font Scale` for quality.
+- Per-glyph fallback masks are resized to the scaled glyph box so fallback characters remain compatible.
+- Font cache keys now include both UI Scale and Font Scale.
+- Font diagnostics now report the scaled-output mode and the effective Font Scale.
+
 ## v0.3.2 — 2026-10-04
 
 - Added launcher-controlled `killerFontScale` for per-display font raster tuning.
