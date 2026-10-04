@@ -35,7 +35,7 @@ public final class KillerVectorFont {
     }
 
     public static double getTextScale() {
-        String raw = System.getProperty("killerTextScale", "1.0");
+        String raw = System.getProperty("sun.java2d.uiScale", "1.0");
         try {
             double scale = Double.parseDouble(raw);
             if (Double.isNaN(scale) || Double.isInfinite(scale)) {
@@ -90,7 +90,7 @@ public final class KillerVectorFont {
                 return null;
             }
 
-            System.out.println("[KillerFont] Generating " + resource + " at text scale " + scale);
+            System.out.println("[KillerFont] Generating " + resource + " for UI scale " + scale);
             java.awt.Font vector = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, in)
                 .deriveFont((float) (BASE_PIXEL_SIZE * scale));
 
