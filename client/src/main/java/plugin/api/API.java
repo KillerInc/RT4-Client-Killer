@@ -3,7 +3,6 @@ package plugin.api;
 import plugin.PluginRepository;
 import rt4.*;
 import rt4.DisplayMode;
-import rt4.Font;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -32,38 +31,44 @@ public class API {
 
     public static void DrawText(FontType fontType, FontColor color, TextModifier mod, String text, int screenX, int screenY) {
         JagString js = JagString.of(text);
+        int style;
 
-        Font font;
         switch (fontType) {
             case SMALL:
-                font = Fonts.p11Full;
+                style = KillerUiText.PLAIN_11;
                 break;
             case LARGE:
-                font = Fonts.p12Full;
+                style = KillerUiText.PLAIN_12;
                 break;
             default:
-                return;
+                KillerUiLog.write("FATAL pluginUnknownFontType=" + fontType);
+                throw new IllegalArgumentException("Unsupported plugin font type " + fontType);
         }
+
+        KillerUiLog.once("plugin-text", "ROUTE pluginApiText=KillerUiText");
 
         switch (mod) {
             case CENTER:
-                font.renderCenter(js, screenX, screenY, color.colorCode, -1);
+                KillerUiText.drawCenter(js, style, screenX, screenY, color.colorCode, -1);
                 break;
             case LEFT:
-                font.renderLeft(js, screenX, screenY, color.colorCode, -1);
+                KillerUiText.drawLeft(js, style, screenX, screenY, color.colorCode, -1);
                 break;
             case RIGHT:
-                font.renderRight(js, screenX, screenY, color.colorCode, -1);
+                KillerUiText.drawRight(js, style, screenX, screenY, color.colorCode, -1);
                 break;
             case SHAKE:
-                font.renderShake(js, screenX, screenY, color.colorCode, -1, 100);
+                KillerUiText.drawShake(js, style, screenX, screenY, color.colorCode, -1, 100);
                 break;
             case WAVE:
-                font.renderWave(js, screenX, screenY, color.colorCode, -1);
+                KillerUiText.drawWave(js, style, screenX, screenY, color.colorCode, -1);
                 break;
             case WAVE_2:
-                font.renderWave2(js, screenX, screenY, color.colorCode, -1);
+                KillerUiText.drawWave2(js, style, screenX, screenY, color.colorCode, -1);
                 break;
+            default:
+                KillerUiLog.write("FATAL pluginUnknownTextModifier=" + mod);
+                throw new IllegalArgumentException("Unsupported plugin text modifier " + mod);
         }
     }
 
