@@ -802,6 +802,7 @@ public final class Component {
 			scriptIdx |= 0x1;
 		}
 		this.properties = new ServerActiveProperties(scriptIdx, -1);
+		KillerUi.scaleDecodedComponent(this);
 	}
 
 	@OriginalMember(owner = "client!be", name = "a", descriptor = "(ZI)Lclient!qf;")
@@ -1195,6 +1196,7 @@ public final class Component {
 		this.statTriggers = this.decodeTriggers(buffer);
 		this.varcTriggers = this.decodeTriggers(buffer);
 		this.varcstrTriggers = this.decodeTriggers(buffer);
+		KillerUi.scaleDecodedComponent(this);
 	}
 
 	@OriginalMember(owner = "client!be", name = "a", descriptor = "([Lclient!ok;I)Lclient!rk;")
