@@ -119,20 +119,14 @@ public abstract class Font extends SecondaryNode {
 
 	@OriginalMember(owner = "client!rk", name = "<init>", descriptor = "([B[I[I[I[I)V")
 	protected Font(@OriginalArg(0) byte[] data, @OriginalArg(1) int[] xOffsets, @OriginalArg(2) int[] yOffsets, @OriginalArg(3) int[] innerWidths, @OriginalArg(4) int[] innerHeights) {
-		this(data, xOffsets, yOffsets, innerWidths, innerHeights, 1.0D);
-	}
-
-	protected Font(byte[] data, int[] xOffsets, int[] yOffsets, int[] innerWidths, int[] innerHeights, double killerFontScale) {
 		this.spriteXOffsets = xOffsets;
 		this.spriteYOffsets = yOffsets;
 		this.spriteInnerWidths = innerWidths;
 		this.spriteInnerHeights = innerHeights;
 		this.decode(data);
-		this.applyKillerFontScale(killerFontScale);
-
-		int minTop = Integer.MAX_VALUE;
-		int maxBottom = Integer.MIN_VALUE;
-		for (int i = 0; i < 256; i++) {
+		@Pc(21) int minTop = Integer.MAX_VALUE;
+		@Pc(23) int maxBottom = Integer.MIN_VALUE;
+		for (@Pc(25) int i = 0; i < 256; i++) {
 			if (this.spriteYOffsets[i] < minTop && this.spriteInnerHeights[i] != 0) {
 				minTop = this.spriteYOffsets[i];
 			}
@@ -142,30 +136,6 @@ public abstract class Font extends SecondaryNode {
 		}
 		this.paragraphTopPadding = this.lineHeight - minTop;
 		this.paragraphBottomPadding = maxBottom - this.lineHeight;
-	}
-
-	private void applyKillerFontScale(double scale) {
-		if (Math.abs(scale - 1.0D) < 0.001D) {
-			return;
-		}
-
-		for (int i = 0; i < this.glyphWidths.length; i++) {
-			this.glyphWidths[i] = Math.max(0, (int) Math.round(this.glyphWidths[i] * scale));
-		}
-
-		if (this.kerning != null) {
-			for (int i = 0; i < this.kerning.length; i++) {
-				int scaled = (int) Math.round(this.kerning[i] * scale);
-				if (scaled < -128) {
-					scaled = -128;
-				} else if (scaled > 127) {
-					scaled = 127;
-				}
-				this.kerning[i] = (byte) scaled;
-			}
-		}
-
-		this.lineHeight = Math.max(1, (int) Math.round(this.lineHeight * scale));
 	}
 
 	@OriginalMember(owner = "client!rk", name = "<init>", descriptor = "([B)V")
