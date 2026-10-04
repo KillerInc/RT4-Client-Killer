@@ -50,22 +50,6 @@ public class WorldMap {
 	public static int width;
 	@OriginalMember(owner = "client!lf", name = "b", descriptor = "[I")
 	public static int[] overlayColors;
-	@OriginalMember(owner = "client!wb", name = "l", descriptor = "Lclient!fd;")
-	public static WorldMapFont font26;
-	@OriginalMember(owner = "client!mj", name = "n", descriptor = "Lclient!fd;")
-	public static WorldMapFont font30;
-	@OriginalMember(owner = "client!kc", name = "C", descriptor = "Lclient!fd;")
-	public static WorldMapFont font22;
-	@OriginalMember(owner = "client!qh", name = "d", descriptor = "Lclient!fd;")
-	public static WorldMapFont font19;
-	@OriginalMember(owner = "client!kc", name = "n", descriptor = "Lclient!fd;")
-	public static WorldMapFont font17;
-	@OriginalMember(owner = "client!nf", name = "d", descriptor = "Lclient!fd;")
-	public static WorldMapFont font14;
-	@OriginalMember(owner = "client!ma", name = "q", descriptor = "Lclient!fd;")
-	public static WorldMapFont font12;
-	@OriginalMember(owner = "client!we", name = "v", descriptor = "Lclient!fd;")
-	public static WorldMapFont font11;
 	@OriginalMember(owner = "client!bc", name = "W", descriptor = "I")
 	public static int viewX;
 	@OriginalMember(owner = "client!rj", name = "P", descriptor = "I")
@@ -887,14 +871,6 @@ public class WorldMap {
 		mapElements.clear();
 		labels = null;
 		panTargetY = -1;
-		font22 = null;
-		font30 = null;
-		font12 = null;
-		font26 = null;
-		font11 = null;
-		font14 = null;
-		font17 = null;
-		font19 = null;
 		overviewSprite = null;
 		panTargetX = -1;
 		renderBuffer = null;
