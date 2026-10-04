@@ -16,8 +16,9 @@ import java.nio.charset.Charset;
  * Generates the bitmap glyph data expected by the RT4 font renderer from
  * RuneStar's vector versions of the original RuneScape fonts.
  *
- * This is deliberately separate from UI/window scaling. The resulting
- * GlyphSet is consumed by the normal SoftwareFont/GlFont renderers.
+ * The generated font size follows the same sun.java2d.uiScale value used by
+ * the client, so UI and text remain driven by one user-facing scale setting.
+ * The resulting GlyphSet is consumed by the normal SoftwareFont/GlFont renderers.
  */
 public final class KillerVectorFont {
     private static final Charset CP1252 = Charset.forName("windows-1252");
