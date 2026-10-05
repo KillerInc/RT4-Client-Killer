@@ -690,7 +690,7 @@ public abstract class GameShell extends Applet implements Runnable, FocusListene
 			topMargin = 0;
 			instance = this;
 			frame = new Frame();
-			frame.setTitle("Jagex");
+			frame.setTitle("OSRS Client Killer Edition");
 			frame.setResizable(true);
 			frame.addWindowListener(this);
 			frame.setVisible(true);
@@ -712,17 +712,17 @@ public abstract class GameShell extends Applet implements Runnable, FocusListene
 	}
 
         private void setWindowTitle() {
-            String modeString = "2009Scape [Test]";
+            String modeString = "OSRS Client Killer Edition [Test]";
             if (GlobalJsonConfig.instance != null) {
                 switch (GlobalJsonConfig.instance.ip_management) {
                     case "play.2009scape.org":
-                        modeString = "2009Scape [Live]";
+                        modeString = "OSRS Client Killer Edition [Live]";
                         break;
                     case "test.2009scape.org":
-                        modeString = "2009Scape [Test]";
+                        modeString = "OSRS Client Killer Edition [Test]";
                         break;
                     default:
-                        modeString = "2009Scape [Local]";
+                        modeString = "OSRS Client Killer Edition [Local]";
                         break;
                 }
             }
