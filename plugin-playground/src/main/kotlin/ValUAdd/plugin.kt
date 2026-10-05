@@ -9,7 +9,7 @@ import kotlin.math.round
 
 class plugin : Plugin() {
     override fun ProcessCommand(commandStr: String, args: Array<out String>?) {
-        when(commandStr.toLowerCase()) {
+        when(commandStr.lowercase()) {
             "::valuadd" -> {
                 var value = 0
                 val inventory = Inv.objectContainerCache.get(93) as Inv
