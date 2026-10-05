@@ -1,0 +1,53 @@
+name: Modern Client
+
+on:
+  push:
+    branches: [ modern-client ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.8.0'
+
+      - name: Build client
+        run: gradle --no-daemon :client:clean :client:jar
+
+      - name: Prepare preview
+        shell: bash
+        run: |
+          cp client/build/libs/osrs-client-killer-1.0.0-modern.jar osrs-client-killer.jar
+          sha256sum osrs-client-killer.jar | awk '{print $1}' > osrs-client-killer.jar.sha256
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: osrs-client-killer
+          path: |
+            osrs-client-killer.jar
+            osrs-client-killer.jar.sha256
+
+      - name: Publish rolling preview
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: modern-client-latest
+          name: OSRS Client Killer Edition - Modern Client Preview
+          prerelease: true
+          make_latest: false
+          files: |
+            osrs-client-killer.jar
+            osrs-client-killer.jar.sha256
+          body: |
+            Automated preview from modern-client. This remains separate from the current stable RT4 release while the modern baseline is validated.
