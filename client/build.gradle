@@ -28,9 +28,27 @@ tasks.withType(JavaCompile).configureEach {
 dependencies {
     compileOnly project(':deob-annotations')
     implementation project(':signlink')
-    implementation 'com.google.code.gson:gson:2.14.0'
-    implementation 'org.jogamp.gluegen:gluegen-rt-main:2.6.0'
-    implementation 'org.jogamp.jogl:jogl-all-main:2.6.0'
+    // Keep the original RT4 JOGL/GlueGen stack. The HD renderer was written
+    // against these exact binaries and their native packaging.
+    implementation 'lib:gson'
+    implementation 'lib:gluegen-rt'
+    implementation 'lib:gluegen-rt-natives-windows-amd64'
+    implementation 'lib:gluegen-rt-natives-windows-i586'
+    implementation 'lib:gluegen-rt-natives-linux-amd64'
+    implementation 'lib:gluegen-rt-natives-linux-i586'
+    implementation 'lib:gluegen-rt-natives-macosx-universal'
+    implementation 'lib:gluegen-rt-natives-android-aarch64'
+    implementation 'lib:gluegen-rt-natives-linux-aarch64'
+
+    implementation 'lib:jogl-all'
+    implementation 'lib:jogl-all-natives-linux-aarch64'
+    implementation 'lib:jogl-all-natives-windows-amd64'
+    implementation 'lib:jogl-all-natives-windows-i586'
+    implementation 'lib:jogl-all-natives-linux-amd64'
+    implementation 'lib:jogl-all-natives-linux-i586'
+    implementation 'lib:jogl-all-natives-macosx-universal'
+    implementation 'lib:jogl-all-natives-android-aarch64'
+
     implementation 'org.jetbrains.kotlin:kotlin-stdlib:2.4.20'
 }
 
@@ -40,7 +58,7 @@ tasks.named('jar') {
     manifest {
         attributes 'Main-Class': application.mainClass.get()
     }
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
