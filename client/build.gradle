@@ -35,6 +35,7 @@ dependencies {
 }
 
 tasks.named('jar') {
+    dependsOn(configurations.runtimeClasspath)
     archiveBaseName = 'osrs-client-killer'
     manifest {
         attributes 'Main-Class': application.mainClass.get()
