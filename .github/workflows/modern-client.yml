@@ -77,16 +77,16 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: modern-client-beta.1
-          name: OSRS Client Killer Edition - Beta 1
-          prerelease: true
-          make_latest: false
+          name: BETA - OSRS Client Killer Edition - Beta 1
+          prerelease: false
+          make_latest: true
           files: |
             2009scape.jar
             2009scape.jar.sha256
             2009scape_beta1.zip
           body: |
-            Beta 1 checkpoint of the modern revision-530 Killer client rebuild.
+            BETA BUILD - Beta 1 checkpoint of the modern revision-530 Killer client rebuild.
 
-            This is intentionally published as a pre-release while the rebuilt client, UI and compatibility work are being validated.
+            This is a beta/testing build while the rebuilt client, UI and compatibility work are being validated.
 
             The runnable client remains named 2009scape.jar. The version marker is kept on the downloadable archive.
