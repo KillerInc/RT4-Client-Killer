@@ -287,6 +287,53 @@ public class Cs1ScriptRunner {
 		return true;
 	}
 
+	private static int killerBottomChatFlowShift(
+		Component[] components,
+		int layer,
+		Component current,
+		int parentX,
+		int parentY,
+		int clipRight
+	) {
+		if (components == null || current == null) {
+			return 0;
+		}
+
+		int shift = 0;
+		for (Component sibling : components) {
+			if (sibling == null
+				|| sibling == current
+				|| sibling.overlayer != layer
+				|| sibling.y <= current.y
+				|| sibling.type != 4) {
+				continue;
+			}
+
+			int siblingX = parentX + sibling.x;
+			int siblingY = parentY + sibling.y;
+			int availableWidth = Math.max(
+				1,
+				Math.min(
+					sibling.width,
+					clipRight - siblingX - KillerUi.px(6)
+				)
+			);
+
+			if (!KillerUi.isBottomChatText(sibling, siblingY, availableWidth)) {
+				continue;
+			}
+
+			int renderHeight = KillerUiText.measureWrappedComponentHeight(
+				sibling.text,
+				sibling,
+				availableWidth
+			);
+			shift += Math.max(0, renderHeight - sibling.height);
+		}
+
+		return shift;
+	}
+
 	@OriginalMember(owner = "client!gn", name = "a", descriptor = "(III[Lclient!be;IIIIBI)V")
 	public static void renderComponent(@OriginalArg(0) int clipLeft, @OriginalArg(1) int parentY, @OriginalArg(2) int parentX, @OriginalArg(3) Component[] components, @OriginalArg(4) int clipRight, @OriginalArg(5) int layer, @OriginalArg(6) int clipTop, @OriginalArg(7) int clipBottom, @OriginalArg(9) int parentRectangle) {
 		if (GlRenderer.enabled) {
@@ -776,7 +823,35 @@ public class Cs1ScriptRunner {
 											if (!component.if3) {
 												displayText = interpolate(component, displayText);
 											}
-										KillerUiText.drawComponent(displayText, component, componentX, componentY, temp2, component.shadowed ? 0 : -1);
+										int visibleTextWidth = Math.max(
+											1,
+											Math.min(component.width, drawRight - componentX - KillerUi.px(6))
+										);
+										boolean bottomChatText = KillerUi.isBottomChatText(
+											component,
+											componentY,
+											visibleTextWidth
+										);
+										if (bottomChatText) {
+											componentY -= killerBottomChatFlowShift(
+												components,
+												layer,
+												component,
+												parentX,
+												parentY,
+												clipRight
+											);
+										}
+										KillerUiText.drawComponent(
+											displayText,
+											component,
+											componentX,
+											componentY,
+											temp2,
+											component.shadowed ? 0 : -1,
+											bottomChatText ? visibleTextWidth : component.width,
+											bottomChatText
+										);
 										PluginRepository.ComponentDraw(i, component, componentX, componentY);
 									} else if (component.type == 5) {
 										@Pc(2094) Sprite sprite = null;
