@@ -361,6 +361,8 @@ class plugin : Plugin() {
                 WindowMode.RESIZABLE -> {
                     GameShell.canvasWidth = frame.width - (currentScrollPaneWidth + uiOffset)
                 }
+
+                WindowMode.FULLSCREEN -> Unit
             }
 
             rightPanelWrapper?.preferredSize = Dimension(currentScrollPaneWidth, frame.height)
@@ -446,7 +448,7 @@ class plugin : Plugin() {
         themeName = (GetData("kondoTheme") as? String) ?: "RUNELITE"
         useLiveGEPrices = (GetData("kondoUseRemoteGE") as? Boolean) ?: true
         playerXPMultiplier = (GetData("kondoPlayerXPMultiplier") as? Int) ?: 5
-        val osName = System.getProperty("os.name").toLowerCase()
+        val osName = System.getProperty("os.name").lowercase()
         uiOffset = (GetData("kondoUIOffset") as? Int) ?: if (osName.contains("win")) 16 else 0
         launchMinimized = (GetData("kondoLaunchMinimized") as? Boolean) ?: false
         useScaledFixed = (GetData("kondoScaledFixed") as? Boolean) ?: false
