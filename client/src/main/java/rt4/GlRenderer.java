@@ -774,7 +774,7 @@ public final class GlRenderer {
 
 	private static void writeHdError(String message, Throwable ex) {
 		try {
-			File log = new File(System.getProperty("user.home"), "2009scape/hd-error.log");
+			File log = new File("hd-error.log");
 			File parent = log.getParentFile();
 			if (parent != null) {
 				parent.mkdirs();
