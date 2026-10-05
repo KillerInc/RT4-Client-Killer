@@ -90,7 +90,7 @@ class plugin : Plugin() {
     override fun Draw(timeDelta: Long) = renderGroundItemNames()
 
     override fun ProcessCommand(commandStr: String, args: Array<out String>?) {
-        when (commandStr.toLowerCase()) {
+        when (commandStr.lowercase()) {
             "::resetgroundconfig" -> resetConfig().also { Init() }
             "::groundconfig" -> displayRanges()
             "::ignoreitem" -> {
