@@ -1,51 +1,47 @@
 plugins {
     id 'java'
     id 'application'
-    id 'org.jetbrains.kotlin.jvm' version '1.4.10'
+    id 'org.jetbrains.kotlin.jvm' version '2.4.20'
 }
 
-mainClassName = 'rt4.client'
-version = '1.0.0'
+application {
+    mainClass = 'rt4.client'
+}
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+version = '1.0.0-modern'
 
-compileJava.options.encoding = 'UTF-8'
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
 
-tasks.withType(JavaCompile) {
+kotlin {
+    jvmToolchain(21)
+}
+
+tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    options.release = 21
 }
 
 dependencies {
     compileOnly project(':deob-annotations')
     implementation project(':signlink')
-
-    implementation 'lib:gson'
-    implementation 'lib:gluegen-rt'
-    implementation 'lib:gluegen-rt-natives-windows-amd64'
-    implementation 'lib:gluegen-rt-natives-windows-i586'
-    implementation 'lib:gluegen-rt-natives-linux-amd64'
-    implementation 'lib:gluegen-rt-natives-linux-i586'
-    implementation 'lib:gluegen-rt-natives-macosx-universal'
-    implementation 'lib:gluegen-rt-natives-android-aarch64'
-    implementation 'lib:gluegen-rt-natives-linux-aarch64'
-
-    implementation 'lib:jogl-all'
-    implementation 'lib:jogl-all-natives-linux-aarch64'
-    implementation 'lib:jogl-all-natives-windows-amd64'
-    implementation 'lib:jogl-all-natives-windows-i586'
-    implementation 'lib:jogl-all-natives-linux-amd64'
-    implementation 'lib:jogl-all-natives-linux-i586'
-    implementation 'lib:jogl-all-natives-macosx-universal'
-    implementation 'lib:jogl-all-natives-android-aarch64'
-
-    runtime 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.4.10'
+    implementation 'com.google.code.gson:gson:2.14.0'
+    implementation 'org.jogamp.gluegen:gluegen-rt-main:2.6.0'
+    implementation 'org.jogamp.jogl:jogl-all-main:2.6.0'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib:2.4.20'
 }
 
-jar {
+tasks.named('jar') {
+    archiveBaseName = 'osrs-client-killer'
     manifest {
-        attributes 'Main-Class': "$mainClassName"
+        attributes 'Main-Class': application.mainClass.get()
     }
-    from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    exclude 'META-INF/*.SF', 'META-INF/*.RSA', 'META-INF/*.DSA'
 }
