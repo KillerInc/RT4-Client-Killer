@@ -33,7 +33,7 @@ class plugin : Plugin() {
             useResizable = true
         }
 
-        var osNameLowerCase: String = System.getProperty("os.name").toLowerCase()
+        var osNameLowerCase: String = System.getProperty("os.name").lowercase()
         if (!osNameLowerCase.startsWith("mac")) {
             wantHd = true
         }
@@ -44,7 +44,7 @@ class plugin : Plugin() {
     }
 
     override fun ProcessCommand(commandStr: String, args: Array<out String>?) {
-        when (commandStr.toLowerCase()) {
+        when (commandStr.lowercase()) {
             "::toggleresizablesd", "::resizablesd", "::togglersd", "::rsd" -> {
                 toggleResizableSd()
             }
