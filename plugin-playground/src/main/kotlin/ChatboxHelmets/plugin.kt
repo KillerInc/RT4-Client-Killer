@@ -79,7 +79,7 @@ class plugin : Plugin() {
                     if(args.isEmpty()) return
                     val type = args[0].toIntOrNull() ?: return
                     ACCOUNT_TYPE = type
-                    usernameMatches[getCleanUserName().toLowerCase()] = ACCOUNT_TYPE
+                    usernameMatches[getCleanUserName().lowercase()] = ACCOUNT_TYPE
                     storeData()
                 }
             }
@@ -119,7 +119,7 @@ class plugin : Plugin() {
         if (cleanUsername.isEmpty()) return
 
         // Check if we already have the account type for this user
-        val lowercaseUsername = cleanUsername.toLowerCase()
+        val lowercaseUsername = cleanUsername.lowercase()
         if (usernameMatches.containsKey(lowercaseUsername)) {
             ACCOUNT_TYPE = usernameMatches[lowercaseUsername]!!
             return
