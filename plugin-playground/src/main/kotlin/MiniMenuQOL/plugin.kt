@@ -79,6 +79,7 @@ class plugin : Plugin() {
                 if (def.cost >= 1000)
                     entry.subject = "<col=cdd162>" + entry.subject.substring(12)
             }
+            else -> Unit
         }
     }
 }
