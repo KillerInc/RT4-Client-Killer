@@ -224,7 +224,7 @@ object HiscoresView : View {
         }
 
         val cleanUsername = username.replace(" ", "_")
-        val apiUrl = "http://api.2009scape.org:3000/hiscores/playerSkills/1/${cleanUsername.toLowerCase()}"
+        val apiUrl = "http://api.2009scape.org:3000/hiscores/playerSkills/1/${cleanUsername.lowercase()}"
 
         customSearchField?.setText(username)
         updateHiscoresViewStandalone(hiscoresPanel, null, "Searching...")
