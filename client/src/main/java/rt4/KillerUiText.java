@@ -473,15 +473,33 @@ public final class KillerUiText {
         int bottomPadding = scaleLegacyMetric(legacyMetrics.killerParagraphBottomPadding(), style);
         int lineSpacing = component.vpadding == 0 ? legacyLineHeight : component.vpadding;
 
-        int wrapWidth = component.width;
-        if (component.height < topPadding + bottomPadding + lineSpacing
-            && component.height < lineSpacing + lineSpacing) {
-            // Matches the stock paragraph renderer: a short single-line
-            // component does not wrap simply because TTF bearings differ.
-            wrapWidth = Integer.MAX_VALUE / 4;
-        }
+        boolean shortLineComponent =
+            component.height < topPadding + bottomPadding + lineSpacing
+                && component.height < lineSpacing + lineSpacing;
+
+        // Most short UI labels/buttons are intentionally single-line. Wide,
+        // left-aligned rows (notably the chat history) are different: their
+        // available pixel width is the real line limit, including any
+        // username/prefix already present in the displayed string.
+        boolean wrapShortLeftAligned =
+            shortLineComponent
+                && component.halign == 0
+                && component.width >= KillerUi.px(300);
+
+        int wrapWidth = shortLineComponent && !wrapShortLeftAligned
+            ? Integer.MAX_VALUE / 4
+            : component.width;
 
         List<Line> lines = layout(parsed, Math.max(1, wrapWidth), 0);
+        int renderHeight = component.height;
+        if (wrapShortLeftAligned && lines.size() > 1 && component.valign == 0) {
+            renderHeight = Math.max(
+                component.height,
+                topPadding + (lines.size() - 1) * lineSpacing
+                    + legacyLineHeight + bottomPadding
+            );
+        }
+
         int firstBaseline;
 
         if (component.valign == 0) {
@@ -514,7 +532,7 @@ public final class KillerUiText {
                 style,
                 component.font,
                 component.width,
-                component.height,
+                renderHeight,
                 color,
                 shadow,
                 256,
@@ -532,7 +550,7 @@ public final class KillerUiText {
                 parsed,
                 lines,
                 component.width,
-                component.height,
+                renderHeight,
                 firstBaseline,
                 component.halign,
                 lineSpacing
