@@ -452,6 +452,10 @@ public class InterfaceList {
 		} else {
 			component.x = parentW - (parentW * component.baseX >> 14) - component.width;
 		}
+
+		if (KillerUi.isBottomChatPanel(component, parentW, parentH)) {
+			component.y = Math.max(0, component.y - KillerUi.bottomChatLift());
+		}
 		// Cache/script-built top-level windows can retain native centering offsets
 		// after their geometry grows. If the scaled root still fits on screen,
 		// keep it entirely inside the canvas without disturbing nested artwork.
