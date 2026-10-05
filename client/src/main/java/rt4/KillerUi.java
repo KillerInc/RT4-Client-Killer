@@ -203,4 +203,56 @@ public final class KillerUi {
         return component.baseHeight * inventoryTextCellHeight()
             + (component.baseHeight - 1) * component.invMarginY;
     }
+
+    /**
+     * Recognize the bottom-left chat frame without depending on a cache
+     * interface id. 2009-era gameframes use a roughly 519x165 logical
+     * container for the chat box/tabs.
+     */
+    public static boolean isBottomChatPanel(Component component, int parentW, int parentH) {
+        if (component == null || scale() <= 1.000001D || component.type != 0) {
+            return false;
+        }
+
+        int logicalW = Math.abs(logicalPx(component.width));
+        int logicalH = Math.abs(logicalPx(component.height));
+        int logicalX = logicalPx(component.x);
+        int bottomGap = parentH - (component.y + component.height);
+
+        return logicalW >= 490 && logicalW <= 545
+            && logicalH >= 145 && logicalH <= 185
+            && logicalX >= -8 && logicalX <= 24
+            && bottomGap >= -px(4) && bottomGap <= px(10)
+            && parentW >= component.width
+            && parentH >= component.height;
+    }
+
+    /**
+     * The original gameframe leaves a small native gap below the chat area.
+     * Once the entire interface is scaled, keeping that gap unscaled makes
+     * the chat sit visibly too low. Apply only the additional scale delta so
+     * the 1.0 layout remains byte-for-byte unchanged.
+     */
+    public static int bottomChatLift() {
+        return Math.max(0, px(12) - 12);
+    }
+
+    /**
+     * Text rows inside the bottom chat area are single native rows that need
+     * to become a bottom-anchored flow when scaled text wraps.
+     */
+    public static boolean isBottomChatText(Component component, int screenY, int availableWidth) {
+        if (component == null || scale() <= 1.000001D) {
+            return false;
+        }
+
+        return component.type == 4
+            && component.halign == 0
+            && component.height > 0
+            && component.height <= px(22)
+            && component.width >= px(240)
+            && availableWidth >= px(180)
+            && screenY >= GameShell.canvasHeight / 2;
+    }
+
 }
