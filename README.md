@@ -6,7 +6,7 @@ The game/network/cache/CS2 core remains revision 530. The modernization work is 
 
 ## Modern baseline
 
-- Java 21 LTS toolchain/runtime target.
+- Java 25 LTS toolchain/runtime target.
 - Gradle 9.8.
 - Kotlin 2.4.20 for Kotlin plugin sources.
 - Gson 2.14.
