@@ -40,11 +40,15 @@ jobs:
           name: modern-client-build-log
           path: modern-client-build.log
 
-      - name: Prepare preview
+      - name: Prepare preview and beta packages
         shell: bash
         run: |
           cp client/build/libs/osrs-client-killer-1.0.0-modern.jar osrs-client-killer.jar
           sha256sum osrs-client-killer.jar | awk '{print $1}' > osrs-client-killer.jar.sha256
+
+          cp client/build/libs/osrs-client-killer-1.0.0-modern.jar 2009scape.jar
+          sha256sum 2009scape.jar | awk '{print $1}' > 2009scape.jar.sha256
+          zip -j 2009scape_beta1.zip 2009scape.jar 2009scape.jar.sha256
 
       - uses: actions/upload-artifact@v5
         with:
@@ -52,6 +56,9 @@ jobs:
           path: |
             osrs-client-killer.jar
             osrs-client-killer.jar.sha256
+            2009scape.jar
+            2009scape.jar.sha256
+            2009scape_beta1.zip
 
       - name: Publish rolling preview
         uses: softprops/action-gh-release@v2
@@ -65,3 +72,21 @@ jobs:
             osrs-client-killer.jar.sha256
           body: |
             Automated preview from modern-client. This remains separate from the current stable RT4 release while the modern baseline is validated.
+
+      - name: Publish Beta 1
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: modern-client-beta.1
+          name: OSRS Client Killer Edition - Beta 1
+          prerelease: true
+          make_latest: false
+          files: |
+            2009scape.jar
+            2009scape.jar.sha256
+            2009scape_beta1.zip
+          body: |
+            Beta 1 checkpoint of the modern revision-530 Killer client rebuild.
+
+            This is intentionally published as a pre-release while the rebuilt client, UI and compatibility work are being validated.
+
+            The runnable client remains named 2009scape.jar. The version marker is kept on the downloadable archive.
