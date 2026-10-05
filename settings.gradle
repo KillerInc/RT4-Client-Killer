@@ -1,11 +1,16 @@
-rootProject.name = "rt4-client"
+rootProject.name = "osrs-client-killer"
+
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
 
 dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
         mavenCentral()
-        flatDir {
-            dirs 'lib'
-        }
     }
 }
 
@@ -13,9 +18,8 @@ include(
     "deob-annotations",
     "signlink",
     "client",
-    "playground"
+    "playground",
+    "plugin-playground"
 )
 
 startParameter.excludedTaskNames << ':playground:run'
-include 'plugin-playground'
-
