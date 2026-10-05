@@ -21,3 +21,10 @@ The current revision-530 protocol, JS5/cache handling, CS1/CS2 interfaces, softw
 This branch intentionally does **not** contain the experimental UI scaler, independent text scaler or TTF replacement.
 
 See `docs/NETWORK-INTEGRATION-NOTES.md` and `docs/PLUGIN-FORMAT.md`.
+
+## Research and migration plans
+
+- `docs/RESEARCH-SOURCES.md` — public client/framework references and compatibility boundary.
+- `docs/NETWORK-INTEGRATION-NOTES.md` — future versioned client/server capabilities.
+- `docs/VECTOR-FONT-PLAN.md` — vector-font reintegration after baseline validation.
+- `docs/MODERN-UI-REBUILD.md` — full cache/UI disassembly and modern layout plan.
