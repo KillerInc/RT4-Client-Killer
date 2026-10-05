@@ -46,7 +46,7 @@ jobs:
           cp client/build/libs/osrs-client-killer-1.0.0-modern.jar osrs-client-killer.jar
           sha256sum osrs-client-killer.jar | awk '{print $1}' > osrs-client-killer.jar.sha256
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: osrs-client-killer
           path: |
