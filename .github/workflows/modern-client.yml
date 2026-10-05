@@ -24,7 +24,21 @@ jobs:
           gradle-version: '9.8.0'
 
       - name: Build client
-        run: gradle --no-daemon :client:clean :client:jar
+        id: build
+        shell: bash
+        run: |
+          set +e
+          gradle --no-daemon --stacktrace :client:clean :client:jar 2>&1 | tee modern-client-build.log
+          status=${PIPESTATUS[0]}
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit "$status"
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: modern-client-build-log
+          path: modern-client-build.log
 
       - name: Prepare preview
         shell: bash
