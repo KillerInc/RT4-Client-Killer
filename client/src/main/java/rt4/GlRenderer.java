@@ -13,6 +13,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 import java.nio.charset.StandardCharsets;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 
 public final class GlRenderer {
 
@@ -763,8 +766,27 @@ public final class GlRenderer {
 			gl.glClear(GL2.GL_COLOR_BUFFER_BIT);
 			return 0;
 		} catch (@Pc(103) Throwable ex) {
+			writeHdError("OpenGL initialization failed", ex);
 			quit();
 			return -5;
+		}
+	}
+
+	private static void writeHdError(String message, Throwable ex) {
+		try {
+			File log = new File(System.getProperty("user.home"), "2009scape/hd-error.log");
+			File parent = log.getParentFile();
+			if (parent != null) {
+				parent.mkdirs();
+			}
+			try (PrintWriter out = new PrintWriter(new FileWriter(log, true))) {
+				out.println("=== " + new java.util.Date() + " ===");
+				out.println(message);
+				if (ex != null) {
+					ex.printStackTrace(out);
+				}
+			}
+		} catch (Throwable ignored) {
 		}
 	}
 
