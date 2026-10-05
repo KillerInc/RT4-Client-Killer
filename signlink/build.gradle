@@ -1,14 +1,16 @@
 plugins {
-    id 'java'
     id 'java-library'
 }
 
 version = '1.0.0'
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
 
 dependencies {
     compileOnly project(':deob-annotations')
-    compileOnly 'lib:jogl-all'
+    compileOnly 'org.jogamp.jogl:jogl-all-main:2.6.0'
 }
