@@ -449,6 +449,19 @@ public final class KillerUiText {
         int color,
         int shadow
     ) {
+        drawComponent(text, component, x, y, color, shadow, component == null ? 1 : component.width, false);
+    }
+
+    public static void drawComponent(
+        JagString text,
+        Component component,
+        int x,
+        int y,
+        int color,
+        int shadow,
+        int maxVisibleWidth,
+        boolean anchorBottom
+    ) {
         if (component == null || text == null || component.width <= 0 || component.height <= 0) {
             return;
         }
@@ -477,18 +490,20 @@ public final class KillerUiText {
             component.height < topPadding + bottomPadding + lineSpacing
                 && component.height < lineSpacing + lineSpacing;
 
-        // Most short UI labels/buttons are intentionally single-line. Wide,
-        // left-aligned rows (notably the chat history) are different: their
-        // available pixel width is the real line limit, including any
-        // username/prefix already present in the displayed string.
+        int visibleWidth = Math.max(1, Math.min(component.width, maxVisibleWidth));
+        boolean forceShortWrap = anchorBottom || visibleWidth < component.width;
+
+        // Most short UI labels/buttons remain single-line. Wide left-aligned
+        // rows (chat history/input) use the actual visible width, not the
+        // cache component width that may continue behind a clip boundary.
         boolean wrapShortLeftAligned =
             shortLineComponent
                 && component.halign == 0
-                && component.width >= KillerUi.px(300);
+                && (component.width >= KillerUi.px(300) || forceShortWrap);
 
         int wrapWidth = shortLineComponent && !wrapShortLeftAligned
             ? Integer.MAX_VALUE / 4
-            : component.width;
+            : visibleWidth;
 
         List<Line> lines = layout(parsed, Math.max(1, wrapWidth), 0);
         int renderHeight = component.height;
@@ -523,6 +538,7 @@ public final class KillerUiText {
             lineSpacing += distributed;
         }
 
+        int renderWidth = forceShortWrap ? visibleWidth : component.width;
         boolean animated = parsed.effect != EFFECT_NONE;
         String key = null;
         RenderedText rendered = null;
@@ -531,7 +547,7 @@ public final class KillerUiText {
                 text,
                 style,
                 component.font,
-                component.width,
+                renderWidth,
                 renderHeight,
                 color,
                 shadow,
@@ -549,7 +565,7 @@ public final class KillerUiText {
             rendered = rasterizeBaselines(
                 parsed,
                 lines,
-                component.width,
+                renderWidth,
                 renderHeight,
                 firstBaseline,
                 component.halign,
@@ -562,7 +578,50 @@ public final class KillerUiText {
             }
         }
 
-        rendered.render(x, y);
+        int renderY = anchorBottom
+            ? y - Math.max(0, renderHeight - component.height)
+            : y;
+        rendered.render(x, renderY);
+    }
+
+    public static int measureWrappedComponentHeight(
+        JagString text,
+        Component component,
+        int maxVisibleWidth
+    ) {
+        if (component == null || text == null || component.width <= 0 || component.height <= 0) {
+            return component == null ? 0 : component.height;
+        }
+
+        int style = styleForComponent(component);
+        Font legacyMetrics = legacyMetricsForComponent(component);
+        ParsedText parsed = parse(
+            text,
+            style,
+            0xFFFFFF,
+            -1,
+            256,
+            EFFECT_NONE,
+            0,
+            legacyMetrics
+        );
+
+        int legacyLineHeight = lineHeight(style, legacyMetrics);
+        int topPadding = scaleLegacyMetric(legacyMetrics.killerParagraphTopPadding(), style);
+        int bottomPadding = scaleLegacyMetric(legacyMetrics.killerParagraphBottomPadding(), style);
+        int lineSpacing = component.vpadding == 0 ? legacyLineHeight : component.vpadding;
+        int visibleWidth = Math.max(1, Math.min(component.width, maxVisibleWidth));
+
+        List<Line> lines = layout(parsed, visibleWidth, 0);
+        if (lines.size() <= 1 || component.valign != 0) {
+            return component.height;
+        }
+
+        return Math.max(
+            component.height,
+            topPadding + (lines.size() - 1) * lineSpacing
+                + legacyLineHeight + bottomPadding
+        );
     }
 
     public static void drawLeft(JagString text, int style, int x, int baselineY, int color, int shadow) {
