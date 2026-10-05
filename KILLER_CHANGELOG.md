@@ -2,6 +2,14 @@
 
 This file tracks **Killer RT4 client changes only**. Upstream 2009Scape/Pazaz history and changelogs are intentionally left untouched.
 
+## v0.8.4 — 2026-10-05
+
+- Keeps the validated text scale and minimap scaling behavior unchanged.
+- Fixes scaled right-click menu selection by using the same scaled row/header geometry for drawing and click hit-testing.
+- Scales the context-menu outside-click margin with UI Scale.
+- Keeps scaled top-level interface windows inside the canvas when the complete window still fits, preventing bank-style windows from drifting partly off-screen.
+- Wraps wide left-aligned chat rows by actual available pixel width and expands wrapped text rendering vertically, so username length naturally reduces the remaining message width.
+
 ## v0.8.3 — 2026-10-04
 
 - Fixes OpenGL minimap icons disappearing early when UI Scale is above 1.0.
