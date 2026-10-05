@@ -452,6 +452,23 @@ public class InterfaceList {
 		} else {
 			component.x = parentW - (parentW * component.baseX >> 14) - component.width;
 		}
+		// Cache/script-built top-level windows can retain native centering offsets
+		// after their geometry grows. If the scaled root still fits on screen,
+		// keep it entirely inside the canvas without disturbing nested artwork.
+		if (KillerUi.scale() > 1.000001D
+			&& !KillerUi.isWorldSurface(component)
+			&& component.type == 0
+			&& component.overlayer == -1
+			&& parentW == GameShell.canvasWidth
+			&& parentH == GameShell.canvasHeight) {
+			if (component.width <= parentW) {
+				component.x = Math.max(0, Math.min(component.x, parentW - component.width));
+			}
+			if (component.height <= parentH) {
+				component.y = Math.max(0, Math.min(component.y, parentH - component.height));
+			}
+		}
+
 		if (!Cheat.qaOpTest || getServerActiveProperties(component).events == 0 && component.type != 0) {
 			return;
 		}
