@@ -3577,7 +3577,8 @@ public class Protocol {
 		if (button != 1) {
 			mouseY = Mouse.lastMouseY;
 			menuX = Mouse.lastMouseX;
-			if (menuX < InterfaceList.menuX - 10 || menuX > InterfaceList.menuWidth + InterfaceList.menuX + 10 || InterfaceList.menuY - 10 > mouseY || mouseY > InterfaceList.menuHeight + InterfaceList.menuY + 10) {
+			int menuCloseMargin = KillerUi.px(10);
+			if (menuX < InterfaceList.menuX - menuCloseMargin || menuX > InterfaceList.menuWidth + InterfaceList.menuX + menuCloseMargin || InterfaceList.menuY - menuCloseMargin > mouseY || mouseY > InterfaceList.menuHeight + InterfaceList.menuY + menuCloseMargin) {
 				Cs1ScriptRunner.isMenuOpen = false;
 				InterfaceList.redrawScreen(InterfaceList.menuX, InterfaceList.menuWidth, InterfaceList.menuY, InterfaceList.menuHeight);
 			}
@@ -3591,15 +3592,14 @@ public class Protocol {
 		@Pc(265) int clickX = Mouse.clickX;
 		@Pc(267) int clickY = Mouse.clickY;
 		@Pc(269) int selectedIdx = -1;
+		int rowHeight = KillerUi.menuRowHeight();
+		int headerHeight = KillerUi.menuHeaderHeight();
 		for (@Pc(271) int idx = 0; idx < MiniMenu.size; idx++) {
-			@Pc(289) int entryY;
-			if (InterfaceList.useStyledMenu) {
-				entryY = (MiniMenu.size - idx - 1) * 15 + mouseY + 35;
-			} else {
-				entryY = (MiniMenu.size - idx - 1) * 15 + mouseY + 31;
-			}
-			if (clickX > menuX && menuX + menuW > clickX && entryY - 13 < clickY && entryY + 3 > clickY) {
+			int visualRow = MiniMenu.size - idx - 1;
+			int rowTop = mouseY + headerHeight + visualRow * rowHeight;
+			if (clickX >= menuX && clickX < menuX + menuW && clickY >= rowTop && clickY < rowTop + rowHeight) {
 				selectedIdx = idx;
+				break;
 			}
 		}
 		if (selectedIdx != -1) {
