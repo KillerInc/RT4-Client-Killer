@@ -2,6 +2,14 @@
 
 This file tracks **Killer RT4 client changes only**. Upstream 2009Scape/Pazaz history and changelogs are intentionally left untouched.
 
+## v0.8.5 — 2026-10-05
+
+- Moves the scaled bottom-left chat frame slightly upward while preserving the exact 1.0 layout.
+- Wraps chat/history and input text against the actually visible width instead of the larger cache component width hidden behind the chat clip.
+- Keeps long unbroken strings from disappearing at the right edge by allowing character-level wrapping when needed.
+- Treats wrapped chat rows as a bottom-anchored text flow, so extra wrapped lines consume vertical space upward instead of overlapping the next message.
+- Keeps the newest/bottom chat rows stable while older rows move upward to make room for wrapped lines.
+
 ## v0.8.4 — 2026-10-05
 
 - Keeps the validated text scale and minimap scaling behavior unchanged.
