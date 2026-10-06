@@ -17,12 +17,19 @@ public final class DisplayDebug {
 
     private DisplayDebug() {}
 
-    private static File getLogFile() {
+    private static File getBaseDirectory() {
         String home = System.getProperty("clientHomeOverride");
-        File base = home == null || home.trim().isEmpty() ? new File(".") : new File(home);
+        return home == null || home.trim().isEmpty() ? new File(".") : new File(home);
+    }
+
+    private static File[] getLogFiles() {
+        File base = getBaseDirectory();
         File logs = new File(base, "logs");
         if (!logs.exists()) logs.mkdirs();
-        return new File(logs, "display-debug.log");
+        return new File[] {
+            new File(base, "display-debug.log"),
+            new File(logs, "display-debug.log")
+        };
     }
 
     private static void writeHeader(PrintWriter out) {
@@ -43,22 +50,37 @@ public final class DisplayDebug {
     }
 
     public static void log(String message) {
-        synchronized (LOCK) {
-            try (PrintWriter out = new PrintWriter(new FileWriter(getLogFile(), true))) {
-                writeHeader(out);
-                out.println("[" + FORMAT.format(new Date()) + "][" + Thread.currentThread().getName() + "] " + message);
-            } catch (Throwable ignored) {}
-        }
+        log(message, null);
     }
 
     public static void log(String message, Throwable throwable) {
         synchronized (LOCK) {
-            try (PrintWriter out = new PrintWriter(new FileWriter(getLogFile(), true))) {
-                writeHeader(out);
-                out.println("[" + FORMAT.format(new Date()) + "][" + Thread.currentThread().getName() + "] " + message);
-                if (throwable != null) throwable.printStackTrace(out);
-            } catch (Throwable ignored) {}
+            String line = "[" + FORMAT.format(new Date()) + "][" + Thread.currentThread().getName() + "] " + message;
+            boolean wroteAny = false;
+
+            for (File file : getLogFiles()) {
+                try (PrintWriter out = new PrintWriter(new FileWriter(file, true))) {
+                    writeHeader(out);
+                    out.println(line);
+                    if (throwable != null) throwable.printStackTrace(out);
+                    wroteAny = true;
+                } catch (Throwable ex) {
+                    System.err.println("[DisplayDebug] Failed writing " + file.getAbsolutePath() + ": " + ex);
+                }
+            }
+
+            if (!wroteAny) {
+                System.err.println("[DisplayDebug] " + line);
+                if (throwable != null) throwable.printStackTrace(System.err);
+            }
         }
+    }
+
+    public static void startup() {
+        File base = getBaseDirectory();
+        log("CLIENT STARTUP DIAGNOSTIC ACTIVE; base=" + base.getAbsolutePath()
+            + ", user.dir=" + System.getProperty("user.dir")
+            + ", class=" + DisplayDebug.class.getProtectionDomain().getCodeSource().getLocation());
     }
 
     public static String canvasInfo(Canvas canvas) {
