@@ -341,12 +341,23 @@ public final class DisplayMode {
 		return cachedDisplayModes;
 	}
 
+	private static GraphicsDevice getCurrentGraphicsDevice() {
+		try {
+			if (GameShell.canvas != null && GameShell.canvas.getGraphicsConfiguration() != null) {
+				return GameShell.canvas.getGraphicsConfiguration().getDevice();
+			}
+		} catch (Throwable ignored) {
+		}
+		return null;
+	}
+
 	@OriginalMember(owner = "client!pm", name = "a", descriptor = "(ILsignlink!ll;)[Lclient!od;")
 	public static DisplayMode[] getAvailableDisplayModes(@OriginalArg(1) SignLink signLink) {
 		if (!signLink.isFullScreenSupported()) {
 			return new DisplayMode[0];
 		}
-		@Pc(17) PrivilegedRequest request = signLink.getDisplayModes();
+		GraphicsDevice graphicsDevice = getCurrentGraphicsDevice();
+		@Pc(17) PrivilegedRequest request = signLink.getDisplayModes(graphicsDevice);
 		while (request.status == 0) {
 			ThreadUtils.sleep(10L);
 		}
@@ -368,8 +379,10 @@ public final class DisplayMode {
 
 	@OriginalMember(owner = "client!nf", name = "a", descriptor = "(IIIIILsignlink!ll;)Ljava/awt/Frame;")
 	public static Frame createFullScreenFrame(@OriginalArg(2) int bitDepth, @OriginalArg(3) int height, @OriginalArg(4) int width, @OriginalArg(5) SignLink signLink) {
+		GraphicsDevice graphicsDevice = getCurrentGraphicsDevice();
 		DisplayDebug.log("createFullScreenFrame: requested=" + width + "x" + height + ", bitDepth=" + bitDepth
-			+ ", fullscreenSupported=" + signLink.isFullScreenSupported());
+			+ ", fullscreenSupported=" + signLink.isFullScreenSupported()
+			+ ", targetDevice=" + (graphicsDevice == null ? "default" : graphicsDevice.getIDstring()));
 		if (!signLink.isFullScreenSupported()) {
 			return null;
 		}
@@ -397,7 +410,7 @@ public final class DisplayMode {
 			return null;
 		}
 		DisplayDebug.log("createFullScreenFrame: matched " + width + "x" + height + " bitDepth=" + bitDepth);
-		@Pc(90) PrivilegedRequest request = signLink.enterFullScreen(bitDepth, height, width);
+		@Pc(90) PrivilegedRequest request = signLink.enterFullScreen(bitDepth, height, width, graphicsDevice);
 		while (request.status == 0) {
 			ThreadUtils.sleep(10L);
 		}

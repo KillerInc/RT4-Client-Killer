@@ -34,6 +34,20 @@ public final class FullScreenManager {
 		}
 	}
 
+	/**
+	 * Prefer the monitor that currently owns the client window. The original
+	 * client selected Java's default screen once at startup, which causes
+	 * fullscreen to jump monitors on multi-display systems.
+	 */
+	public final GraphicsDevice selectDevice(GraphicsDevice preferredDevice) {
+		if (this.previousDisplayMode == null
+			&& preferredDevice != null
+			&& preferredDevice.isFullScreenSupported()) {
+			this.device = preferredDevice;
+		}
+		return this.device;
+	}
+
 	@OriginalMember(owner = "signlink!e", name = "a", descriptor = "(Ljava/awt/Frame;B)V")
 	private void setFullScreenWindow(@OriginalArg(0) Frame frame) {
 		@Pc(1) boolean wasValid = false;

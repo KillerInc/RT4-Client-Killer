@@ -388,9 +388,22 @@ public final class SignLink implements Runnable {
 					}
 					request.result = new DataInputStream(((URL) request.objectArg).openStream());
 				} else if (type == 5) {
+					GraphicsDevice requestedDevice = request.objectArg instanceof GraphicsDevice
+						? (GraphicsDevice) request.objectArg
+						: null;
+					this.fullScreenManager.selectDevice(requestedDevice);
 					request.result = this.fullScreenManager.getDisplayModes();
 				} else if (type == 6) {
-					@Pc(168) Frame frame = new Frame("Jagex Full Screen");
+					GraphicsDevice requestedDevice = request.objectArg instanceof GraphicsDevice
+						? (GraphicsDevice) request.objectArg
+						: null;
+					GraphicsDevice selectedDevice = this.fullScreenManager.selectDevice(requestedDevice);
+					GraphicsConfiguration graphicsConfiguration = selectedDevice == null
+						? null
+						: selectedDevice.getDefaultConfiguration();
+					@Pc(168) Frame frame = graphicsConfiguration == null
+						? new Frame("Jagex Full Screen")
+						: new Frame("Jagex Full Screen", graphicsConfiguration);
 					request.result = frame;
 					frame.setResizable(false);
 					frame.setBackground(Color.black);
@@ -522,7 +535,11 @@ public final class SignLink implements Runnable {
 
 	@OriginalMember(owner = "signlink!ll", name = "a", descriptor = "(IIIII)Lsignlink!im;")
 	public final PrivilegedRequest enterFullScreen(@OriginalArg(1) int bitDepth, @OriginalArg(2) int height, @OriginalArg(3) int width) {
-		return this.enqueue(6, bitDepth << 16, null, (width << 16) + height);
+		return this.enterFullScreen(bitDepth, height, width, null);
+	}
+
+	public final PrivilegedRequest enterFullScreen(int bitDepth, int height, int width, GraphicsDevice graphicsDevice) {
+		return this.enqueue(6, bitDepth << 16, graphicsDevice, (width << 16) + height);
 	}
 
 	@OriginalMember(owner = "signlink!ll", name = "a", descriptor = "(IILjava/lang/Runnable;)Lsignlink!im;")
@@ -537,6 +554,10 @@ public final class SignLink implements Runnable {
 
 	@OriginalMember(owner = "signlink!ll", name = "a", descriptor = "(B)Lsignlink!im;")
 	public final PrivilegedRequest getDisplayModes() {
-		return this.enqueue(5, 0, null, 0);
+		return this.getDisplayModes(null);
+	}
+
+	public final PrivilegedRequest getDisplayModes(GraphicsDevice graphicsDevice) {
+		return this.enqueue(5, 0, graphicsDevice, 0);
 	}
 }
