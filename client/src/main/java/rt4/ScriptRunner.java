@@ -4650,6 +4650,7 @@ public final class ScriptRunner {
 														isp -= 2;
 														int3 = intStack[isp + 1];
 														int1 = intStack[isp];
+														DisplayDebug.log("CS2 opcode 5300 ENTER FULLSCREEN width=" + int1 + ", height=" + int3);
 														DisplayMode.setWindowMode(false, 3, int1, int3);
 														intStack[isp++] = GameShell.fullScreenFrame == null ? 0 : 1;
 														continue;
@@ -4699,6 +4700,7 @@ public final class ScriptRunner {
 															int1 = 0;
 														}
 														// Gets called on every mode change.
+														DisplayDebug.log("CS2 opcode 5307 SET DISPLAY MODE=" + int1 + " (" + DisplayDebug.modeName(int1) + ")");
 														DisplayMode.setWindowMode(false, int1, -1, -1);
 														continue;
 													}
