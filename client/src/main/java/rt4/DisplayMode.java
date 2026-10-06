@@ -277,7 +277,10 @@ public final class DisplayMode {
 			InterfaceList.rectangleDirty[i] = true;
 		}
 		GameShell.fullRedraw = true;
-		PluginRepository.reloadPlugins();
+		// Do not reload plugins inside the graphics-mode transaction. Some plugins
+		// perform Swing/resource work here, which can make RuneScape's own mode
+		// confirmation time out even after OpenGL succeeded.
+		PluginRepository.requestReload();
 	}
 
 	@OriginalMember(owner = "client!ab", name = "c", descriptor = "(B)[Lclient!od;")
