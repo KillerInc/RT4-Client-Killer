@@ -425,6 +425,8 @@ public final class GlRenderer {
 		@Pc(1) int result = 0;
 		vendor = gl.glGetString(GL2.GL_VENDOR);
 		renderer = gl.glGetString(GL2.GL_RENDERER);
+		DisplayDebug.log("checkContext vendor=" + vendor + ", renderer=" + renderer
+			+ ", version=" + gl.glGetString(GL2.GL_VERSION));
 		@Pc(12) String vendor = GlRenderer.vendor.toLowerCase();
 		if (vendor.contains("microsoft")) {
 			result = 1;
@@ -696,11 +698,15 @@ public final class GlRenderer {
 
 	@OriginalMember(owner = "client!tf", name = "a", descriptor = "(Ljava/awt/Canvas;I)I")
 	public static int init(@OriginalArg(0) Canvas canvas, @OriginalArg(1) int numSamples) {
+		DisplayDebug.log("GlRenderer.init begin: samples=" + numSamples + ", " + DisplayDebug.canvasInfo(canvas));
 		try {
 			if (!canvas.isDisplayable()) {
+				DisplayDebug.log("GlRenderer.init -> -1 canvas not displayable");
 				return -1;
 			}
+			DisplayDebug.log("Requesting JOGL GL3bc");
 			GLProfile profile = GLProfile.get(GLProfile.GL3bc);
+			DisplayDebug.log("JOGL profile=" + profile);
 			@Pc(8) GLCapabilities capabilities = new GLCapabilities(profile);
 			if (numSamples > 0) {
 				capabilities.setSampleBuffers(true);
@@ -728,8 +734,10 @@ public final class GlRenderer {
 						break;
 					}
 				} catch (@Pc(41) Exception ex) {
+					DisplayDebug.log("context.makeCurrent exception attempt=" + swapBuffersAttempts, ex);
 				}
 				if (swapBuffersAttempts++ > 5) {
+					DisplayDebug.log("GlRenderer.init -> -2 context not current");
 					return -2;
 				}
 				ThreadUtils.sleep(1000L);
@@ -738,11 +746,18 @@ public final class GlRenderer {
 				window.unlockSurface();
 			}
 			gl = GLContext.getCurrentGL().getGL2();
+			DisplayDebug.log("OpenGL: vendor=" + gl.glGetString(GL2.GL_VENDOR)
+				+ ", renderer=" + gl.glGetString(GL2.GL_RENDERER)
+				+ ", version=" + gl.glGetString(GL2.GL_VERSION)
+				+ ", GLSL=" + gl.glGetString(GL2.GL_SHADING_LANGUAGE_VERSION));
 			gl.glLineWidth((float) GameShell.canvasScale);
 			enabled = true;
 			canvasWidth = canvas.getSize().width;
 			canvasHeight = canvas.getSize().height;
 			result = checkContext();
+			DisplayDebug.log("checkContext result=" + result + ", maxTU=" + maxTextureUnits
+				+ ", maxTC=" + maxTextureCoords + ", maxTIU=" + maxTextureImageUnits
+				+ ", VBO=" + arbVboSupported + ", multisample=" + arbMultisampleSupported);
 			if (result != 0) {
 				quit();
 				return result;
@@ -757,6 +772,7 @@ public final class GlRenderer {
 					break;
 				} catch (@Pc(86) Exception ex) {
 					if (swapBuffersAttempts++ > 5) {
+						DisplayDebug.log("GlRenderer.init -> -3 swapBuffers failed repeatedly", ex);
 						quit();
 						return -3;
 					}
@@ -764,8 +780,10 @@ public final class GlRenderer {
 				}
 			}
 			gl.glClear(GL2.GL_COLOR_BUFFER_BIT);
+			DisplayDebug.log("GlRenderer.init SUCCESS " + canvasWidth + "x" + canvasHeight);
 			return 0;
 		} catch (@Pc(103) Throwable ex) {
+			DisplayDebug.log("GlRenderer.init -> -5 unhandled", ex);
 			writeHdError("OpenGL initialization failed", ex);
 			quit();
 			return -5;
