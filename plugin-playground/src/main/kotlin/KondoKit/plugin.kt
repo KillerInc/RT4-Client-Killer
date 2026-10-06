@@ -455,9 +455,7 @@ class plugin : Plugin() {
     }
 
     private fun initKondoUI(){
-        // Sprite resources are temporarily unavailable while the client changes
-        // display mode. Wait silently instead of drawing a loading message over
-        // the login screen/gameplay every frame.
+        DrawText(FontType.LARGE, fromColor(Color(16777215)), TextModifier.CENTER, "KondoKit Loading Sprites...", GameShell.canvasWidth/2, GameShell.canvasHeight/2)
         if(!allSpritesLoaded()) return
         val frame: Frame? = GameShell.frame
         if (frame != null) {
