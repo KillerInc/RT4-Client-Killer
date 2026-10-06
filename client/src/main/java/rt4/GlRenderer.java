@@ -476,7 +476,13 @@ public final class GlRenderer {
 		arbVertexProgramSupported = gl.isExtensionAvailable("GL_ARB_vertex_program");
 		extTexture3dSupported = gl.isExtensionAvailable("GL_EXT_texture3D");
 		@Pc(176) JagString renderer = toJagString(GlRenderer.renderer).toLowerCase();
-		if (renderer.indexOf(RADEON) != -1) {
+
+		// The original RT4 client carried workarounds for early Radeon 7000-9250
+		// cards. Modern AMD products reuse those four-digit numbers (for example
+		// Radeon RX 7900 XTX), so parsing "7900" unconditionally incorrectly
+		// disables VBOs and 3D textures on current hardware. Restrict the legacy
+		// workaround to pre-OpenGL-3 contexts, where those old cards actually live.
+		if (renderer.indexOf(RADEON) != -1 && GlRenderer.version < 30) {
 			@Pc(184) int v = 0;
 			@Pc(193) JagString[] rendererParts = renderer.replaceSlashWithSpace().split(32);
 			for (@Pc(195) int i = 0; i < rendererParts.length; i++) {
@@ -492,8 +498,15 @@ public final class GlRenderer {
 			if (v >= 7000 && v <= 9250) {
 				extTexture3dSupported = false;
 			}
-			GlModel.arbVboSupported = arbVboSupported;
+			DisplayDebug.log("Applied legacy Radeon workaround: model=" + v
+				+ ", glVersion=" + GlRenderer.version + ", VBO=" + arbVboSupported
+				+ ", texture3D=" + extTexture3dSupported);
 		}
+
+		// Keep GlModel's interleaved-buffer path in sync with the capability the
+		// renderer actually detected. Previously this assignment only happened
+		// inside the Radeon workaround block.
+		GlModel.arbVboSupported = arbVboSupported;
 		if (arbVboSupported) {
 			try {
 				@Pc(250) int[] temp = new int[1];
