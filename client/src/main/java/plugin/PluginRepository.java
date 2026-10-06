@@ -46,11 +46,24 @@ public final class PluginRepository {
 
     public static int lastMiniMenu;
     private static boolean shutdownHookInstalled;
+    private static volatile boolean reloadRequested;
 
     private PluginRepository() {}
 
     public static synchronized void registerPlugin(PluginInfo info, Plugin plugin) {
         loadedPlugins.put(info, plugin);
+    }
+
+    public static void requestReload() {
+        reloadRequested = true;
+    }
+
+    public static void processPendingReload() {
+        if (!reloadRequested) {
+            return;
+        }
+        reloadRequested = false;
+        reloadPlugins();
     }
 
     public static synchronized void reloadPlugins() {
