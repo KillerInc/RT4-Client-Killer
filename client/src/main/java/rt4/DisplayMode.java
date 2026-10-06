@@ -54,6 +54,13 @@ public final class DisplayMode {
 	public static void setWindowMode(@OriginalArg(0) boolean replaceCanvas, @OriginalArg(1) int newMode, @OriginalArg(3) int width, @OriginalArg(4) int height) {
 		canvasReplaceTime = 0L;
 		@Pc(4) int currentMode = getWindowMode();
+		DisplayDebug.log("setWindowMode request: current=" + DisplayDebug.modeName(currentMode)
+			+ ", requested=" + DisplayDebug.modeName(newMode)
+			+ ", width=" + width + ", height=" + height
+			+ ", replaceCanvas=" + replaceCanvas
+			+ ", glEnabled=" + GlRenderer.enabled
+			+ ", fullscreenFrame=" + (GameShell.fullScreenFrame != null)
+			+ ", " + DisplayDebug.canvasInfo(GameShell.canvas));
 		if (newMode == 3 || currentMode == 3) {
 			replaceCanvas = true;
 		}
@@ -61,6 +68,7 @@ public final class DisplayMode {
 		if (replaceCanvas && newMode > 0 && !resizableSD) {
 			useHD = true;
 		}
+		DisplayDebug.log("setWindowMode derived: useHD=" + useHD + ", resizableSD=" + resizableSD);
 		setWindowMode(replaceCanvas, newMode, useHD, currentMode, width, height);
 	}
 
@@ -79,6 +87,9 @@ public final class DisplayMode {
 
 	@OriginalMember(owner = "client!pm", name = "a", descriptor = "(ZIZIZII)V")
 	public static void setWindowMode(@OriginalArg(0) boolean replaceCanvas, @OriginalArg(1) int newMode, @OriginalArg(2) boolean useHD, @OriginalArg(3) int currentMode, @OriginalArg(5) int width, @OriginalArg(6) int height) {
+		DisplayDebug.log("setWindowMode begin: current=" + DisplayDebug.modeName(currentMode)
+			+ ", new=" + DisplayDebug.modeName(newMode) + ", useHD=" + useHD
+			+ ", replaceCanvas=" + replaceCanvas + ", requested=" + width + "x" + height);
 		if (useHD) {
 			GlRenderer.quit();
 		}
@@ -87,7 +98,10 @@ public final class DisplayMode {
 			GameShell.fullScreenFrame = null;
 		}
 		if (newMode == 3 && GameShell.fullScreenFrame == null) {
+			DisplayDebug.log("Attempting fullscreen frame: requested=" + width + "x" + height);
 			GameShell.fullScreenFrame = createFullScreenFrame(0, height, width, GameShell.signLink);
+			DisplayDebug.log("Fullscreen frame result: " + (GameShell.fullScreenFrame == null ? "null" :
+				(GameShell.fullScreenFrame.getWidth() + "x" + GameShell.fullScreenFrame.getHeight())));
 			if (GameShell.fullScreenFrame != null) {
 				Preferences.fullScreenHeight = height;
 				Preferences.fullScreenWidth = width;
@@ -99,6 +113,7 @@ public final class DisplayMode {
 		 * to fall back to Standard Mode.
  		 */
 		if (newMode == 3 && GameShell.fullScreenFrame == null) {
+			DisplayDebug.log("FULLSCREEN FAILED -> fallback=" + DisplayDebug.modeName(Preferences.favoriteWorlds));
 			setWindowMode(true, Preferences.favoriteWorlds, true, currentMode, -1, -1);
 			return;
 		}
@@ -216,11 +231,14 @@ public final class DisplayMode {
 				start_GLRenderer = true; // Manually set here to allow GLRenderer.init() to execute.
 			}
 			if (start_GLRenderer) {
-				GlRenderer.init(GameShell.canvas, Preferences.antiAliasingMode * 2);
+				int glInitResult = GlRenderer.init(GameShell.canvas, Preferences.antiAliasingMode * 2);
+				DisplayDebug.log("GlRenderer.init result=" + glInitResult + ", enabled=" + GlRenderer.enabled
+					+ ", " + DisplayDebug.canvasInfo(GameShell.canvas));
 			}
 		}
 		// If HD Mode fails, this restarts the whole process to enter into SD Mode
 		if (!GlRenderer.enabled && newMode > 0) {
+			DisplayDebug.log("HD/GL not enabled after init -> forcing SD fallback. requested=" + DisplayDebug.modeName(newMode));
 			setWindowMode(true, 0, true, currentMode, -1, -1);
 			return;
 		}
@@ -277,6 +295,11 @@ public final class DisplayMode {
 			InterfaceList.rectangleDirty[i] = true;
 		}
 		GameShell.fullRedraw = true;
+		DisplayDebug.log("setWindowMode complete: actual=" + DisplayDebug.modeName(getWindowMode())
+			+ ", glEnabled=" + GlRenderer.enabled + ", resizable=" + resizable
+			+ ", frame=" + GameShell.frameWidth + "x" + GameShell.frameHeight
+			+ ", canvas=" + GameShell.canvasWidth + "x" + GameShell.canvasHeight
+			+ ", fullscreenFrame=" + (GameShell.fullScreenFrame != null));
 		// Do not reload plugins inside the graphics-mode transaction. Some plugins
 		// perform Swing/resource work here, which can make RuneScape's own mode
 		// confirmation time out even after OpenGL succeeded.
@@ -345,10 +368,20 @@ public final class DisplayMode {
 
 	@OriginalMember(owner = "client!nf", name = "a", descriptor = "(IIIIILsignlink!ll;)Ljava/awt/Frame;")
 	public static Frame createFullScreenFrame(@OriginalArg(2) int bitDepth, @OriginalArg(3) int height, @OriginalArg(4) int width, @OriginalArg(5) SignLink signLink) {
+		DisplayDebug.log("createFullScreenFrame: requested=" + width + "x" + height + ", bitDepth=" + bitDepth
+			+ ", fullscreenSupported=" + signLink.isFullScreenSupported());
 		if (!signLink.isFullScreenSupported()) {
 			return null;
 		}
 		@Pc(20) DisplayMode[] displayModes = getAvailableDisplayModes(signLink);
+		if (displayModes != null) {
+			DisplayDebug.log("Available fullscreen modes count=" + displayModes.length);
+			for (int debugIndex = 0; debugIndex < displayModes.length && debugIndex < 100; debugIndex++) {
+				DisplayMode debugMode = displayModes[debugIndex];
+				DisplayDebug.log("mode[" + debugIndex + "]=" + debugMode.width + "x" + debugMode.height
+					+ "x" + debugMode.bitDepth + "@" + debugMode.refreshRate);
+			}
+		}
 		if (displayModes == null) {
 			return null;
 		}
@@ -360,13 +393,17 @@ public final class DisplayMode {
 			}
 		}
 		if (!found) {
+			DisplayDebug.log("createFullScreenFrame: resolution NOT FOUND: " + width + "x" + height);
 			return null;
 		}
+		DisplayDebug.log("createFullScreenFrame: matched " + width + "x" + height + " bitDepth=" + bitDepth);
 		@Pc(90) PrivilegedRequest request = signLink.enterFullScreen(bitDepth, height, width);
 		while (request.status == 0) {
 			ThreadUtils.sleep(10L);
 		}
 		@Pc(103) Frame frame = (Frame) request.result;
+		DisplayDebug.log("enterFullScreen completed: status=" + request.status + ", frame="
+			+ (frame == null ? "null" : frame.getWidth() + "x" + frame.getHeight()));
 		if (frame == null) {
 			return null;
 		} else if (request.status == 2) {
