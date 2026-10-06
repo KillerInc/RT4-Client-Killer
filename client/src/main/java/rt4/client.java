@@ -54,6 +54,7 @@ public final class client extends GameShell {
 	static final JagString DEFAULT_STATUS_TEXT = JagString.parse("");
 	@OriginalMember(owner = "client!jm", name = "z", descriptor = "Lclient!na;")
 	public static JagString mainLoadSecondaryText = DEFAULT_STATUS_TEXT;
+	private static boolean displayDebugStarted = false;
 	@OriginalMember(owner = "client!sg", name = "k", descriptor = "Lclient!ve;")
 	public static Js5 js5Archive23;
 	@OriginalMember(owner = "client!pb", name = "Q", descriptor = "I")
@@ -1691,6 +1692,10 @@ public final class client extends GameShell {
 	@OriginalMember(owner = "client!client", name = "a", descriptor = "(B)V")
 	@Override
 	protected final void mainLoop() {
+		if (!displayDebugStarted) {
+			displayDebugStarted = true;
+			DisplayDebug.startup();
+		}
 		if (gameState == 1000) {
 			return;
 		}
