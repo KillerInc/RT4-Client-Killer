@@ -30,19 +30,37 @@ public final class ModernUiManager {
         ModernUiDevelopmentMirror.sync();
         UiStyleRepository.refresh();
         DisplayDebug.log(
-            "MODERN_UI init enabled=" + ModernUiPreferences.isEnabled()
+            "MODERN_UI init savedEnabled=" + ModernUiPreferences.isEnabled()
+                + ", effectiveEnabled=" + isEnabled()
+                + ", displayMode=" + DisplayMode.getWindowMode()
                 + ", savedStyle=" + ModernUiPreferences.getStyleId()
                 + ", effectiveStyle=" + getEffectiveStyle().id
         );
     }
 
+    public static boolean isSupportedDisplayMode() {
+        // The Modern renderer is intentionally available only for the two
+        // scalable HD modes: resizable HD (2) and fullscreen HD (3).
+        return DisplayMode.getWindowMode() >= 2;
+    }
+
     public static boolean isEnabled() {
         initialize();
-        return ModernUiPreferences.isEnabled();
+        return ModernUiPreferences.isEnabled()
+            && isSupportedDisplayMode();
     }
 
     public static void setEnabled(boolean enabled) {
         initialize();
+
+        if (enabled && !isSupportedDisplayMode()) {
+            DisplayDebug.log(
+                "MODERN_UI enable ignored: unsupported display mode="
+                    + DisplayMode.getWindowMode()
+            );
+            return;
+        }
+
         if (ModernUiPreferences.isEnabled() == enabled) {
             return;
         }
@@ -148,7 +166,9 @@ public final class ModernUiManager {
         reloadNoticeUntil = MonotonicClock.currentTimeMillis() + 650L;
         DisplayDebug.log(
             "MODERN_UI reload complete generation=" + reloadGeneration
-                + ", enabled=" + ModernUiPreferences.isEnabled()
+                + ", savedEnabled=" + ModernUiPreferences.isEnabled()
+                + ", effectiveEnabled=" + isEnabled()
+                + ", displayMode=" + DisplayMode.getWindowMode()
                 + ", style=" + ModernUiPreferences.getStyleId()
                 + ", reason=" + reason
                 + ", gameState=" + gameStateBefore + "->" + client.gameState
