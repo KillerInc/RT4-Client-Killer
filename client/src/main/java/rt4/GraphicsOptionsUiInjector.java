@@ -49,9 +49,11 @@ public final class GraphicsOptionsUiInjector {
         List<LayoutEntry> selectorSprites = new ArrayList<>();
         LayoutEntry valueText = null;
 
+        // First find the visible AA value text. This is the most reliable
+        // vertical anchor for the CLOSED selector row.
         for (LayoutEntry entry : entries) {
             Component component = entry.component;
-            if (component == antiLabel.component) {
+            if (component == antiLabel.component || component.type != 4) {
                 continue;
             }
 
@@ -60,17 +62,7 @@ public final class GraphicsOptionsUiInjector {
             int dx = Math.abs(centerX - aaCenterX);
             int dy = entry.y - aaLabelY;
 
-            if (component.type == 5
-                && dx <= 78
-                && dy >= 6 && dy <= 48
-                && component.width > 0 && component.height > 0
-                && component.width <= 180 && component.height <= 40) {
-                selectorSprites.add(entry);
-                continue;
-            }
-
-            if (component.type == 4
-                && dx <= 72
+            if (dx <= 72
                 && dy >= 5 && dy <= 44
                 && component.text != null
                 && component.text.length() > 0) {
@@ -78,6 +70,34 @@ public final class GraphicsOptionsUiInjector {
                     || Math.abs(entry.y - (aaLabelY + 18))
                         < Math.abs(valueText.y - (aaLabelY + 18))) {
                     valueText = entry;
+                }
+            }
+        }
+
+        if (valueText != null) {
+            int rowTop = valueText.y - 8;
+            int rowBottom = valueText.y + Math.max(18, valueText.component.height) + 5;
+
+            // Now copy only sprite pieces that overlap the closed AA field.
+            // This excludes the lower decorative/popup sprite that was
+            // appearing beside Style Editor.
+            for (LayoutEntry entry : entries) {
+                Component component = entry.component;
+                if (component.type != 5
+                    || component.width <= 0 || component.height <= 0
+                    || component.width > 180 || component.height > 32) {
+                    continue;
+                }
+
+                int centerX = entry.x + Math.max(1, component.width) / 2;
+                int dx = Math.abs(centerX - aaCenterX);
+                int spriteTop = entry.y;
+                int spriteBottom = entry.y + component.height;
+
+                if (dx <= 78
+                    && spriteBottom >= rowTop
+                    && spriteTop <= rowBottom) {
+                    selectorSprites.add(entry);
                 }
             }
         }
@@ -175,6 +195,14 @@ public final class GraphicsOptionsUiInjector {
                 + ", selectorParts=" + selectorSprites.size()
                 + ", added=" + added.size()
         );
+        for (LayoutEntry source : selectorSprites) {
+            DisplayDebug.log(
+                "MODERN_UI selector clone source"
+                    + " id=" + source.component.id
+                    + " xy=" + source.x + "," + source.y
+                    + " size=" + source.component.width + "x" + source.component.height
+            );
+        }
     }
 
     private static Component cloneAtRoot(
