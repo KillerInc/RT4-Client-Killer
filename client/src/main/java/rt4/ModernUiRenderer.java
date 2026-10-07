@@ -433,6 +433,7 @@ public final class ModernUiRenderer {
             }
 
             ModernTrueTypeFont.drawInBox(
+                fontAsset,
                 text,
                 x,
                 y,
