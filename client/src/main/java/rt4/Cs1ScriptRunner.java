@@ -375,7 +375,8 @@ public class Cs1ScriptRunner {
 						drawBottom = clipBottom <= temp2 ? clipBottom : temp2;
 						drawRight = temp1 >= clipRight ? clipRight : temp1;
 					}
-					if (!component.if3 || drawRight > drawLeft && drawTop < drawBottom) {\n\t\t\t\t\t\tModernUiSettingsOverlay.observeComponent(component, componentX, componentY);
+					if (!component.if3 || drawRight > drawLeft && drawTop < drawBottom) {
+						ModernUiSettingsOverlay.observeComponent(component, componentX, componentY);
 						@Pc(468) int temp3;
 						@Pc(503) int memory;
 						@Pc(514) int color;
