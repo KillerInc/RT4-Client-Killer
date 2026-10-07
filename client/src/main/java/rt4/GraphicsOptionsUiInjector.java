@@ -34,8 +34,15 @@ public final class GraphicsOptionsUiInjector {
             return;
         }
 
-        Component antiLabel = findText(original, "Anti-aliasing");
+        Component antiLabel = findText(original, "anti-alias");
         if (antiLabel == null) {
+            if (containsText(original, "graphics options")) {
+                DisplayDebug.log(
+                    "MODERN_UI Graphics Options detected but Anti-aliasing label was not ready"
+                        + " interface=" + interfaceId
+                        + ", components=" + original.length
+                );
+            }
             return;
         }
 
@@ -184,17 +191,33 @@ public final class GraphicsOptionsUiInjector {
         return false;
     }
 
-    private static Component findText(Component[] components, String text) {
+    private static Component findText(Component[] components, String textFragment) {
+        String needle = textFragment.toLowerCase(java.util.Locale.ROOT);
         for (Component component : components) {
             if (component != null
                 && component.type == 4
                 && component.text != null
-                && component.text.length() > 0
-                && text.equals(component.text.toString())) {
-                return component;
+                && component.text.length() > 0) {
+                String value = component.text.toString().toLowerCase(java.util.Locale.ROOT);
+                if (value.contains(needle)) {
+                    return component;
+                }
             }
         }
         return null;
+    }
+
+    private static boolean containsText(Component[] components, String textFragment) {
+        String needle = textFragment.toLowerCase(java.util.Locale.ROOT);
+        for (Component component : components) {
+            if (component == null || component.text == null || component.text.length() == 0) {
+                continue;
+            }
+            if (component.text.toString().toLowerCase(java.util.Locale.ROOT).contains(needle)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void shift(Component component, int dx, int dy) {
