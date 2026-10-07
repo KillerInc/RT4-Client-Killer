@@ -17,6 +17,7 @@ public final class ModernUiRenderer {
     private static int graphicsOptionsDepth;
     private static int graphicsOptionsTitleCenterX;
     private static int graphicsOptionsTitleY;
+    private static boolean graphicsOptionsBrightnessRendered;
 
     private ModernUiRenderer() {
     }
@@ -41,6 +42,7 @@ public final class ModernUiRenderer {
         boolean graphicsOptions = containsGraphicsOptionsText(loadedComponents);
         int oldTitleCenterX = graphicsOptionsTitleCenterX;
         int oldTitleY = graphicsOptionsTitleY;
+        boolean oldBrightnessRendered = graphicsOptionsBrightnessRendered;
 
         if (graphicsOptions) {
             GraphicsOptionsAnchor anchor = findGraphicsOptionsAnchor(
@@ -54,6 +56,7 @@ public final class ModernUiRenderer {
                 graphicsOptionsTitleY = anchor.y;
             }
             graphicsOptionsDepth++;
+            graphicsOptionsBrightnessRendered = false;
             renderGraphicsOptionsBackdrop(
                 clipLeft,
                 clipTop,
@@ -78,6 +81,7 @@ public final class ModernUiRenderer {
             graphicsOptionsDepth--;
             graphicsOptionsTitleCenterX = oldTitleCenterX;
             graphicsOptionsTitleY = oldTitleY;
+            graphicsOptionsBrightnessRendered = oldBrightnessRendered;
         }
     }
 
@@ -292,6 +296,8 @@ public final class ModernUiRenderer {
     private static void renderText(Component component, int x, int y) {
         if (graphicsOptionsDepth > 0
             && component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_VALUE_TEXT) {
+            // The injected Modern UI selector value is owned by the Killer
+            // Edition overlay. Suppress only that synthetic copy here.
             return;
         }
 
@@ -320,38 +326,209 @@ public final class ModernUiRenderer {
             display = Cs1ScriptRunner.interpolate(component, display);
         }
 
-        if (graphicsOptionsDepth > 0
-            && component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_STYLE_TEXT) {
-            ModernUiImage button = ModernUiAssetResolver.get(
-                "controls/button",
-                Math.max(1, component.width),
-                Math.max(1, component.height)
-            );
-            if (button != null) {
-                button.render(x, y);
-            } else {
-                drawMissing(
-                    "asset:controls/button",
-                    x,
-                    y,
+        String text = display == null ? "" : display.toString();
+
+        if (graphicsOptionsDepth > 0) {
+            if (component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_STYLE_TEXT) {
+                ModernUiImage button = ModernUiAssetResolver.get(
+                    "controls/button",
                     Math.max(1, component.width),
-                    Math.max(1, component.height)
+                    Math.max(20, component.height)
                 );
+                int buttonY = y - Math.max(0, (20 - component.height) / 2);
+                if (button != null) {
+                    button.render(x, buttonY);
+                } else {
+                    drawMissing(
+                        "asset:controls/button",
+                        x,
+                        buttonY,
+                        Math.max(1, component.width),
+                        Math.max(20, component.height)
+                    );
+                }
+
+                ModernTrueTypeFont.drawInBox(
+                    text,
+                    x,
+                    buttonY,
+                    component.width,
+                    Math.max(20, component.height),
+                    0xE8DDC4,
+                    component.halign,
+                    1,
+                    11.0F,
+                    false
+                );
+                return;
             }
+
+            if (isGraphicsOptionsDropdownValue(component, text, y)) {
+                int controlHeight = Math.max(20, component.height + 6);
+                int controlY = y - Math.max(2, (controlHeight - component.height) / 2);
+
+                drawModernControlBox(
+                    x,
+                    controlY,
+                    Math.max(1, component.width),
+                    controlHeight,
+                    true,
+                    false
+                );
+
+                ModernTrueTypeFont.drawInBox(
+                    text,
+                    x + 4,
+                    controlY,
+                    Math.max(1, component.width - 22),
+                    controlHeight,
+                    0xE8DDC4,
+                    component.halign,
+                    1,
+                    11.0F,
+                    false
+                );
+                return;
+            }
+
+            ModernTrueTypeFont.drawInBox(
+                text,
+                x,
+                y,
+                component.width,
+                component.height,
+                0xE8DDC4,
+                component.halign,
+                component.valign,
+                graphicsOptionsFontSize(text),
+                false
+            );
+            return;
         }
 
         ModernTrueTypeFont.drawInBox(
-            display == null ? "" : display.toString(),
+            text,
             x,
             y,
             component.width,
             component.height,
-            graphicsOptionsDepth > 0 ? 0xE2E5E9 : safeColor(color),
+            safeColor(color),
             component.halign,
             component.valign,
             12.0F,
             component.shadowed
         );
+    }
+
+    private static boolean isGraphicsOptionsDropdownValue(
+        Component component,
+        String text,
+        int y
+    ) {
+        if (text == null || text.trim().isEmpty()) {
+            return false;
+        }
+        if (component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_STYLE_TEXT
+            || component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_VALUE_TEXT) {
+            return false;
+        }
+
+        int width = Math.max(1, component.width);
+        int height = Math.max(1, component.height);
+        if (width < 60 || width > 190 || height > 32) {
+            return false;
+        }
+
+        int relativeY = y - graphicsOptionsTitleY;
+        if (relativeY < 65 || relativeY > 350) {
+            return false;
+        }
+
+        return !isGraphicsOptionsLabel(text);
+    }
+
+    private static boolean isGraphicsOptionsLabel(String text) {
+        String normalized = normalizeGraphicsOptionsText(text);
+
+        if (normalized.isEmpty()) {
+            return true;
+        }
+
+        if (normalized.equals("graphics options")
+            || normalized.equals("display modes")
+            || normalized.equals("advanced options")
+            || normalized.equals("brightness")
+            || normalized.equals("visible levels")
+            || normalized.equals("remove roofs")
+            || normalized.equals("ground decoration")
+            || normalized.equals("texture detail")
+            || normalized.equals("idle animations")
+            || normalized.equals("flickering effects")
+            || normalized.equals("ground textures")
+            || normalized.equals("character shadows")
+            || normalized.equals("scenery shadows")
+            || normalized.equals("lighting detail")
+            || normalized.equals("water detail")
+            || normalized.equals("fog")
+            || normalized.equals("anti-aliasing")
+            || normalized.equals("modern ui")
+            || normalized.equals("style editor")
+            || normalized.equals("main menu")
+            || normalized.equals("standard detail")
+            || normalized.equals("(small)")
+            || normalized.equals("(fullscreen)")) {
+            return true;
+        }
+
+        return normalized.startsWith("high detail");
+    }
+
+    private static String normalizeGraphicsOptionsText(String text) {
+        StringBuilder out = new StringBuilder(text.length());
+        boolean insideTag = false;
+
+        for (int i = 0; i < text.length(); i++) {
+            char ch = text.charAt(i);
+            if (ch == '<') {
+                insideTag = true;
+                continue;
+            }
+            if (ch == '>' && insideTag) {
+                insideTag = false;
+                out.append(' ');
+                continue;
+            }
+            if (!insideTag) {
+                out.append(ch == '\n' || ch == '\r' || ch == '\t' ? ' ' : ch);
+            }
+        }
+
+        return out.toString()
+            .trim()
+            .toLowerCase(java.util.Locale.ROOT)
+            .replaceAll("\\s+", " ");
+    }
+
+    private static float graphicsOptionsFontSize(String text) {
+        String normalized = normalizeGraphicsOptionsText(text);
+
+        if (normalized.equals("graphics options")) {
+            return 16.0F;
+        }
+        if (normalized.equals("display modes")
+            || normalized.equals("advanced options")) {
+            return 13.0F;
+        }
+        if (normalized.equals("standard detail")
+            || normalized.startsWith("high detail")
+            || normalized.equals("(small)")
+            || normalized.equals("(fullscreen)")) {
+            return 11.0F;
+        }
+        if (normalized.equals("main menu")) {
+            return 13.0F;
+        }
+        return 12.0F;
     }
 
     private static void renderImage(Component component, int x, int y) {
@@ -533,17 +710,53 @@ public final class ModernUiRenderer {
     ) {
         if (component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_SELECTOR_HIT
             || component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_SELECTOR_PIECE) {
+            // Synthetic Standard-UI selector pieces are replaced by the
+            // Modern overlay and are never missing Modern assets.
             return;
         }
 
         String assetKey = "graphics-options/" + componentAssetKey(component);
         int width = Math.max(1, component.width);
         int height = Math.max(1, component.height);
+        int relativeY = y - graphicsOptionsTitleY;
+        int centerX = x + width / 2;
 
-        // Graphics Options replacements are deliberately 1:1 with the real
-        // interface component that supplied the old artwork. This preserves
-        // the exact source position and dimensions for both replacement art
-        // and the development missing-texture marker.
+        // The parchment/frame/background is legacy cache chrome. Modern mode
+        // already supplies one scalable panel and divider set.
+        if (width >= 165 || height >= 55 || relativeY < -20) {
+            return;
+        }
+
+        // SD/HD display-mode buttons contain legacy sprite lettering. The
+        // Modern backdrop draws vector buttons and TrueType SD/HD labels.
+        if (relativeY >= 10 && relativeY <= 90
+            && width >= 36 && width <= 100
+            && height >= 20 && height <= 55) {
+            return;
+        }
+
+        // Brightness is the only non-dropdown control in the advanced grid.
+        // Replace its sprite assembly once with our scalable slider assets.
+        if (!graphicsOptionsBrightnessRendered
+            && relativeY >= 120 && relativeY <= 230
+            && Math.abs(centerX - (graphicsOptionsTitleCenterX - 260)) <= 45
+            && width >= 65 && width <= 165
+            && height >= 10 && height <= 34) {
+            drawModernBrightness(x, y, width, Math.max(18, height));
+            graphicsOptionsBrightnessRendered = true;
+            return;
+        }
+
+        // Selector boxes, end caps and arrow pieces are legacy sprite chrome.
+        // Their value text components now draw one scalable vector dropdown
+        // at the real component bounds, so these individual sprite fragments
+        // must disappear in Modern mode.
+        if (relativeY >= 65 && relativeY <= 360
+            && width <= 190
+            && height <= 34) {
+            return;
+        }
+
         ModernUiImage image = ModernUiAssetResolver.get(
             assetKey,
             width,
@@ -554,6 +767,8 @@ public final class ModernUiRenderer {
             return;
         }
 
+        // Do not hide genuinely unidentified graphics while developing the
+        // replacement renderer.
         drawMissing(
             "asset:" + assetKey,
             x,
