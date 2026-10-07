@@ -75,6 +75,10 @@ public final class ModernUiSettingsOverlay {
      * Reads Mouse's normal click snapshot but deliberately never changes it.
      */
     public static void processInput() {
+        if (!ModernUiManager.isSupportedDisplayMode()) {
+            dropdownOpen = false;
+            return;
+        }
         if (!graphicsOptionsSeen || !selectorSeen || Mouse.clickButton != 1) {
             return;
         }
@@ -121,7 +125,9 @@ public final class ModernUiSettingsOverlay {
     }
 
     public static void render() {
-        if (!graphicsOptionsSeen || !selectorSeen) {
+        if (!ModernUiManager.isSupportedDisplayMode()
+            || !graphicsOptionsSeen
+            || !selectorSeen) {
             dropdownOpen = false;
             return;
         }
