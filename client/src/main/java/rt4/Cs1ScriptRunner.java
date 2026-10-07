@@ -1135,12 +1135,14 @@ public class Cs1ScriptRunner {
 
 	@OriginalMember(owner = "client!al", name = "a", descriptor = "(Z)V")
 	public static void renderTopLevelInterface() {
+		ModernUiSettingsOverlay.beginFrame();
 		deferredDragComponents = null;
 		renderInterface(InterfaceList.topLevelInterface, 0, GameShell.canvasWidth, 0, -1, GameShell.canvasHeight, 0, 0);
 		if (deferredDragComponents != null) {
 			renderComponent(0, deferredDragRenderY, deferredDragRenderX, deferredDragComponents, GameShell.canvasWidth, -1412584499, 0, GameShell.canvasHeight, dragParentComponent.rectangle);
 			deferredDragComponents = null;
 		}
+		ModernUiSettingsOverlay.render();
 	}
 
 	@OriginalMember(owner = "client!mj", name = "a", descriptor = "(IILclient!be;IB)V")
