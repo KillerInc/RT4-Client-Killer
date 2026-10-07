@@ -1138,6 +1138,13 @@ public final class ModernUiRenderer {
         }
     }
 
+    private static final class GraphicsOptionsSignature {
+        private boolean graphicsOptions;
+        private boolean displayModes;
+        private boolean advancedOptions;
+        private boolean antiAliasing;
+    }
+
     private static final class GraphicsOptionsAnchor {
         private final int centerX;
         private final int y;
@@ -1159,23 +1166,50 @@ public final class ModernUiRenderer {
     }
 
     private static boolean containsGraphicsOptionsText(Component[] components) {
+        // "Graphics Options" also appears as a navigation entry on other
+        // interfaces (for example the login/main menu). Treating that single
+        // string as an interface identity causes Modern Graphics Options
+        // chrome to be drawn on unrelated screens.
+        //
+        // Require the semantic signature of the real Graphics Options screen.
+        GraphicsOptionsSignature signature = new GraphicsOptionsSignature();
+        collectGraphicsOptionsSignature(components, signature);
+        return signature.graphicsOptions
+            && signature.displayModes
+            && signature.advancedOptions
+            && signature.antiAliasing;
+    }
+
+    private static void collectGraphicsOptionsSignature(
+        Component[] components,
+        GraphicsOptionsSignature signature
+    ) {
         if (components == null) {
-            return false;
+            return;
         }
+
         for (Component component : components) {
             if (component == null) {
                 continue;
             }
-            if (component.text != null
-                && component.text.length() > 0
-                && component.text.toString().contains("Graphics Options")) {
-                return true;
+
+            if (component.text != null && component.text.length() > 0) {
+                String text = normalizeGraphicsOptionsText(component.text.toString());
+                if (text.equals("graphics options")) {
+                    signature.graphicsOptions = true;
+                } else if (text.equals("display modes")) {
+                    signature.displayModes = true;
+                } else if (text.equals("advanced options")) {
+                    signature.advancedOptions = true;
+                } else if (text.equals("anti-aliasing")) {
+                    signature.antiAliasing = true;
+                }
             }
-            if (component.createdComponents != null && containsGraphicsOptionsText(component.createdComponents)) {
-                return true;
+
+            if (component.createdComponents != null) {
+                collectGraphicsOptionsSignature(component.createdComponents, signature);
             }
         }
-        return false;
     }
 
     private static String componentAssetKey(Component component) {
