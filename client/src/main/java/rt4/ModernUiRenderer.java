@@ -27,7 +27,6 @@ public final class ModernUiRenderer {
     private static MainMenuLayout mainMenuLayout;
     private static int suppressDiagnosticsDepth;
     private static boolean loginUiActivated;
-    private static boolean mainMenuBackdropRendered;
     private static UiRect lastMainMenuContentBounds;
 
     private ModernUiRenderer() {
@@ -107,7 +106,6 @@ public final class ModernUiRenderer {
         if (mainMenu) {
             mainMenuDepth++;
             mainMenuLayout = detectedMainMenu;
-            mainMenuBackdropRendered = false;
         }
 
         if (graphicsOptions) {
@@ -436,13 +434,9 @@ public final class ModernUiRenderer {
             ScriptRunner.renderGameScene(component.height, component.clientCode == 1403, x, component.width, y);
             setClip(clipLeft, clipTop, clipRight, clipBottom);
 
-            // Do not draw the Modern main-menu parchment/logo here.
-            // The login scene can draw a transition/fade overlay later in the
-            // same legacy component pass, which would incorrectly fade the
-            // Modern backdrop with the animated background. The first Modern
-            // main-menu control calls ensureMainMenuBackdrop() instead, so the
-            // parchment and title are composited after scene transitions but
-            // before the controls themselves.
+            // Scene rendering belongs to the background pass only. The
+            // complete Modern login UI is composited after this interface's
+            // legacy scene/fade component pass has finished.
             return true;
         }
 
@@ -1422,7 +1416,6 @@ public final class ModernUiRenderer {
         renderMainMenuMusicSlider();
 
         setClip(0, 0, GameShell.canvasWidth, GameShell.canvasHeight);
-        mainMenuBackdropRendered = true;
     }
 
     private static String getCurrentMainMenuText(Component component) {
