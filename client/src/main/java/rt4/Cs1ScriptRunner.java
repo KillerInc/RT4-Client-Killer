@@ -8,6 +8,7 @@ import plugin.PluginRepository;
 import java.nio.charset.StandardCharsets;
 
 public class Cs1ScriptRunner {
+	private static int modernUiNativeBridgeDepth;
 	@OriginalMember(owner = "client!bm", name = "p", descriptor = "Lclient!na;")
 	public static final JagString CS1_PLACEHOLDER_1 = JagString.parse("(U1");
 	@OriginalMember(owner = "client!wh", name = "u", descriptor = "Lclient!na;")
@@ -1123,13 +1124,44 @@ public class Cs1ScriptRunner {
 	@OriginalMember(owner = "client!ag", name = "a", descriptor = "(IIIIIIIII)V")
 	public static void renderInterface(@OriginalArg(1) int interfaceId, @OriginalArg(2) int clipLeft, @OriginalArg(3) int clipRight, @OriginalArg(4) int parentX, @OriginalArg(5) int rectangle, @OriginalArg(6) int clipBottom, @OriginalArg(7) int clipTop, @OriginalArg(8) int parentY) {
 		if (ModernUiManager.isEnabled()) {
+			// Graphics Options owns the renderer switch itself. Keep that
+			// entire interface tree native so the bridge is pixel-identical
+			// in Standard and Modern modes instead of partially substituting
+			// Modern UI placeholder artwork.
+			if (modernUiNativeBridgeDepth > 0) {
+				renderNativeInterface(interfaceId, clipLeft, clipRight, parentX, rectangle, clipBottom, clipTop, parentY);
+				return;
+			}
+			if (InterfaceList.load(interfaceId)
+				&& ModernUiSettingsOverlay.isGraphicsOptionsInterface(InterfaceList.components[interfaceId])) {
+				modernUiNativeBridgeDepth++;
+				try {
+					renderComponent(clipLeft, parentY, parentX, InterfaceList.components[interfaceId], clipRight, -1, clipTop, clipBottom, rectangle);
+				} finally {
+					modernUiNativeBridgeDepth--;
+				}
+				return;
+			}
 			ModernUiRenderer.renderInterface(interfaceId, clipLeft, clipRight, parentX, rectangle, clipBottom, clipTop, parentY);
 			return;
 		}
+		renderNativeInterface(interfaceId, clipLeft, clipRight, parentX, rectangle, clipBottom, clipTop, parentY);
+	}
+
+	private static void renderNativeInterface(
+		int interfaceId,
+		int clipLeft,
+		int clipRight,
+		int parentX,
+		int rectangle,
+		int clipBottom,
+		int clipTop,
+		int parentY
+	) {
 		if (InterfaceList.load(interfaceId)) {
 			renderComponent(clipLeft, parentY, parentX, InterfaceList.components[interfaceId], clipRight, -1, clipTop, clipBottom, rectangle);
 		} else if (rectangle == -1) {
-			for (@Pc(27) int i = 0; i < 100; i++) {
+			for (int i = 0; i < 100; i++) {
 				InterfaceList.rectangleDirty[i] = true;
 			}
 		} else {

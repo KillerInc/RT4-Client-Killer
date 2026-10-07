@@ -59,6 +59,27 @@ public final class ModernUiSettingsOverlay {
         return graphicsOptionsSeen;
     }
 
+    public static boolean isGraphicsOptionsInterface(Component[] components) {
+        if (components == null) {
+            return false;
+        }
+        for (Component component : components) {
+            if (component == null) {
+                continue;
+            }
+            if (component.text != null
+                && component.text.length() > 0
+                && component.text.toString().contains("Graphics Options")) {
+                return true;
+            }
+            if (component.createdComponents != null
+                && isGraphicsOptionsInterface(component.createdComponents)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static void render() {
         if (!graphicsOptionsSeen) {
             dropdownOpen = false;
@@ -80,93 +101,54 @@ public final class ModernUiSettingsOverlay {
         int selectorX = targetCenterX - selectorW / 2;
         int selectorY = titleY + 279;
 
-        if (modern) {
-            ModernTrueTypeFont.drawCentered(
-                "Modern UI",
-                targetCenterX,
-                labelBaseline,
-                0xE4D2A3,
-                11.0F,
-                true
-            );
-            drawModernField(selectorX, selectorY, selectorW, selectorH, true);
-            ModernTrueTypeFont.drawCentered(
-                "Yes",
-                targetCenterX - 5,
-                selectorY + 15,
-                0xFFF2CF,
-                11.0F,
-                false
-            );
-            drawModernArrow(selectorX + selectorW - 16, selectorY + 7);
-        } else {
-            if (Fonts.p12Full == null) {
-                return;
-            }
-
-            Fonts.p12Full.renderCenter(
-                JagString.parse("Modern UI"),
-                targetCenterX,
-                labelBaseline,
-                TEXT,
-                -1
-            );
-
-            if (!drawNativeSelectorAssembly(sourceCenterX, targetCenterX, selectorY)) {
-                drawNativeFallback(selectorX, selectorY, selectorW, selectorH, true, true);
-            }
-
-            Fonts.p12Full.renderCenter(
-                JagString.parse("No"),
-                targetCenterX - 5,
-                selectorY + 15,
-                TEXT,
-                -1
-            );
+        if (Fonts.p12Full == null) {
+            return;
         }
+
+        // This screen is the renderer-selection bridge, so its added control
+        // must use the same native artwork as the surrounding selectors.
+        Fonts.p12Full.renderCenter(
+            JagString.parse("Modern UI"),
+            targetCenterX,
+            labelBaseline,
+            TEXT,
+            -1
+        );
+
+        if (!drawNativeSelectorAssembly(sourceCenterX, targetCenterX, selectorY)) {
+            drawNativeFallback(selectorX, selectorY, selectorW, selectorH, true, true);
+        }
+
+        Fonts.p12Full.renderCenter(
+            JagString.parse(modern ? "Yes" : "No"),
+            targetCenterX - 5,
+            selectorY + 15,
+            TEXT,
+            -1
+        );
 
         int editorW = 116;
         int editorH = 20;
         int editorX = targetCenterX - editorW / 2;
         int editorY = selectorY + 24;
 
-        if (modern) {
-            drawModernField(editorX, editorY, editorW, editorH, true);
-            ModernTrueTypeFont.drawCentered(
-                "Style Editor",
-                targetCenterX,
-                editorY + 15,
-                0xFFF2CF,
-                10.0F,
-                true
-            );
-        } else {
-            // Button is not a dropdown, so use a native-looking field without
-            // arrow/cap decoration.
-            drawNativeFallback(editorX, editorY, editorW, editorH, false, false);
-            Fonts.p12Full.renderCenter(
-                JagString.parse("Style Editor"),
-                targetCenterX,
-                editorY + 15,
-                DISABLED,
-                -1
-            );
-        }
+        drawNativeFallback(editorX, editorY, editorW, editorH, modern, false);
+        Fonts.p12Full.renderCenter(
+            JagString.parse("Style Editor"),
+            targetCenterX,
+            editorY + 15,
+            modern ? TEXT : DISABLED,
+            -1
+        );
 
         int popupX = selectorX;
         int popupY = selectorY + selectorH;
         int popupH = selectorH * 2;
 
         if (dropdownOpen) {
-            if (modern) {
-                drawModernField(popupX, popupY, selectorW, popupH, true);
-                drawModernChoice("No", popupX, popupY, selectorW, selectorH, !modern);
-                drawModernChoice("Yes", popupX, popupY + selectorH, selectorW, selectorH, modern);
-            } else {
-                drawNativeFallback(popupX, popupY, selectorW, popupH, true, false);
-                drawNativeChoice("No", popupX, popupY, selectorW, selectorH, !modern);
-                drawNativeChoice("Yes", popupX, popupY + selectorH, selectorW, selectorH, modern);
-            }
+            drawNativeFallback(popupX, popupY, selectorW, popupH, true, false);
+            drawNativeChoice("No", popupX, popupY, selectorW, selectorH, !modern);
+            drawNativeChoice("Yes", popupX, popupY + selectorH, selectorW, selectorH, modern);
         }
 
         if (Mouse.clickButton != 1) {
@@ -316,6 +298,7 @@ public final class ModernUiSettingsOverlay {
         if (selected) {
             fillAlpha(x + 2, y + 2, width - 4, height - 4, 0xD1B875, 150);
         }
+        hline(x + 2, y + height - 1, width - 4, 0x6F5B3B);
         Fonts.p12Full.renderCenter(
             JagString.parse(text),
             x + width / 2,
