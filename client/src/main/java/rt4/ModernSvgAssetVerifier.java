@@ -72,16 +72,24 @@ public final class ModernSvgAssetVerifier {
             }
         }
 
+        // Some authored SVGs intentionally have a large transparent
+        // viewBox around their artwork. We are testing whether Batik produced
+        // real vector output, not whether the source was tightly cropped.
         require(
-            visible > total / 20,
+            visible > total / 200,
             "SVG rendered effectively blank at "
                 + width + "x" + height
         );
+
+        double coverage =
+            total == 0 ? 0.0 : (visible * 100.0) / total;
 
         System.out.println(
             "  raster "
                 + width + "x" + height
                 + " visiblePixels=" + visible
+                + " coverage="
+                + String.format(java.util.Locale.ROOT, "%.2f%%", coverage)
         );
     }
 
