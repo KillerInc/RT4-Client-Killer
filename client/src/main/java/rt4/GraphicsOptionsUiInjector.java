@@ -75,28 +75,36 @@ public final class GraphicsOptionsUiInjector {
         }
 
         if (valueText != null) {
-            int rowTop = valueText.y - 8;
-            int rowBottom = valueText.y + Math.max(18, valueText.component.height) + 5;
+            int valueHeight = Math.max(1, valueText.component.height);
+            int rowCenterY = valueText.y + valueHeight / 2;
 
-            // Now copy only sprite pieces that overlap the closed AA field.
-            // This excludes the lower decorative/popup sprite that was
-            // appearing beside Style Editor.
+            // Copy only the sprites that actually belong to the CLOSED AA
+            // selector row. They must be vertically centered on the value
+            // text and fully contained in that row band. This deliberately
+            // rejects the stray decorative/popup pieces that were being
+            // cloned underneath the Modern UI selector.
             for (LayoutEntry entry : entries) {
                 Component component = entry.component;
                 if (component.type != 5
                     || component.width <= 0 || component.height <= 0
-                    || component.width > 180 || component.height > 32) {
+                    || component.width > 180 || component.height > 24) {
                     continue;
                 }
 
                 int centerX = entry.x + Math.max(1, component.width) / 2;
                 int dx = Math.abs(centerX - aaCenterX);
-                int spriteTop = entry.y;
+
+                int spriteCenterY = entry.y + component.height / 2;
+                int centerDy = Math.abs(spriteCenterY - rowCenterY);
+
+                int allowedTop = valueText.y - 6;
+                int allowedBottom = valueText.y + Math.max(18, valueHeight) + 6;
                 int spriteBottom = entry.y + component.height;
 
                 if (dx <= 78
-                    && spriteBottom >= rowTop
-                    && spriteTop <= rowBottom) {
+                    && centerDy <= 7
+                    && entry.y >= allowedTop
+                    && spriteBottom <= allowedBottom) {
                     selectorSprites.add(entry);
                 }
             }
