@@ -27,6 +27,7 @@ public final class ModernUiRenderer {
     private static MainMenuLayout mainMenuLayout;
     private static int suppressDiagnosticsDepth;
     private static boolean loginUiActivated;
+    private static boolean mainMenuBackdropRendered;
 
     private ModernUiRenderer() {
     }
@@ -105,12 +106,7 @@ public final class ModernUiRenderer {
         if (mainMenu) {
             mainMenuDepth++;
             mainMenuLayout = detectedMainMenu;
-            renderMainMenuBackdrop(
-                clipLeft,
-                clipTop,
-                clipRight,
-                clipBottom
-            );
+            mainMenuBackdropRendered = false;
         }
 
         if (graphicsOptions) {
@@ -292,6 +288,19 @@ public final class ModernUiRenderer {
             Cs1ScriptRunner.gameSceneTooltipX = x;
             ScriptRunner.renderGameScene(component.height, component.clientCode == 1403, x, component.width, y);
             setClip(clipLeft, clipTop, clipRight, clipBottom);
+
+            if (mainMenuDepth > 0
+                && mainMenuLayout != null
+                && !mainMenuBackdropRendered) {
+                renderMainMenuBackdrop(
+                    clipLeft,
+                    clipTop,
+                    clipRight,
+                    clipBottom
+                );
+                mainMenuBackdropRendered = true;
+                setClip(clipLeft, clipTop, clipRight, clipBottom);
+            }
             return true;
         }
 
@@ -424,6 +433,7 @@ public final class ModernUiRenderer {
         String text = display == null ? "" : display.toString();
 
         if (mainMenuDepth > 0 && isManagedMainMenuText(text)) {
+            ensureMainMenuBackdrop();
             renderMainMenuText(component, text, x, y);
             return;
         }
@@ -1168,24 +1178,8 @@ public final class ModernUiRenderer {
         setClip(clipLeft, clipTop, clipRight, clipBottom);
 
         drawMainMenuAsset(
-            "main-menu/panel",
-            mainMenuLayout.body
-        );
-        drawMainMenuAsset(
-            "main-menu/header",
-            mainMenuLayout.header
-        );
-        drawMainMenuAsset(
-            "main-menu/footer",
-            mainMenuLayout.footer
-        );
-        drawMainMenuAsset(
-            "main-menu/edge",
-            mainMenuLayout.leftEdge
-        );
-        drawMainMenuAsset(
-            "main-menu/edge",
-            mainMenuLayout.rightEdge
+            "main-menu/scroll",
+            mainMenuLayout.scroll
         );
 
         if (mainMenuLayout.logo != null) {
@@ -1218,6 +1212,22 @@ public final class ModernUiRenderer {
                 true
             );
         }
+    }
+
+    private static void ensureMainMenuBackdrop() {
+        if (mainMenuDepth <= 0
+            || mainMenuLayout == null
+            || mainMenuBackdropRendered) {
+            return;
+        }
+
+        renderMainMenuBackdrop(
+            0,
+            0,
+            GameShell.canvasWidth,
+            GameShell.canvasHeight
+        );
+        mainMenuBackdropRendered = true;
     }
 
     private static void drawMainMenuAsset(
@@ -1295,9 +1305,9 @@ public final class ModernUiRenderer {
                 component.width,
                 Math.min(190, textWidth + 22)
             );
-            int buttonHeight = Math.max(22, component.height + 8);
+            int buttonHeight = Math.max(1, component.height);
             int buttonX = x + (component.width - buttonWidth) / 2;
-            int buttonY = y + (component.height - buttonHeight) / 2;
+            int buttonY = y;
 
             boolean hover =
                 Mouse.lastMouseX >= x
@@ -1326,6 +1336,21 @@ public final class ModernUiRenderer {
                     buttonHeight
                 );
             }
+
+            ModernTrueTypeFont.drawInBox(
+                fontAsset,
+                text,
+                buttonX,
+                buttonY,
+                buttonWidth,
+                buttonHeight,
+                color,
+                1,
+                1,
+                size,
+                component.shadowed
+            );
+            return;
         }
 
         ModernTrueTypeFont.drawInBox(
@@ -1446,6 +1471,7 @@ public final class ModernUiRenderer {
         private final Set<Integer> choiceComponentIds = new HashSet<>();
 
         private UiRect body;
+        private UiRect scroll;
         private UiRect header;
         private UiRect footer;
         private UiRect leftEdge;
@@ -1499,6 +1525,15 @@ public final class ModernUiRenderer {
                     ? rectCenterX(content)
                     : rectCenterX(graphics.rect);
 
+            int scrollWidth = Math.max(224, content.width + 54);
+            int scrollHeight = Math.max(250, content.height + 72);
+            scroll = new UiRect(
+                centerX - scrollWidth / 2,
+                content.y - 34,
+                scrollWidth,
+                scrollHeight
+            );
+
             MainMenuImageEntry bestBody = null;
             int bestBodyArea = 0;
             for (MainMenuImageEntry image : images) {
@@ -1522,6 +1557,7 @@ public final class ModernUiRenderer {
 
             if (bestBody != null) {
                 bodyComponentId = bestBody.componentId;
+                frameComponentIds.add(bestBody.componentId);
                 body = bestBody.rect;
             } else {
                 int width = Math.max(190, content.width + 48);
@@ -1702,11 +1738,28 @@ public final class ModernUiRenderer {
                     }
                 }
 
-                if (leftChoice != null) {
-                    choiceComponentIds.add(leftChoice.componentId);
-                }
-                if (rightChoice != null) {
-                    choiceComponentIds.add(rightChoice.componentId);
+                UiRect leftChoiceRect =
+                    leftChoice == null ? null : leftChoice.rect;
+                UiRect rightChoiceRect =
+                    rightChoice == null ? null : rightChoice.rect;
+
+                for (MainMenuImageEntry image : images) {
+                    if (intersects(
+                            leftChoiceRect,
+                            image.rect.x,
+                            image.rect.y,
+                            image.rect.width,
+                            image.rect.height
+                        )
+                        || intersects(
+                            rightChoiceRect,
+                            image.rect.x,
+                            image.rect.y,
+                            image.rect.width,
+                            image.rect.height
+                        )) {
+                        choiceComponentIds.add(image.componentId);
+                    }
                 }
             }
         }
