@@ -2490,14 +2490,29 @@ public final class ModernUiRenderer {
             if (component == null || component.overlayer != layer) {
                 continue;
             }
+            if (component.if3 && InterfaceList.isHidden(component)) {
+                continue;
+            }
+            if (component.type == 0
+                && !component.if3
+                && InterfaceList.isHidden(component)
+                && InterfaceList.hoveredComponent != component) {
+                continue;
+            }
 
             int x = parentX + component.x;
             int y = parentY + component.y;
 
-            if (component.text != null
+            if (component.type == 4
+                && component.text != null
                 && component.text.length() > 0
-                && component.text.toString().contains("Graphics Options")) {
-                return new GraphicsOptionsAnchor(x + component.width / 2, y);
+                && normalizeGraphicsOptionsText(
+                    component.text.toString()
+                ).equals("graphics options")) {
+                return new GraphicsOptionsAnchor(
+                    x + component.width / 2,
+                    y
+                );
             }
 
             if (component.type == 0) {
