@@ -210,6 +210,9 @@ public final class ModernUiRenderer {
 
             int x = parentX + component.x;
             int y = parentY + component.y;
+            if (mainMenuDepth > 0 && component.type == 4) {
+                y += mainMenuTextYOffset(component);
+            }
             int rectangle = parentRectangle;
             if (rectangle == -1 && InterfaceList.rectangles < InterfaceList.rectangleX.length) {
                 rectangle = InterfaceList.rectangles++;
@@ -276,6 +279,30 @@ public final class ModernUiRenderer {
                 InterfaceList.rectangleRedraw[rectangle] = true;
             }
         }
+    }
+
+    private static int mainMenuTextYOffset(Component component) {
+        if (component == null || component.text == null) {
+            return 0;
+        }
+
+        String normalized = normalizeGraphicsOptionsText(
+            component.text.toString()
+        );
+
+        // Spread the lower main-menu controls without moving the Music Volume
+        // label or any of its slider components. This keeps the original
+        // volume interaction objects exactly where the cache/scripts expect.
+        if (normalized.equals("graphics options")) {
+            return -12;
+        }
+        if (normalized.equals("audio options")) {
+            return -6;
+        }
+        if (normalized.equals("quit")) {
+            return 14;
+        }
+        return 0;
     }
 
     private static boolean renderClientComponent(
@@ -1678,11 +1705,11 @@ public final class ModernUiRenderer {
 
             // Give the vector parchment a little more breathing room around
             // the existing login controls without moving the control layout.
-            int scrollWidth = Math.max(484, content.width + 269);
-            int scrollHeight = Math.max(511, content.height + 202);
+            int scrollWidth = Math.max(581, content.width + 323);
+            int scrollHeight = Math.max(613, content.height + 242);
             scroll = new UiRect(
                 centerX - scrollWidth / 2,
-                content.y - 125,
+                content.y - 176,
                 scrollWidth,
                 scrollHeight
             );
