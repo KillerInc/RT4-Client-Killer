@@ -17,8 +17,6 @@ public final class ModernUiSettingsOverlay {
     private static int selectorY;
     private static int selectorW;
     private static int selectorH;
-    private static int selectorRight;
-    private static int selectorBottom;
 
     private static int editorX;
     private static int editorY;
@@ -34,10 +32,6 @@ public final class ModernUiSettingsOverlay {
         graphicsOptionsSeen = false;
         selectorSeen = false;
         editorSeen = false;
-        selectorX = Integer.MAX_VALUE;
-        selectorY = Integer.MAX_VALUE;
-        selectorRight = Integer.MIN_VALUE;
-        selectorBottom = Integer.MIN_VALUE;
     }
 
     public static void observeComponent(Component component, int x, int y) {
@@ -51,14 +45,11 @@ public final class ModernUiSettingsOverlay {
             graphicsOptionsSeen = true;
         }
 
-        if (component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_SELECTOR_HIT
-            || component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_SELECTOR_PIECE) {
-            selectorX = Math.min(selectorX, x);
-            selectorY = Math.min(selectorY, y);
-            selectorRight = Math.max(selectorRight, x + Math.max(1, component.width));
-            selectorBottom = Math.max(selectorBottom, y + Math.max(1, component.height));
-            selectorW = Math.max(1, selectorRight - selectorX);
-            selectorH = Math.max(1, selectorBottom - selectorY);
+        if (component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_SELECTOR_HIT) {
+            selectorX = x;
+            selectorY = y;
+            selectorW = Math.max(1, component.width);
+            selectorH = Math.max(1, component.height);
             selectorSeen = true;
         } else if (component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_STYLE_TEXT) {
             editorX = x;
@@ -81,15 +72,6 @@ public final class ModernUiSettingsOverlay {
 
         ModernUiManager.initialize();
         boolean modern = ModernUiManager.isEnabled();
-
-        if (modern) {
-            drawModernClosedSelector(
-                selectorX,
-                selectorY,
-                selectorW,
-                selectorH
-            );
-        }
 
         int popupX = selectorX;
         int popupY = selectorY + selectorH;
@@ -145,45 +127,6 @@ public final class ModernUiSettingsOverlay {
             && contains(mx, my, editorX, editorY, editorW, editorH)) {
             Mouse.clickButton = 0;
             ModernUiManager.openStyleEditor();
-        }
-    }
-
-    private static void drawModernClosedSelector(
-        int x,
-        int y,
-        int width,
-        int height
-    ) {
-        ModernUiImage field = ModernUiAssetResolver.get(
-            "controls/dropdown",
-            width,
-            height
-        );
-        if (field != null) {
-            field.render(x, y);
-        } else {
-            ModernUiRenderer.drawMissing(
-                "asset:controls/dropdown",
-                x,
-                y,
-                width,
-                height
-            );
-        }
-
-        ModernUiImage arrow = ModernUiAssetResolver.get("icons/dropdown", 9, 6);
-        int arrowX = x + width - 15;
-        int arrowY = y + Math.max(4, (height - 6) / 2);
-        if (arrow != null) {
-            arrow.render(arrowX, arrowY);
-        } else {
-            ModernUiRenderer.drawMissing(
-                "asset:icons/dropdown",
-                arrowX,
-                arrowY,
-                9,
-                6
-            );
         }
     }
 
