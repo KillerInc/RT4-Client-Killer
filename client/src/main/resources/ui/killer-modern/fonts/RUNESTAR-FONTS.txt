@@ -1,0 +1,4 @@
+RuneScape TTF family from RuneStar/fonts release 1.103-0.
+Source: https://github.com/RuneStar/fonts
+License: CC0-1.0 / Public Domain (see upstream project).
+Used only by Killer Edition Modern UI; vanilla RT4 font rendering is unchanged.
