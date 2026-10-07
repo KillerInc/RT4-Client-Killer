@@ -28,6 +28,7 @@ public final class ModernUiRenderer {
     private static int suppressDiagnosticsDepth;
     private static boolean loginUiActivated;
     private static boolean mainMenuBackdropRendered;
+    private static UiRect lastMainMenuContentBounds;
 
     private ModernUiRenderer() {
     }
@@ -210,8 +211,8 @@ public final class ModernUiRenderer {
 
             int x = parentX + component.x;
             int y = parentY + component.y;
-            if (mainMenuDepth > 0 && component.type == 4) {
-                y += mainMenuTextYOffset(component);
+            if (mainMenuDepth > 0) {
+                y = adjustMainMenuComponentY(component, y);
             }
             int rectangle = parentRectangle;
             if (rectangle == -1 && InterfaceList.rectangles < InterfaceList.rectangleX.length) {
@@ -226,10 +227,39 @@ public final class ModernUiRenderer {
             component.rectangle = rectangle;
             ModernUiSettingsOverlay.observeComponent(component, x, y);
 
-            int left = Math.max(clipLeft, x);
-            int top = Math.max(clipTop, y);
-            int right = Math.min(clipRight, x + Math.max(1, component.width));
-            int bottom = Math.min(clipBottom, y + Math.max(1, component.height));
+            int effectiveClipLeft = clipLeft;
+            int effectiveClipTop = clipTop;
+            int effectiveClipRight = clipRight;
+            int effectiveClipBottom = clipBottom;
+
+            if (mainMenuDepth > 0
+                && mainMenuLayout != null
+                && usesMainMenuContentBounds(component)) {
+                UiRect bounds = mainMenuLayout.contentBounds;
+                if (bounds != null) {
+                    effectiveClipLeft = Math.max(0, bounds.x);
+                    effectiveClipTop = Math.max(0, bounds.y);
+                    effectiveClipRight = Math.min(
+                        GameShell.canvasWidth,
+                        bounds.x + bounds.width
+                    );
+                    effectiveClipBottom = Math.min(
+                        GameShell.canvasHeight,
+                        bounds.y + bounds.height
+                    );
+                }
+            }
+
+            int left = Math.max(effectiveClipLeft, x);
+            int top = Math.max(effectiveClipTop, y);
+            int right = Math.min(
+                effectiveClipRight,
+                x + Math.max(1, component.width)
+            );
+            int bottom = Math.min(
+                effectiveClipBottom,
+                y + Math.max(1, component.height)
+            );
             if (right <= left || bottom <= top) {
                 continue;
             }
@@ -274,11 +304,94 @@ public final class ModernUiRenderer {
                 continue;
             }
 
+            if (mainMenuDepth > 0
+                && mainMenuLayout != null
+                && usesMainMenuContentBounds(component)
+                && mainMenuLayout.contentBounds != null) {
+                UiRect bounds = mainMenuLayout.contentBounds;
+                setClip(
+                    Math.max(0, bounds.x),
+                    Math.max(0, bounds.y),
+                    Math.min(GameShell.canvasWidth, bounds.x + bounds.width),
+                    Math.min(GameShell.canvasHeight, bounds.y + bounds.height)
+                );
+            }
+
             renderComponentVisual(component, x, y);
+
+            if (mainMenuDepth > 0 && usesMainMenuContentBounds(component)) {
+                setClip(clipLeft, clipTop, clipRight, clipBottom);
+            }
+
             if (rectangle >= 0 && rectangle < InterfaceList.rectangleRedraw.length) {
                 InterfaceList.rectangleRedraw[rectangle] = true;
             }
         }
+    }
+
+    public static int adjustMainMenuComponentY(
+        Component component,
+        int y
+    ) {
+        if (!usesMainMenuContentBounds(component) || component.type != 4) {
+            return y;
+        }
+        return y + mainMenuTextYOffset(component);
+    }
+
+    public static boolean usesMainMenuContentBounds(Component component) {
+        if (component == null
+            || lastMainMenuContentBounds == null
+            || !ModernUiManager.isEnabled()) {
+            return false;
+        }
+
+        int interfaceId = component.id >>> 16;
+        if (interfaceId != LoginManager.loginScreenId) {
+            return false;
+        }
+
+        if (component.type != 4 || component.text == null) {
+            return false;
+        }
+
+        String normalized = normalizeGraphicsOptionsText(
+            component.text.toString()
+        );
+        return isManagedMainMenuText(normalized)
+            || normalized.equals("music volume");
+    }
+
+    public static int getMainMenuContentLeft(int fallback) {
+        return lastMainMenuContentBounds == null
+            ? fallback
+            : Math.max(0, lastMainMenuContentBounds.x);
+    }
+
+    public static int getMainMenuContentTop(int fallback) {
+        return lastMainMenuContentBounds == null
+            ? fallback
+            : Math.max(0, lastMainMenuContentBounds.y);
+    }
+
+    public static int getMainMenuContentRight(int fallback) {
+        return lastMainMenuContentBounds == null
+            ? fallback
+            : Math.min(
+                GameShell.canvasWidth,
+                lastMainMenuContentBounds.x
+                    + lastMainMenuContentBounds.width
+            );
+    }
+
+    public static int getMainMenuContentBottom(int fallback) {
+        return lastMainMenuContentBounds == null
+            ? fallback
+            : Math.min(
+                GameShell.canvasHeight,
+                lastMainMenuContentBounds.y
+                    + lastMainMenuContentBounds.height
+            );
     }
 
     private static int mainMenuTextYOffset(Component component) {
@@ -290,9 +403,8 @@ public final class ModernUiRenderer {
             component.text.toString()
         );
 
-        // Spread the lower main-menu controls without moving the Music Volume
-        // label or any of its slider components. This keeps the original
-        // volume interaction objects exactly where the cache/scripts expect.
+        // These offsets are part of the Modern main-menu layout, not cosmetic
+        // render-only nudges. InterfaceList uses the same transform for input.
         if (normalized.equals("graphics options")) {
             return -12;
         }
@@ -300,9 +412,7 @@ public final class ModernUiRenderer {
             return -6;
         }
         if (normalized.equals("quit")) {
-            // Keep Quit on its original cache Y. Moving it down pushes the
-            // component beyond its parent clip, leaving only the top edge.
-            return 0;
+            return 14;
         }
         return 0;
     }
@@ -1649,6 +1759,7 @@ public final class ModernUiRenderer {
 
         private UiRect body;
         private UiRect scroll;
+        private UiRect contentBounds;
         private UiRect header;
         private UiRect footer;
         private UiRect leftEdge;
@@ -1715,6 +1826,24 @@ public final class ModernUiRenderer {
                 scrollWidth,
                 scrollHeight
             );
+
+            // The usable menu area is derived from the parchment itself.
+            // Future scaling/resizing therefore changes the outer artwork and
+            // the interaction/render bounds together instead of preserving the
+            // obsolete 2009 cache container dimensions.
+            int contentInsetX = Math.max(42, scroll.width * 12 / 100);
+            int contentInsetTop = Math.max(58, scroll.height * 12 / 100);
+            int contentInsetBottom = Math.max(48, scroll.height * 10 / 100);
+            contentBounds = new UiRect(
+                scroll.x + contentInsetX,
+                scroll.y + contentInsetTop,
+                Math.max(1, scroll.width - contentInsetX * 2),
+                Math.max(
+                    1,
+                    scroll.height - contentInsetTop - contentInsetBottom
+                )
+            );
+            lastMainMenuContentBounds = contentBounds;
 
             MainMenuImageEntry bestBody = null;
             int bestBodyArea = 0;
@@ -2488,6 +2617,7 @@ public final class ModernUiRenderer {
 
     public static void clearCaches() {
         loggedMissing.clear();
+        lastMainMenuContentBounds = null;
         ModernUiAssetResolver.clear();
         ModernTrueTypeFont.clear();
     }
