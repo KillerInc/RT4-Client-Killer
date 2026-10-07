@@ -15,6 +15,8 @@ import java.util.Set;
 public final class ModernUiRenderer {
     private static final Set<String> loggedMissing = new HashSet<>();
     private static int graphicsOptionsDepth;
+    private static int graphicsOptionsTitleCenterX;
+    private static int graphicsOptionsTitleY;
 
     private ModernUiRenderer() {
     }
@@ -37,8 +39,27 @@ public final class ModernUiRenderer {
 
         Component[] loadedComponents = InterfaceList.components[interfaceId];
         boolean graphicsOptions = containsGraphicsOptionsText(loadedComponents);
+        int oldTitleCenterX = graphicsOptionsTitleCenterX;
+        int oldTitleY = graphicsOptionsTitleY;
+
         if (graphicsOptions) {
+            GraphicsOptionsAnchor anchor = findGraphicsOptionsAnchor(
+                loadedComponents,
+                -1,
+                parentX,
+                parentY
+            );
+            if (anchor != null) {
+                graphicsOptionsTitleCenterX = anchor.centerX;
+                graphicsOptionsTitleY = anchor.y;
+            }
             graphicsOptionsDepth++;
+            renderGraphicsOptionsBackdrop(
+                clipLeft,
+                clipTop,
+                clipRight,
+                clipBottom
+            );
         }
 
         renderComponents(
@@ -55,6 +76,8 @@ public final class ModernUiRenderer {
 
         if (graphicsOptions) {
             graphicsOptionsDepth--;
+            graphicsOptionsTitleCenterX = oldTitleCenterX;
+            graphicsOptionsTitleY = oldTitleY;
         }
     }
 
@@ -242,16 +265,8 @@ public final class ModernUiRenderer {
 
     private static void renderRectangle(Component component, int x, int y) {
         if (graphicsOptionsDepth > 0) {
-            int alpha = 230;
-            if (component.filled) {
-                if (GlRenderer.enabled) {
-                    GlRaster.fillRectAlpha(x, y, component.width, component.height, 0x2B241B, alpha);
-                } else {
-                    SoftwareRaster.fillRectAlpha(x, y, component.width, component.height, 0x2B241B, alpha);
-                }
-            } else {
-                drawOutline(x, y, component.width, component.height, 0x8C744A);
-            }
+            // Cache rectangles are part of the 2009 skin. Modern Graphics
+            // Options supplies its own chrome and keeps only their state/text.
             return;
         }
 
@@ -306,7 +321,7 @@ public final class ModernUiRenderer {
             y,
             component.width,
             component.height,
-            graphicsOptionsDepth > 0 ? 0xE4D2A3 : safeColor(color),
+            graphicsOptionsDepth > 0 ? 0xE2E5E9 : safeColor(color),
             component.halign,
             component.valign,
             12.0F,
@@ -465,44 +480,241 @@ public final class ModernUiRenderer {
     private static void renderGraphicsOptionsImageFallback(Component component, int x, int y) {
         String key = "graphics-options/" + componentAssetKey(component);
         if (loggedMissing.add(key)) {
-            DisplayDebug.log("MODERN_UI MISSING " + key);
+            DisplayDebug.log("MODERN_UI replaced " + key + " with modern chrome");
         }
 
         int width = Math.max(1, component.width);
         int height = Math.max(1, component.height);
+        int centerX = x + width / 2;
+        int relativeY = y - graphicsOptionsTitleY;
 
-        // Missing major UI artwork must be impossible to mistake for a
-        // finished style. Use a high-contrast checkerboard diagnostic.
-        if (width >= 500 && height >= 180) {
-            drawMissingBackdrop(
-                key,
-                x,
-                y,
-                width,
-                height
-            );
+        // The old parchment frame is composed from many large/long sprite
+        // slices. Do not turn those slices into rectangular placeholders.
+        if (width >= 165 || height >= 55 || relativeY < -20) {
             return;
         }
 
-        if (width >= 250 && height >= 80) {
+        // Display-mode image buttons are real controls, not frame slices.
+        if (relativeY >= 10 && relativeY <= 90
+            && width >= 42 && width <= 92
+            && height >= 24 && height <= 52) {
+            drawModernControlBox(x, y, width, height, false);
             return;
         }
 
-        // Controls/buttons get a consistent modern field treatment while the
-        // proper style assets are still being authored.
-        if (width >= 45 && height >= 14) {
-            if (GlRenderer.enabled) {
-                GlRaster.fillRectAlpha(x, y, width, height, 0x3A3022, 235);
-                GlRaster.drawRect(x, y, width, height, 0xA58956);
-            } else {
-                SoftwareRaster.fillRectAlpha(x, y, width, height, 0x3A3022, 235);
-                SoftwareRaster.drawRect(x, y, width, height, 0xA58956);
+        // Brightness occupies the first advanced-options column.
+        if (relativeY >= 140 && relativeY <= 195
+            && Math.abs(centerX - (graphicsOptionsTitleCenterX - 260)) <= 30
+            && width >= 70 && width <= 150
+            && height >= 12 && height <= 30) {
+            drawModernBrightness(x, y, width, height);
+            return;
+        }
+
+        // Native selectors are assemblies of a central field plus tiny caps
+        // and arrows. Replace only the central field; tiny pieces fall through
+        // and disappear, preventing the blocky brown mosaic seen previously.
+        if (relativeY >= 85 && relativeY <= 325
+            && width >= 70 && width <= 155
+            && height >= 14 && height <= 30) {
+            drawModernControlBox(x, y, width, height, true);
+            return;
+        }
+
+        // Tiny decorative pieces and remaining parchment fragments are
+        // intentionally omitted. Modern UI never falls back to Index-8 art.
+    }
+
+    private static GraphicsOptionsAnchor findGraphicsOptionsAnchor(
+        Component[] components,
+        int layer,
+        int parentX,
+        int parentY
+    ) {
+        if (components == null) {
+            return null;
+        }
+
+        for (Component component : components) {
+            if (component == null || component.overlayer != layer) {
+                continue;
             }
+
+            int x = parentX + component.x;
+            int y = parentY + component.y;
+
+            if (component.text != null
+                && component.text.length() > 0
+                && component.text.toString().contains("Graphics Options")) {
+                return new GraphicsOptionsAnchor(x + component.width / 2, y);
+            }
+
+            if (component.type == 0) {
+                GraphicsOptionsAnchor child = findGraphicsOptionsAnchor(
+                    components,
+                    component.id,
+                    x - component.scrollX,
+                    y - component.scrollY
+                );
+                if (child != null) {
+                    return child;
+                }
+
+                if (component.createdComponents != null) {
+                    child = findGraphicsOptionsAnchor(
+                        component.createdComponents,
+                        component.id,
+                        x - component.scrollX,
+                        y - component.scrollY
+                    );
+                    if (child != null) {
+                        return child;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private static void renderGraphicsOptionsBackdrop(
+        int clipLeft,
+        int clipTop,
+        int clipRight,
+        int clipBottom
+    ) {
+        if (graphicsOptionsTitleCenterX == 0) {
             return;
         }
 
-        // Tiny decorative pieces are skipped. Their absence remains logged,
-        // but we do not cover the screen with magenta debug tiles.
+        setClip(clipLeft, clipTop, clipRight, clipBottom);
+
+        int x = graphicsOptionsTitleCenterX - 345;
+        int y = graphicsOptionsTitleY - 34;
+        int width = 690;
+        int height = 385;
+
+        fillAlpha(x, y, width, height, 0x111419, 218);
+        drawOutline(x, y, width, height, 0x8F8058);
+        drawOutline(x + 1, y + 1, width - 2, height - 2, 0x343941);
+
+        // Clean section rules replace the parchment strips.
+        hline(x + 18, graphicsOptionsTitleY + 116, width - 36, 0x4B515A);
+        hline(x + 18, graphicsOptionsTitleY + 326, width - 36, 0x4B515A);
+
+        // The SD/HD lettering was baked into legacy sprites. Recreate it as
+        // vector text so the display mode row is fully Modern UI as well.
+        int[] centers = {
+            graphicsOptionsTitleCenterX - 225,
+            graphicsOptionsTitleCenterX - 75,
+            graphicsOptionsTitleCenterX + 75,
+            graphicsOptionsTitleCenterX + 225
+        };
+        String[] labels = {"SD", "HD", "HD", "HD"};
+        int buttonY = graphicsOptionsTitleY + 20;
+
+        for (int i = 0; i < centers.length; i++) {
+            int buttonX = centers[i] - 42;
+            boolean active = (!GlRenderer.enabled && i == 0)
+                || (GlRenderer.enabled && i == 2);
+            drawModernControlBox(buttonX, buttonY, 84, 40, false);
+            if (active) {
+                drawOutline(buttonX + 2, buttonY + 2, 80, 36, 0xD0B66D);
+            }
+            ModernTrueTypeFont.drawCentered(
+                labels[i],
+                centers[i],
+                buttonY + 27,
+                active ? 0xFFFFFF : 0xE0E3E7,
+                18.0F,
+                true
+            );
+        }
+    }
+
+    private static void drawModernControlBox(
+        int x,
+        int y,
+        int width,
+        int height,
+        boolean dropdown
+    ) {
+        fillAlpha(x, y, width, height, 0x171A1F, 240);
+        drawOutline(x, y, width, height, 0x9C8958);
+        hline(x + 1, y + 1, width - 2, 0x373C44);
+
+        if (dropdown && width >= 22) {
+            ModernUiImage arrow = ModernUiAssetResolver.get("icons/dropdown", 9, 6);
+            if (arrow != null) {
+                arrow.render(x + width - 15, y + Math.max(4, (height - 6) / 2));
+            }
+        }
+    }
+
+    private static void drawModernBrightness(
+        int x,
+        int y,
+        int width,
+        int height
+    ) {
+        int lineY = y + height / 2;
+        int left = x + 10;
+        int right = x + width - 10;
+        hline(left, lineY, Math.max(1, right - left), 0x69717C);
+
+        int levels = 4;
+        int selected = Preferences.brightness;
+        if (selected < 1) {
+            selected = 1;
+        } else if (selected > levels) {
+            selected = levels;
+        }
+
+        for (int i = 0; i < levels; i++) {
+            int tickX = left + (right - left) * i / (levels - 1);
+            fillAlpha(tickX - 2, lineY - 2, 5, 5, 0x8B939E, 255);
+            if (i == selected - 1) {
+                drawOutline(tickX - 4, lineY - 4, 9, 9, 0xD0B66D);
+            }
+        }
+    }
+
+    private static void fillAlpha(
+        int x,
+        int y,
+        int width,
+        int height,
+        int color,
+        int alpha
+    ) {
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+        if (GlRenderer.enabled) {
+            GlRaster.fillRectAlpha(x, y, width, height, color, alpha);
+        } else {
+            SoftwareRaster.fillRectAlpha(x, y, width, height, color, alpha);
+        }
+    }
+
+    private static void hline(int x, int y, int width, int color) {
+        if (width <= 0) {
+            return;
+        }
+        if (GlRenderer.enabled) {
+            GlRaster.drawHorizontalLine(x, y, width, color);
+        } else {
+            SoftwareRaster.drawHorizontalLine(x, y, width, color);
+        }
+    }
+
+    private static final class GraphicsOptionsAnchor {
+        private final int centerX;
+        private final int y;
+
+        private GraphicsOptionsAnchor(int centerX, int y) {
+            this.centerX = centerX;
+            this.y = y;
+        }
     }
 
     private static void drawMissingBackdrop(String key, int x, int y, int width, int height) {
