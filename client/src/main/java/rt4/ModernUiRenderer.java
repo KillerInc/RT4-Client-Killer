@@ -1433,7 +1433,7 @@ public final class ModernUiRenderer {
         if (subtitle) {
             fontAsset = ModernUiFontRegistry.PLAIN_11;
             size = 10.0F;
-            color = 0xBEB39B;
+            color = 0x5A351C;
         } else if (detail) {
             fontAsset = ModernUiFontRegistry.PLAIN_11;
             size = 10.0F;
@@ -1818,11 +1818,13 @@ public final class ModernUiRenderer {
 
             // Give the vector parchment a little more breathing room around
             // the existing login controls without moving the control layout.
-            int scrollWidth = Math.max(581, content.width + 323);
-            int scrollHeight = Math.max(613, content.height + 242);
+            // Keep the parchment and its derived inner content bounds in the
+            // same scale system. This is 95% of the previous main-menu size.
+            int scrollWidth = Math.max(552, content.width + 307);
+            int scrollHeight = Math.max(582, content.height + 230);
             scroll = new UiRect(
                 centerX - scrollWidth / 2,
-                content.y - 176,
+                content.y - 161,
                 scrollWidth,
                 scrollHeight
             );
