@@ -39,7 +39,6 @@ import java.util.jar.Manifest;
 public final class PluginRepository {
     private static final String MODERN_METADATA = "META-INF/killer-plugin.properties";
     private static final String MANIFEST_MAIN_CLASS = "Killer-Plugin-Class";
-    private static final String LEGACY_PLUGIN_PROPERTY = "killer.legacyPlugins";
 
     private static final Map<PluginInfo, Plugin> loadedPlugins = new LinkedHashMap<>();
     private static final List<URLClassLoader> pluginClassLoaders = new ArrayList<>();
@@ -113,35 +112,11 @@ public final class PluginRepository {
             }
         }
 
-        // Modern Killer Edition intentionally does not auto-run old loose
-        // plugin.class directories. They are invisible to the launcher's modern
-        // plugin catalog and can leave stale playground plugins active after an
-        // update. Developers can opt in temporarily with:
-        //   -Dkiller.legacyPlugins=true
-        if (Boolean.getBoolean(LEGACY_PLUGIN_PROPERTY)) {
-            File[] legacyDirectories = pluginsDirectory.listFiles(File::isDirectory);
-            if (legacyDirectories != null) {
-                Arrays.sort(legacyDirectories, Comparator.comparing(File::getName, String.CASE_INSENSITIVE_ORDER));
-                for (File directory : legacyDirectories) {
-                    loadLegacyPlugin(directory, pluginsDirectory);
-                }
-            }
-        } else {
-            File[] legacyDirectories = pluginsDirectory.listFiles(
-                file -> file.isDirectory() && new File(file, "plugin.class").isFile()
-            );
-            if (legacyDirectories != null && legacyDirectories.length > 0) {
-                Arrays.sort(legacyDirectories, Comparator.comparing(File::getName, String.CASE_INSENSITIVE_ORDER));
-                StringBuilder skipped = new StringBuilder();
-                for (File directory : legacyDirectories) {
-                    if (skipped.length() > 0) skipped.append(", ");
-                    skipped.append(directory.getName());
-                }
-                String skippedMessage =
-                    "Legacy loose plugins disabled by default; skipped: " + skipped
-                    + ". Use -D" + LEGACY_PLUGIN_PROPERTY + "=true only for migration testing.";
-                System.out.println(skippedMessage);
-                DisplayDebug.log("PLUGIN " + skippedMessage);
+        File[] legacyDirectories = pluginsDirectory.listFiles(File::isDirectory);
+        if (legacyDirectories != null) {
+            Arrays.sort(legacyDirectories, Comparator.comparing(File::getName, String.CASE_INSENSITIVE_ORDER));
+            for (File directory : legacyDirectories) {
+                loadLegacyPlugin(directory, pluginsDirectory);
             }
         }
     }
