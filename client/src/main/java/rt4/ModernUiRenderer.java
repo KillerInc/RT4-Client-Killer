@@ -152,8 +152,10 @@ public final class ModernUiRenderer {
         );
 
         if (mainMenu) {
-            renderMainMenuChoiceIcons();
-            renderMainMenuMusicSlider();
+            // Permanent UI pass: everything in the Modern main menu is
+            // composited after the complete legacy login component tree.
+            // This keeps the scene fade/transition confined to the background.
+            renderPermanentMainMenuUi();
             setClip(clipLeft, clipTop, clipRight, clipBottom);
         }
 
@@ -574,20 +576,7 @@ public final class ModernUiRenderer {
 
         if (mainMenuDepth > 0
             && normalizeGraphicsOptionsText(text).equals("music volume")) {
-            ensureMainMenuBackdrop();
-            ModernTrueTypeFont.drawInBox(
-                ModernUiFontRegistry.PLAIN_12,
-                text,
-                x,
-                y - 4,
-                component.width,
-                Math.max(22, component.height + 8),
-                safeColor(color),
-                component.halign,
-                1,
-                20.0F,
-                component.shadowed
-            );
+            renderMainMenuMusicLabel(component, text, x, y, color);
             return;
         }
 
@@ -1268,6 +1257,7 @@ public final class ModernUiRenderer {
                 if (!text.isEmpty()) {
                     layout.texts.add(
                         new MainMenuTextEntry(
+                            component,
                             component.id,
                             text,
                             rect
@@ -1276,7 +1266,7 @@ public final class ModernUiRenderer {
                 }
             } else if (component.type == 5) {
                 layout.images.add(
-                    new MainMenuImageEntry(component.id, rect)
+                    new MainMenuImageEntry(component, component.id, rect)
                 );
             }
 
@@ -1365,19 +1355,163 @@ public final class ModernUiRenderer {
     }
 
     private static void ensureMainMenuBackdrop() {
-        if (mainMenuDepth <= 0
-            || mainMenuLayout == null
-            || mainMenuBackdropRendered) {
+        // Intentionally deferred. The complete Modern main menu is rendered
+        // once, at the end of the login interface pass, after the legacy
+        // background fade/transition components have finished drawing.
+    }
+
+    private static void renderPermanentMainMenuUi() {
+        if (mainMenuLayout == null) {
             return;
         }
 
+        // Layer 1 is already complete at this point:
+        // 3D login scene + legacy scene transition/fade.
+        // Layer 2 begins here and is never part of that fade.
         renderMainMenuBackdrop(
             0,
             0,
             GameShell.canvasWidth,
             GameShell.canvasHeight
         );
+
+        UiRect bounds = mainMenuLayout.contentBounds;
+        if (bounds != null) {
+            setClip(
+                Math.max(0, bounds.x),
+                Math.max(0, bounds.y),
+                Math.min(GameShell.canvasWidth, bounds.x + bounds.width),
+                Math.min(GameShell.canvasHeight, bounds.y + bounds.height)
+            );
+        } else {
+            setClip(0, 0, GameShell.canvasWidth, GameShell.canvasHeight);
+        }
+
+        for (MainMenuTextEntry entry : mainMenuLayout.texts) {
+            if (entry.component == null) {
+                continue;
+            }
+
+            String text = getCurrentMainMenuText(entry.component);
+            String normalized = normalizeGraphicsOptionsText(text);
+            int y = adjustMainMenuComponentY(
+                entry.component,
+                entry.rect.y
+            );
+
+            if (normalized.equals("music volume")) {
+                renderMainMenuMusicLabel(
+                    entry.component,
+                    text,
+                    entry.rect.x,
+                    y,
+                    entry.component.color
+                );
+            } else if (isManagedMainMenuText(normalized)) {
+                renderMainMenuText(
+                    entry.component,
+                    text,
+                    entry.rect.x,
+                    y
+                );
+            }
+        }
+
+        renderMainMenuChoiceBackgrounds();
+        renderMainMenuChoiceIcons();
+        renderMainMenuMusicSlider();
+
+        setClip(0, 0, GameShell.canvasWidth, GameShell.canvasHeight);
         mainMenuBackdropRendered = true;
+    }
+
+    private static String getCurrentMainMenuText(Component component) {
+        if (component == null) {
+            return "";
+        }
+
+        JagString display = component.text;
+        if (Cs1ScriptRunner.isTrue(component)
+            && component.activeText != null
+            && component.activeText.length() > 0) {
+            display = component.activeText;
+        }
+
+        if (!component.if3 && display != null) {
+            display = Cs1ScriptRunner.interpolate(component, display);
+        }
+
+        return display == null ? "" : display.toString();
+    }
+
+    private static void renderMainMenuMusicLabel(
+        Component component,
+        String text,
+        int x,
+        int y,
+        int color
+    ) {
+        ModernTrueTypeFont.drawInBox(
+            ModernUiFontRegistry.PLAIN_12,
+            text,
+            x,
+            y - 4,
+            component.width,
+            Math.max(22, component.height + 8),
+            safeColor(color),
+            component.halign,
+            1,
+            20.0F,
+            component.shadowed
+        );
+    }
+
+    private static void renderMainMenuChoiceBackgrounds() {
+        if (mainMenuLayout == null) {
+            return;
+        }
+
+        drawMainMenuChoiceBackground(
+            mainMenuLayout.standardChoiceComponent,
+            mainMenuLayout.standardChoice
+        );
+        drawMainMenuChoiceBackground(
+            mainMenuLayout.highChoiceComponent,
+            mainMenuLayout.highChoice
+        );
+    }
+
+    private static void drawMainMenuChoiceBackground(
+        Component component,
+        UiRect rect
+    ) {
+        if (component == null
+            || rect == null
+            || rect.width <= 0
+            || rect.height <= 0) {
+            return;
+        }
+
+        String asset =
+            Cs1ScriptRunner.isTrue(component)
+                ? "main-menu/choice-active"
+                : "main-menu/choice";
+        ModernUiImage image = ModernUiAssetResolver.get(
+            asset,
+            rect.width,
+            rect.height
+        );
+        if (image != null) {
+            image.render(rect.x, rect.y);
+        } else {
+            drawMissing(
+                "asset:" + asset,
+                rect.x,
+                rect.y,
+                rect.width,
+                rect.height
+            );
+        }
     }
 
     private static void drawMainMenuAsset(
@@ -1762,6 +1896,8 @@ public final class ModernUiRenderer {
         private UiRect logo;
         private UiRect standardChoice;
         private UiRect highChoice;
+        private Component standardChoiceComponent;
+        private Component highChoiceComponent;
         private UiRect musicSlider;
 
         private int bodyComponentId = -1;
@@ -2115,6 +2251,10 @@ public final class ModernUiRenderer {
 
                 standardChoice = leftChoiceRect;
                 highChoice = rightChoiceRect;
+                standardChoiceComponent =
+                    leftChoice == null ? null : leftChoice.component;
+                highChoiceComponent =
+                    rightChoice == null ? null : rightChoice.component;
 
                 for (MainMenuImageEntry image : images) {
                     if (intersects(
@@ -2139,15 +2279,18 @@ public final class ModernUiRenderer {
     }
 
     private static final class MainMenuTextEntry {
+        private final Component component;
         private final int componentId;
         private final String text;
         private final UiRect rect;
 
         private MainMenuTextEntry(
+            Component component,
             int componentId,
             String text,
             UiRect rect
         ) {
+            this.component = component;
             this.componentId = componentId;
             this.text = text;
             this.rect = rect;
@@ -2155,13 +2298,16 @@ public final class ModernUiRenderer {
     }
 
     private static final class MainMenuImageEntry {
+        private final Component component;
         private final int componentId;
         private final UiRect rect;
 
         private MainMenuImageEntry(
+            Component component,
             int componentId,
             UiRect rect
         ) {
+            this.component = component;
             this.componentId = componentId;
             this.rect = rect;
         }
