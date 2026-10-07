@@ -152,6 +152,7 @@ public final class ModernUiRenderer {
 
         if (mainMenu) {
             renderMainMenuChoiceIcons();
+            renderMainMenuMusicSlider();
             setClip(clipLeft, clipTop, clipRight, clipBottom);
         }
 
@@ -436,6 +437,25 @@ public final class ModernUiRenderer {
         }
 
         String text = display == null ? "" : display.toString();
+
+        if (mainMenuDepth > 0
+            && normalizeGraphicsOptionsText(text).equals("music volume")) {
+            ensureMainMenuBackdrop();
+            ModernTrueTypeFont.drawInBox(
+                ModernUiFontRegistry.PLAIN_12,
+                text,
+                x,
+                y - 4,
+                component.width,
+                Math.max(22, component.height + 8),
+                safeColor(color),
+                component.halign,
+                1,
+                20.0F,
+                component.shadowed
+            );
+            return;
+        }
 
         if (mainMenuDepth > 0 && isManagedMainMenuText(text)) {
             ensureMainMenuBackdrop();
@@ -1389,6 +1409,12 @@ public final class ModernUiRenderer {
             return true;
         }
 
+        if (mainMenuLayout.musicSliderComponentIds.contains(id)) {
+            // The original click/script components remain live, but their
+            // cache sprites are completely replaced by the vector slider.
+            return true;
+        }
+
         if (mainMenuLayout.choiceComponentIds.contains(id)) {
             boolean active = Cs1ScriptRunner.isTrue(component);
             String asset =
@@ -1483,6 +1509,65 @@ public final class ModernUiRenderer {
         }
     }
 
+    private static void renderMainMenuMusicSlider() {
+        if (mainMenuLayout == null || mainMenuLayout.musicSlider == null) {
+            return;
+        }
+
+        UiRect rect = mainMenuLayout.musicSlider;
+        int trackHeight = Math.min(18, Math.max(12, rect.height - 6));
+        int trackY = rect.y + (rect.height - trackHeight) / 2;
+
+        ModernUiImage track = ModernUiAssetResolver.get(
+            "main-menu/music-volume-track",
+            rect.width,
+            trackHeight
+        );
+        if (track != null) {
+            track.render(rect.x, trackY);
+        } else {
+            drawMissing(
+                "asset:main-menu/music-volume-track",
+                rect.x,
+                trackY,
+                rect.width,
+                trackHeight
+            );
+        }
+
+        int volume = Preferences.musicVolume;
+        if (volume < 0) {
+            volume = 0;
+        } else if (volume > 255) {
+            volume = 255;
+        }
+
+        int knobWidth = 20;
+        int knobHeight = Math.min(26, Math.max(20, rect.height));
+        int left = rect.x + 10;
+        int right = rect.x + rect.width - 10;
+        int knobCenterX = left + (right - left) * volume / 255;
+        int knobX = knobCenterX - knobWidth / 2;
+        int knobY = rect.y + (rect.height - knobHeight) / 2;
+
+        ModernUiImage knob = ModernUiAssetResolver.get(
+            "main-menu/music-volume-knob",
+            knobWidth,
+            knobHeight
+        );
+        if (knob != null) {
+            knob.render(knobX, knobY);
+        } else {
+            drawMissing(
+                "asset:main-menu/music-volume-knob",
+                knobX,
+                knobY,
+                knobWidth,
+                knobHeight
+            );
+        }
+    }
+
     private static UiRect unionRects(List<UiRect> rects) {
         if (rects == null || rects.isEmpty()) {
             return null;
@@ -1531,6 +1616,7 @@ public final class ModernUiRenderer {
         private final List<MainMenuImageEntry> images = new ArrayList<>();
         private final Set<Integer> frameComponentIds = new HashSet<>();
         private final Set<Integer> choiceComponentIds = new HashSet<>();
+        private final Set<Integer> musicSliderComponentIds = new HashSet<>();
 
         private UiRect body;
         private UiRect scroll;
@@ -1541,6 +1627,7 @@ public final class ModernUiRenderer {
         private UiRect logo;
         private UiRect standardChoice;
         private UiRect highChoice;
+        private UiRect musicSlider;
 
         private int bodyComponentId = -1;
         private int logoComponentId = -1;
@@ -1762,6 +1849,54 @@ public final class ModernUiRenderer {
                 10,
                 body.height
             );
+
+            MainMenuTextEntry music = findText("music volume");
+            if (music != null) {
+                int sliderWidth = Math.min(
+                    190,
+                    Math.max(160, scroll.width - 300)
+                );
+                sliderWidth = Math.min(
+                    sliderWidth,
+                    Math.max(140, scroll.width - 90)
+                );
+                int sliderHeight = 24;
+                musicSlider = new UiRect(
+                    centerX - sliderWidth / 2,
+                    music.rect.y + music.rect.height + 1,
+                    sliderWidth,
+                    sliderHeight
+                );
+
+                UiRect capture = new UiRect(
+                    musicSlider.x - 12,
+                    musicSlider.y - 5,
+                    musicSlider.width + 24,
+                    musicSlider.height + 10
+                );
+
+                for (MainMenuImageEntry image : images) {
+                    if (image.componentId == bodyComponentId
+                        || image.componentId == logoComponentId
+                        || frameComponentIds.contains(image.componentId)
+                        || choiceComponentIds.contains(image.componentId)) {
+                        continue;
+                    }
+
+                    UiRect rect = image.rect;
+                    if (rect.width <= 64
+                        && rect.height <= 48
+                        && intersects(
+                            capture,
+                            rect.x,
+                            rect.y,
+                            rect.width,
+                            rect.height
+                        )) {
+                        musicSliderComponentIds.add(image.componentId);
+                    }
+                }
+            }
 
             MainMenuTextEntry standard = findText("standard detail");
             MainMenuTextEntry high = findText("high detail");
