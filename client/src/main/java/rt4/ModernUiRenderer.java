@@ -494,11 +494,10 @@ public final class ModernUiRenderer {
             return;
         }
 
-        // Display-mode image buttons are real controls, not frame slices.
+        // Display-mode controls are drawn once by renderGraphicsOptionsBackdrop.
         if (relativeY >= 10 && relativeY <= 90
             && width >= 42 && width <= 92
             && height >= 24 && height <= 52) {
-            drawModernControlBox(x, y, width, height, false);
             return;
         }
 
@@ -517,7 +516,7 @@ public final class ModernUiRenderer {
         if (relativeY >= 85 && relativeY <= 325
             && width >= 70 && width <= 155
             && height >= 14 && height <= 30) {
-            drawModernControlBox(x, y, width, height, true);
+            drawModernControlBox(x, y, width, height, true, false);
             return;
         }
 
@@ -593,16 +592,27 @@ public final class ModernUiRenderer {
         int width = 690;
         int height = 385;
 
-        fillAlpha(x, y, width, height, 0x111419, 218);
-        drawOutline(x, y, width, height, 0x8F8058);
-        drawOutline(x + 1, y + 1, width - 2, height - 2, 0x343941);
+        ModernUiImage panel = ModernUiAssetResolver.get(
+            "graphics-options/panel",
+            width,
+            height
+        );
+        if (panel != null) {
+            panel.render(x, y);
+        }
 
-        // Clean section rules replace the parchment strips.
-        hline(x + 18, graphicsOptionsTitleY + 116, width - 36, 0x4B515A);
-        hline(x + 18, graphicsOptionsTitleY + 326, width - 36, 0x4B515A);
+        ModernUiImage divider = ModernUiAssetResolver.get(
+            "graphics-options/divider",
+            width - 36,
+            4
+        );
+        if (divider != null) {
+            divider.render(x + 18, graphicsOptionsTitleY + 114);
+            divider.render(x + 18, graphicsOptionsTitleY + 324);
+        }
 
-        // The SD/HD lettering was baked into legacy sprites. Recreate it as
-        // vector text so the display mode row is fully Modern UI as well.
+        // The legacy SD/HD lettering is part of cache sprites. Modern mode
+        // draws its own vector-backed display-mode buttons and TrueType labels.
         int[] centers = {
             graphicsOptionsTitleCenterX - 225,
             graphicsOptionsTitleCenterX - 75,
@@ -616,19 +626,27 @@ public final class ModernUiRenderer {
             int buttonX = centers[i] - 42;
             boolean active = (!GlRenderer.enabled && i == 0)
                 || (GlRenderer.enabled && i == 2);
-            drawModernControlBox(buttonX, buttonY, 84, 40, false);
-            if (active) {
-                drawOutline(buttonX + 2, buttonY + 2, 80, 36, 0xD0B66D);
-            }
+            drawModernControlBox(buttonX, buttonY, 84, 40, false, active);
             ModernTrueTypeFont.drawCentered(
                 labels[i],
                 centers[i],
                 buttonY + 27,
-                active ? 0xFFFFFF : 0xE0E3E7,
+                active ? 0xFFF4D1 : 0xE8DDC4,
                 18.0F,
                 true
             );
         }
+
+        // Main Menu is text-driven in the cache, so give it Modern UI chrome
+        // without changing its click/script behavior.
+        drawModernControlBox(
+            graphicsOptionsTitleCenterX - 78,
+            graphicsOptionsTitleY + 318,
+            156,
+            28,
+            false,
+            false
+        );
     }
 
     private static void drawModernControlBox(
@@ -636,16 +654,38 @@ public final class ModernUiRenderer {
         int y,
         int width,
         int height,
-        boolean dropdown
+        boolean dropdown,
+        boolean active
     ) {
-        fillAlpha(x, y, width, height, 0x171A1F, 240);
-        drawOutline(x, y, width, height, 0x9C8958);
-        hline(x + 1, y + 1, width - 2, 0x373C44);
+        String asset;
+        if (dropdown) {
+            asset = "controls/dropdown";
+        } else if (active) {
+            asset = "controls/button-active";
+        } else {
+            asset = "controls/button";
+        }
+
+        ModernUiImage chrome = ModernUiAssetResolver.get(
+            asset,
+            width,
+            height
+        );
+        if (chrome != null) {
+            chrome.render(x, y);
+        }
 
         if (dropdown && width >= 22) {
-            ModernUiImage arrow = ModernUiAssetResolver.get("icons/dropdown", 9, 6);
+            ModernUiImage arrow = ModernUiAssetResolver.get(
+                "icons/dropdown",
+                9,
+                6
+            );
             if (arrow != null) {
-                arrow.render(x + width - 15, y + Math.max(4, (height - 6) / 2));
+                arrow.render(
+                    x + width - 15,
+                    y + Math.max(4, (height - 6) / 2)
+                );
             }
         }
     }
@@ -656,25 +696,34 @@ public final class ModernUiRenderer {
         int width,
         int height
     ) {
-        int lineY = y + height / 2;
-        int left = x + 10;
-        int right = x + width - 10;
-        hline(left, lineY, Math.max(1, right - left), 0x69717C);
-
-        int levels = 4;
         int selected = Preferences.brightness;
         if (selected < 1) {
             selected = 1;
-        } else if (selected > levels) {
-            selected = levels;
+        } else if (selected > 4) {
+            selected = 4;
         }
 
-        for (int i = 0; i < levels; i++) {
-            int tickX = left + (right - left) * i / (levels - 1);
-            fillAlpha(tickX - 2, lineY - 2, 5, 5, 0x8B939E, 255);
-            if (i == selected - 1) {
-                drawOutline(tickX - 4, lineY - 4, 9, 9, 0xD0B66D);
-            }
+        ModernUiImage track = ModernUiAssetResolver.get(
+            "controls/slider-track",
+            width,
+            Math.max(8, height)
+        );
+        if (track != null) {
+            track.render(x, y);
+        }
+
+        int left = x + 10;
+        int right = x + width - 10;
+        int centerY = y + height / 2;
+        int knobX = left + (right - left) * (selected - 1) / 3 - 6;
+
+        ModernUiImage knob = ModernUiAssetResolver.get(
+            "controls/slider-knob",
+            13,
+            18
+        );
+        if (knob != null) {
+            knob.render(knobX, centerY - 9);
         }
     }
 

@@ -131,7 +131,7 @@ public final class ModernUiSettingsOverlay {
         int editorY = selectorY + 24;
 
         if (modern) {
-            drawModernField(editorX, editorY, editorW, editorH, true);
+            drawModernButton(editorX, editorY, editorW, editorH, true);
             ModernTrueTypeFont.drawCentered(
                 "Style Editor",
                 targetCenterX,
@@ -159,7 +159,7 @@ public final class ModernUiSettingsOverlay {
 
         if (dropdownOpen) {
             if (modern) {
-                drawModernField(popupX, popupY, selectorW, popupH, true);
+                drawModernPopup(popupX, popupY, selectorW, popupH);
                 drawModernChoice("No", popupX, popupY, selectorW, selectorH, !modern);
                 drawModernChoice("Yes", popupX, popupY + selectorH, selectorW, selectorH, modern);
             } else {
@@ -332,12 +332,47 @@ public final class ModernUiSettingsOverlay {
         int height,
         boolean enabled
     ) {
-        int fill = enabled ? 0x171A1F : 0x202329;
-        int border = enabled ? 0xA18E5A : 0x555A63;
-        int highlight = enabled ? 0x343941 : 0x2B2F35;
-        fill(x, y, width, height, fill);
-        outline(x, y, width, height, border);
-        hline(x + 1, y + 1, width - 2, highlight);
+        ModernUiImage field = ModernUiAssetResolver.get(
+            enabled ? "controls/dropdown" : "controls/dropdown-disabled",
+            width,
+            height
+        );
+        if (field != null) {
+            field.render(x, y);
+        }
+    }
+
+    private static void drawModernButton(
+        int x,
+        int y,
+        int width,
+        int height,
+        boolean enabled
+    ) {
+        ModernUiImage button = ModernUiAssetResolver.get(
+            enabled ? "controls/button" : "controls/button-disabled",
+            width,
+            height
+        );
+        if (button != null) {
+            button.render(x, y);
+        }
+    }
+
+    private static void drawModernPopup(
+        int x,
+        int y,
+        int width,
+        int height
+    ) {
+        ModernUiImage popup = ModernUiAssetResolver.get(
+            "controls/popup",
+            width,
+            height
+        );
+        if (popup != null) {
+            popup.render(x, y);
+        }
     }
 
     private static void drawModernChoice(
@@ -356,17 +391,26 @@ public final class ModernUiSettingsOverlay {
             width,
             height
         );
-        if (selected) {
-            fillAlpha(x + 2, y + 2, width - 4, height - 4, 0x343B46, 235);
-        } else if (hovered) {
-            fillAlpha(x + 2, y + 2, width - 4, height - 4, 0x2A3038, 210);
+
+        String asset = selected
+            ? "controls/choice-selected"
+            : hovered ? "controls/choice-hover" : null;
+        if (asset != null) {
+            ModernUiImage row = ModernUiAssetResolver.get(
+                asset,
+                Math.max(1, width - 4),
+                Math.max(1, height - 2)
+            );
+            if (row != null) {
+                row.render(x + 2, y + 1);
+            }
         }
-        hline(x + 2, y + height - 1, width - 4, 0x555B65);
+
         ModernTrueTypeFont.drawCentered(
             text,
             x + width / 2,
             y + 15,
-            selected ? 0xFFFFFF : 0xE1E4E8,
+            selected ? 0xFFF4D1 : 0xE8DDC4,
             10.0F,
             false
         );
