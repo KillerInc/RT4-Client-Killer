@@ -43,7 +43,8 @@ public final class ModernUiRenderer {
         }
 
         Component[] loadedComponents = InterfaceList.components[interfaceId];
-        boolean graphicsOptions = containsGraphicsOptionsText(loadedComponents);
+        boolean graphicsOptions =
+            GraphicsOptionsUiInjector.isGraphicsOptionsActive(loadedComponents);
         int oldTitleCenterX = graphicsOptionsTitleCenterX;
         int oldTitleY = graphicsOptionsTitleY;
         boolean oldBrightnessRendered = graphicsOptionsBrightnessRendered;
@@ -1138,13 +1139,6 @@ public final class ModernUiRenderer {
         }
     }
 
-    private static final class GraphicsOptionsSignature {
-        private boolean graphicsOptions;
-        private boolean displayModes;
-        private boolean advancedOptions;
-        private boolean antiAliasing;
-    }
-
     private static final class GraphicsOptionsAnchor {
         private final int centerX;
         private final int y;
@@ -1163,53 +1157,6 @@ public final class ModernUiRenderer {
         int height
     ) {
         drawMissing(key, x, y, width, height);
-    }
-
-    private static boolean containsGraphicsOptionsText(Component[] components) {
-        // "Graphics Options" also appears as a navigation entry on other
-        // interfaces (for example the login/main menu). Treating that single
-        // string as an interface identity causes Modern Graphics Options
-        // chrome to be drawn on unrelated screens.
-        //
-        // Require the semantic signature of the real Graphics Options screen.
-        GraphicsOptionsSignature signature = new GraphicsOptionsSignature();
-        collectGraphicsOptionsSignature(components, signature);
-        return signature.graphicsOptions
-            && signature.displayModes
-            && signature.advancedOptions
-            && signature.antiAliasing;
-    }
-
-    private static void collectGraphicsOptionsSignature(
-        Component[] components,
-        GraphicsOptionsSignature signature
-    ) {
-        if (components == null) {
-            return;
-        }
-
-        for (Component component : components) {
-            if (component == null) {
-                continue;
-            }
-
-            if (component.text != null && component.text.length() > 0) {
-                String text = normalizeGraphicsOptionsText(component.text.toString());
-                if (text.equals("graphics options")) {
-                    signature.graphicsOptions = true;
-                } else if (text.equals("display modes")) {
-                    signature.displayModes = true;
-                } else if (text.equals("advanced options")) {
-                    signature.advancedOptions = true;
-                } else if (text.equals("anti-aliasing")) {
-                    signature.antiAliasing = true;
-                }
-            }
-
-            if (component.createdComponents != null) {
-                collectGraphicsOptionsSignature(component.createdComponents, signature);
-            }
-        }
     }
 
     private static String componentAssetKey(Component component) {

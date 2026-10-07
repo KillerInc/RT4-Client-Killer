@@ -22,6 +22,7 @@ public final class GraphicsOptionsUiInjector {
     public static final int CLIENT_CODE_VALUE_TEXT = 1903;
     public static final int CLIENT_CODE_STYLE_TEXT = 1904;
     public static final int CLIENT_CODE_SELECTOR_PIECE = 1905;
+    public static final int CLIENT_CODE_LABEL_TEXT = 1906;
 
     private static final int COLUMN_DELTA_X = 130;
     private static final int STYLE_DELTA_Y = 30;
@@ -31,12 +32,24 @@ public final class GraphicsOptionsUiInjector {
 
     public static void inject(int interfaceId) {
         Component[] original = InterfaceList.components[interfaceId];
-        if (original == null || original.length == 0 || alreadyInjected(original)) {
+        if (original == null || original.length == 0) {
             return;
         }
 
         List<LayoutEntry> entries = new ArrayList<>();
-        collectLayout(original, -1, 0, 0, entries);
+        collectVisibleLayout(original, -1, 0, 0, entries);
+
+        boolean active = hasGraphicsOptionsSignature(entries);
+        if (!active) {
+            if (alreadyInjected(original)) {
+                InterfaceList.components[interfaceId] = removeInjected(original);
+            }
+            return;
+        }
+
+        if (alreadyInjected(original)) {
+            return;
+        }
 
         LayoutEntry graphicsTitle = findText(entries, "graphics options");
         LayoutEntry antiLabel = findText(entries, "anti-alias");
@@ -136,6 +149,7 @@ public final class GraphicsOptionsUiInjector {
             antiLabel.x + COLUMN_DELTA_X,
             antiLabel.y
         );
+        label.clientCode = CLIENT_CODE_LABEL_TEXT;
         label.text = JagString.parse("Modern UI");
         label.activeText = label.text;
         added.add(label);
@@ -237,7 +251,13 @@ public final class GraphicsOptionsUiInjector {
         return clone;
     }
 
-    private static void collectLayout(
+    public static boolean isGraphicsOptionsActive(Component[] components) {
+        List<LayoutEntry> entries = new ArrayList<>();
+        collectVisibleLayout(components, -1, 0, 0, entries);
+        return hasGraphicsOptionsSignature(entries);
+    }
+
+    private static void collectVisibleLayout(
         Component[] components,
         int layer,
         int parentX,
@@ -253,6 +273,19 @@ public final class GraphicsOptionsUiInjector {
                 continue;
             }
 
+            // Mirror the vanilla visibility rules. Most importantly, do not
+            // walk children of hidden non-IF3 containers; those are inactive
+            // menu pages stored in the same interface archive.
+            if (component.if3 && InterfaceList.isHidden(component)) {
+                continue;
+            }
+            if (component.type == 0
+                && !component.if3
+                && InterfaceList.isHidden(component)
+                && InterfaceList.hoveredComponent != component) {
+                continue;
+            }
+
             int x = parentX + component.x;
             int y = parentY + component.y;
             out.add(new LayoutEntry(component, x, y));
@@ -261,10 +294,16 @@ public final class GraphicsOptionsUiInjector {
                 int childX = x - component.scrollX;
                 int childY = y - component.scrollY;
 
-                collectLayout(components, component.id, childX, childY, out);
+                collectVisibleLayout(
+                    components,
+                    component.id,
+                    childX,
+                    childY,
+                    out
+                );
 
                 if (component.createdComponents != null) {
-                    collectLayout(
+                    collectVisibleLayout(
                         component.createdComponents,
                         component.id,
                         childX,
@@ -276,12 +315,84 @@ public final class GraphicsOptionsUiInjector {
         }
     }
 
+    private static boolean hasGraphicsOptionsSignature(List<LayoutEntry> entries) {
+        boolean graphicsOptions = false;
+        boolean displayModes = false;
+        boolean advancedOptions = false;
+        boolean antiAliasing = false;
+
+        for (LayoutEntry entry : entries) {
+            Component component = entry.component;
+            if (component.type != 4
+                || component.text == null
+                || component.text.length() == 0) {
+                continue;
+            }
+
+            String text = component.text.toString()
+                .trim()
+                .toLowerCase(Locale.ROOT);
+
+            if (text.equals("graphics options")) {
+                graphicsOptions = true;
+            } else if (text.equals("display modes")) {
+                displayModes = true;
+            } else if (text.equals("advanced options")) {
+                advancedOptions = true;
+            } else if (text.equals("anti-aliasing")) {
+                antiAliasing = true;
+            }
+        }
+
+        return graphicsOptions
+            && displayModes
+            && advancedOptions
+            && antiAliasing;
+    }
+
+    private static Component[] removeInjected(Component[] components) {
+        int kept = 0;
+        for (Component component : components) {
+            if (!isInjected(component)) {
+                kept++;
+            }
+        }
+
+        if (kept == components.length) {
+            return components;
+        }
+
+        Component[] cleaned = new Component[kept];
+        int index = 0;
+        for (Component component : components) {
+            if (!isInjected(component)) {
+                cleaned[index++] = component;
+            }
+        }
+
+        DisplayDebug.log(
+            "MODERN_UI removed inactive Graphics Options controls"
+        );
+        return cleaned;
+    }
+
+    private static boolean isInjected(Component component) {
+        if (component == null) {
+            return false;
+        }
+
+        int code = component.clientCode;
+        return code == CLIENT_CODE_SELECTOR_HIT
+            || code == CLIENT_CODE_STYLE_HIT
+            || code == CLIENT_CODE_VALUE_TEXT
+            || code == CLIENT_CODE_STYLE_TEXT
+            || code == CLIENT_CODE_SELECTOR_PIECE
+            || code == CLIENT_CODE_LABEL_TEXT;
+    }
+
     private static boolean alreadyInjected(Component[] components) {
         for (Component component : components) {
-            if (component != null
-                && (component.clientCode == CLIENT_CODE_SELECTOR_HIT
-                    || component.clientCode == CLIENT_CODE_VALUE_TEXT
-                    || component.clientCode == CLIENT_CODE_STYLE_TEXT)) {
+            if (isInjected(component)) {
                 return true;
             }
         }
