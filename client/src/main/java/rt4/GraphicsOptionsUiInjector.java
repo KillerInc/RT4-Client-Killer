@@ -6,15 +6,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 /**
- * Adds the Modern UI selector to the real Graphics Options component tree.
+ * Adds the Modern UI selector to the actual Graphics Options component tree.
  *
- * The original menu is cache/JS5 driven rather than authored in Java. Instead
- * of drawing an overlay with guessed coordinates, this runs immediately after
- * an interface group is decoded and clones the existing Anti-aliasing control.
- * The result is a normal Component set laid out and rendered exactly like the
- * surrounding controls.
+ * Graphics Options is cache/JS5 driven. We therefore copy the real
+ * Anti-aliasing assembly after layout has been calculated, preserving each
+ * source component's original parent while shifting the clone into the unused
+ * column. Selection is based on final on-screen geometry rather than assuming
+ * that the label, field, arrow and value text all share one overlayer.
  */
 public final class GraphicsOptionsUiInjector {
     public static final int CLIENT_CODE_SELECTOR_HIT = 1901;
@@ -34,97 +35,111 @@ public final class GraphicsOptionsUiInjector {
             return;
         }
 
-        Component antiLabel = findText(original, "anti-alias");
+        List<LayoutEntry> entries = new ArrayList<>();
+        collectLayout(
+            original,
+            -1,
+            0,
+            0,
+            entries
+        );
+
+        LayoutEntry antiLabel = findText(entries, "anti-alias");
         if (antiLabel == null) {
-            if (containsText(original, "graphics options")) {
+            if (findText(entries, "graphics options") != null) {
                 DisplayDebug.log(
-                    "MODERN_UI Graphics Options detected but Anti-aliasing label was not ready"
+                    "MODERN_UI Graphics Options found but Anti-aliasing label was not found"
                         + " interface=" + interfaceId
-                        + ", components=" + original.length
+                        + ", entries=" + entries.size()
                 );
             }
             return;
         }
 
-        int parent = antiLabel.overlayer;
-        int labelCenter = antiLabel.baseX + Math.max(1, antiLabel.baseWidth) / 2;
-        int labelY = antiLabel.baseY;
+        int labelCenterX = antiLabel.x + Math.max(1, antiLabel.component.width) / 2;
+        int labelY = antiLabel.y;
 
-        List<Component> selectorSprites = new ArrayList<>();
-        Component valueText = null;
+        List<LayoutEntry> selectorSprites = new ArrayList<>();
+        LayoutEntry valueText = null;
 
-        for (Component component : original) {
-            if (component == null || component.overlayer != parent) {
+        for (LayoutEntry entry : entries) {
+            Component component = entry.component;
+            if (component == antiLabel.component) {
                 continue;
             }
 
-            int width = Math.max(1, component.baseWidth);
-            int center = component.baseX + width / 2;
-            if (Math.abs(center - labelCenter) > 72) {
-                continue;
-            }
+            int width = Math.max(1, component.width);
+            int centerX = entry.x + width / 2;
+            int dx = Math.abs(centerX - labelCenterX);
+            int dy = entry.y - labelY;
 
-            int dy = component.baseY - labelY;
-            if (component.type == 5 && dy >= 7 && dy <= 48
-                && component.baseWidth > 0 && component.baseHeight > 0
-                && component.baseWidth <= 180 && component.baseHeight <= 40) {
-                selectorSprites.add(component);
+            if (component.type == 5
+                && dx <= 76
+                && dy >= 6 && dy <= 48
+                && component.width > 0 && component.height > 0
+                && component.width <= 180 && component.height <= 40) {
+                selectorSprites.add(entry);
                 continue;
             }
 
             if (component.type == 4
-                && component != antiLabel
-                && dy >= 5 && dy <= 45
+                && dx <= 70
+                && dy >= 5 && dy <= 44
                 && component.text != null
                 && component.text.length() > 0) {
                 if (valueText == null
-                    || Math.abs(component.baseY - (labelY + 18))
-                        < Math.abs(valueText.baseY - (labelY + 18))) {
-                    valueText = component;
+                    || Math.abs(entry.y - (labelY + 18))
+                        < Math.abs(valueText.y - (labelY + 18))) {
+                    valueText = entry;
                 }
             }
         }
 
         if (selectorSprites.isEmpty() || valueText == null) {
             DisplayDebug.log(
-                "MODERN_UI Graphics Options injection skipped: Anti-aliasing assembly incomplete"
+                "MODERN_UI Graphics Options injection skipped: Anti-aliasing geometry incomplete"
                     + " interface=" + interfaceId
+                    + ", anti=(" + antiLabel.x + "," + antiLabel.y + ")"
                     + ", sprites=" + selectorSprites.size()
                     + ", valueText=" + (valueText != null)
             );
+            logNearby(entries, labelCenterX, labelY);
             return;
         }
 
         selectorSprites.sort(
-            Comparator.comparingInt((Component c) -> c.baseY)
-                .thenComparingInt(c -> c.baseX)
+            Comparator.comparingInt((LayoutEntry e) -> e.y)
+                .thenComparingInt(e -> e.x)
         );
 
         List<Component> added = new ArrayList<>();
 
-        Component label = cloneComponent(antiLabel);
+        Component label = cloneComponent(antiLabel.component);
         prepareClone(label);
         shift(label, COLUMN_DELTA_X, 0);
         label.text = JagString.parse("Modern UI");
         label.activeText = label.text;
         added.add(label);
 
-        Component widestSelector = null;
-        for (Component source : selectorSprites) {
-            Component clone = cloneComponent(source);
+        Component selectorHit = null;
+        int selectorHitArea = -1;
+        for (LayoutEntry source : selectorSprites) {
+            Component clone = cloneComponent(source.component);
             prepareClone(clone);
             shift(clone, COLUMN_DELTA_X, 0);
             added.add(clone);
 
-            if (widestSelector == null || clone.baseWidth > widestSelector.baseWidth) {
-                widestSelector = clone;
+            int area = Math.max(1, clone.width) * Math.max(1, clone.height);
+            if (area > selectorHitArea) {
+                selectorHit = clone;
+                selectorHitArea = area;
             }
         }
-        if (widestSelector != null) {
-            widestSelector.clientCode = CLIENT_CODE_SELECTOR_HIT;
+        if (selectorHit != null) {
+            selectorHit.clientCode = CLIENT_CODE_SELECTOR_HIT;
         }
 
-        Component value = cloneComponent(valueText);
+        Component value = cloneComponent(valueText.component);
         prepareClone(value);
         shift(value, COLUMN_DELTA_X, 0);
         value.clientCode = CLIENT_CODE_VALUE_TEXT;
@@ -132,28 +147,33 @@ public final class GraphicsOptionsUiInjector {
         value.activeText = value.text;
         added.add(value);
 
-        // Style Editor uses the same field body and text metrics, but sits on a
-        // separate row with an 8-12 px visual gap instead of colliding with the
-        // selector above it. Tiny dropdown caps/arrow pieces are intentionally
-        // not cloned because this is a button, not another selector.
+        // Style Editor is a second row made from the same real control body.
+        // Only sizeable selector pieces are copied so a dropdown arrow/cap is
+        // not accidentally turned into part of the button.
         Component styleHit = null;
-        for (Component source : selectorSprites) {
-            if (source.baseWidth < 60 || source.baseHeight < 12) {
+        int styleHitArea = -1;
+        for (LayoutEntry source : selectorSprites) {
+            Component sourceComponent = source.component;
+            if (sourceComponent.width < 60 || sourceComponent.height < 12) {
                 continue;
             }
-            Component clone = cloneComponent(source);
+
+            Component clone = cloneComponent(sourceComponent);
             prepareClone(clone);
             shift(clone, COLUMN_DELTA_X, STYLE_DELTA_Y);
             added.add(clone);
-            if (styleHit == null || clone.baseWidth > styleHit.baseWidth) {
+
+            int area = Math.max(1, clone.width) * Math.max(1, clone.height);
+            if (area > styleHitArea) {
                 styleHit = clone;
+                styleHitArea = area;
             }
         }
         if (styleHit != null) {
             styleHit.clientCode = CLIENT_CODE_STYLE_HIT;
         }
 
-        Component styleText = cloneComponent(valueText);
+        Component styleText = cloneComponent(valueText.component);
         prepareClone(styleText);
         shift(styleText, COLUMN_DELTA_X, STYLE_DELTA_Y);
         styleText.clientCode = CLIENT_CODE_STYLE_TEXT;
@@ -171,11 +191,58 @@ public final class GraphicsOptionsUiInjector {
         InterfaceList.components[interfaceId] = expanded;
 
         DisplayDebug.log(
-            "MODERN_UI inserted Graphics Options components into interface=" + interfaceId
-                + ", clonedFrom=Anti-aliasing"
+            "MODERN_UI inserted Graphics Options components"
+                + " interface=" + interfaceId
+                + ", anti=(" + antiLabel.x + "," + antiLabel.y + ")"
                 + ", selectorParts=" + selectorSprites.size()
+                + ", value='" + valueText.component.text + "'"
                 + ", added=" + added.size()
         );
+    }
+
+    private static void collectLayout(
+        Component[] components,
+        int layer,
+        int parentX,
+        int parentY,
+        List<LayoutEntry> out
+    ) {
+        if (components == null) {
+            return;
+        }
+
+        for (Component component : components) {
+            if (component == null || component.overlayer != layer) {
+                continue;
+            }
+
+            int x = parentX + component.x;
+            int y = parentY + component.y;
+            out.add(new LayoutEntry(component, x, y));
+
+            if (component.type == 0) {
+                int childX = x - component.scrollX;
+                int childY = y - component.scrollY;
+
+                collectLayout(
+                    components,
+                    component.id,
+                    childX,
+                    childY,
+                    out
+                );
+
+                if (component.createdComponents != null) {
+                    collectLayout(
+                        component.createdComponents,
+                        component.id,
+                        childX,
+                        childY,
+                        out
+                    );
+                }
+            }
+        }
     }
 
     private static boolean alreadyInjected(Component[] components) {
@@ -191,33 +258,56 @@ public final class GraphicsOptionsUiInjector {
         return false;
     }
 
-    private static Component findText(Component[] components, String textFragment) {
-        String needle = textFragment.toLowerCase(java.util.Locale.ROOT);
-        for (Component component : components) {
-            if (component != null
-                && component.type == 4
-                && component.text != null
-                && component.text.length() > 0) {
-                String value = component.text.toString().toLowerCase(java.util.Locale.ROOT);
-                if (value.contains(needle)) {
-                    return component;
-                }
+    private static LayoutEntry findText(
+        List<LayoutEntry> entries,
+        String textFragment
+    ) {
+        String needle = textFragment.toLowerCase(Locale.ROOT);
+        for (LayoutEntry entry : entries) {
+            Component component = entry.component;
+            if (component.type != 4
+                || component.text == null
+                || component.text.length() == 0) {
+                continue;
+            }
+
+            if (component.text.toString().toLowerCase(Locale.ROOT).contains(needle)) {
+                return entry;
             }
         }
         return null;
     }
 
-    private static boolean containsText(Component[] components, String textFragment) {
-        String needle = textFragment.toLowerCase(java.util.Locale.ROOT);
-        for (Component component : components) {
-            if (component == null || component.text == null || component.text.length() == 0) {
+    private static void logNearby(
+        List<LayoutEntry> entries,
+        int centerX,
+        int labelY
+    ) {
+        int logged = 0;
+        for (LayoutEntry entry : entries) {
+            Component component = entry.component;
+            int componentCenter = entry.x + Math.max(1, component.width) / 2;
+            if (Math.abs(componentCenter - centerX) > 100
+                || entry.y < labelY - 12
+                || entry.y > labelY + 58) {
                 continue;
             }
-            if (component.text.toString().toLowerCase(java.util.Locale.ROOT).contains(needle)) {
-                return true;
+
+            String text = component.text == null ? "" : component.text.toString();
+            DisplayDebug.log(
+                "MODERN_UI AA nearby"
+                    + " id=" + component.id
+                    + " parent=" + component.overlayer
+                    + " type=" + component.type
+                    + " xy=" + entry.x + "," + entry.y
+                    + " size=" + component.width + "x" + component.height
+                    + " base=" + component.baseX + "," + component.baseY
+                    + (text.isEmpty() ? "" : " text='" + text + "'")
+            );
+            if (++logged >= 24) {
+                break;
             }
         }
-        return false;
     }
 
     private static void shift(Component component, int dx, int dy) {
@@ -228,8 +318,8 @@ public final class GraphicsOptionsUiInjector {
     }
 
     private static void prepareClone(Component component) {
-        // The clone inherits visuals/layout only. Existing Anti-aliasing
-        // scripts must never change anti-aliasing when our new control is used.
+        // Preserve the original component's geometry and visual configuration,
+        // but never inherit Anti-aliasing's scripts or actions.
         component.onLoad = null;
         component.onStatTransmit = null;
         component.onVarcTransmit = null;
@@ -289,7 +379,22 @@ public final class GraphicsOptionsUiInjector {
             }
             return clone;
         } catch (ReflectiveOperationException ex) {
-            throw new IllegalStateException("Unable to clone Graphics Options component", ex);
+            throw new IllegalStateException(
+                "Unable to clone Graphics Options component",
+                ex
+            );
+        }
+    }
+
+    private static final class LayoutEntry {
+        private final Component component;
+        private final int x;
+        private final int y;
+
+        private LayoutEntry(Component component, int x, int y) {
+            this.component = component;
+            this.x = x;
+            this.y = y;
         }
     }
 }
