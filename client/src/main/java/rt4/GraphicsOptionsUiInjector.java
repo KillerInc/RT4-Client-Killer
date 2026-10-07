@@ -21,6 +21,7 @@ public final class GraphicsOptionsUiInjector {
     public static final int CLIENT_CODE_STYLE_HIT = 1902;
     public static final int CLIENT_CODE_VALUE_TEXT = 1903;
     public static final int CLIENT_CODE_STYLE_TEXT = 1904;
+    public static final int CLIENT_CODE_SELECTOR_PIECE = 1905;
 
     private static final int COLUMN_DELTA_X = 130;
     private static final int STYLE_DELTA_Y = 30;
@@ -128,12 +129,20 @@ public final class GraphicsOptionsUiInjector {
 
         List<Component> added = new ArrayList<>();
 
-        // Root-level copies use final rendered positions, so no nested parent
-        // can clip the new sixth-column control.
-        Component label = cloneAtRoot(
+        // Attach the injected controls to the same Graphics Options menu
+        // container as the title. Root-level absolute copies drift in resized
+        // mode because the host interface offset is applied again at render.
+        int menuParent = graphicsTitle.component.overlayer;
+        int menuParentX = graphicsTitle.parentX;
+        int menuParentY = graphicsTitle.parentY;
+
+        Component label = cloneIntoParent(
             antiLabel,
             antiLabel.x + COLUMN_DELTA_X,
-            antiLabel.y
+            antiLabel.y,
+            menuParent,
+            menuParentX,
+            menuParentY
         );
         label.text = JagString.parse("Modern UI");
         label.activeText = label.text;
@@ -143,11 +152,15 @@ public final class GraphicsOptionsUiInjector {
         int selectorHitArea = -1;
 
         for (LayoutEntry source : selectorSprites) {
-            Component clone = cloneAtRoot(
+            Component clone = cloneIntoParent(
                 source,
                 source.x + COLUMN_DELTA_X,
-                source.y
+                source.y,
+                menuParent,
+                menuParentX,
+                menuParentY
             );
+            clone.clientCode = CLIENT_CODE_SELECTOR_PIECE;
             added.add(clone);
 
             int area = Math.max(1, clone.width) * Math.max(1, clone.height);
@@ -161,10 +174,13 @@ public final class GraphicsOptionsUiInjector {
             selectorHit.clientCode = CLIENT_CODE_SELECTOR_HIT;
         }
 
-        Component value = cloneAtRoot(
+        Component value = cloneIntoParent(
             valueText,
             valueText.x + COLUMN_DELTA_X,
-            valueText.y
+            valueText.y,
+            menuParent,
+            menuParentX,
+            menuParentY
         );
         value.clientCode = CLIENT_CODE_VALUE_TEXT;
         value.text = JagString.parse(ModernUiManager.isEnabled() ? "Yes" : "No");
@@ -176,10 +192,13 @@ public final class GraphicsOptionsUiInjector {
         // button and were the extra ornaments visible in the menu.
         // Reuse only AA's text geometry as a real component/hitbox. Modern
         // mode draws the button artwork from the .uipack behind this text.
-        Component styleText = cloneAtRoot(
+        Component styleText = cloneIntoParent(
             valueText,
             valueText.x + COLUMN_DELTA_X,
-            valueText.y + STYLE_DELTA_Y
+            valueText.y + STYLE_DELTA_Y,
+            menuParent,
+            menuParentX,
+            menuParentY
         );
         styleText.clientCode = CLIENT_CODE_STYLE_TEXT;
         styleText.text = JagString.parse("Style Editor");
@@ -213,22 +232,22 @@ public final class GraphicsOptionsUiInjector {
         }
     }
 
-    private static Component cloneAtRoot(
+    private static Component cloneIntoParent(
         LayoutEntry source,
-        int absoluteX,
-        int absoluteY
+        int targetX,
+        int targetY,
+        int parentId,
+        int parentX,
+        int parentY
     ) {
         Component clone = cloneComponent(source.component);
         prepareClone(clone);
 
-        clone.overlayer = -1;
-
-        // Because this copy is now a root component, x/y and baseX/baseY are
-        // all expressed directly in interface coordinates.
-        clone.baseX = absoluteX;
-        clone.baseY = absoluteY;
-        clone.x = absoluteX;
-        clone.y = absoluteY;
+        clone.overlayer = parentId;
+        clone.baseX = targetX - parentX;
+        clone.baseY = targetY - parentY;
+        clone.x = clone.baseX;
+        clone.y = clone.baseY;
         clone.xMode = 0;
         clone.yMode = 0;
 
@@ -253,7 +272,7 @@ public final class GraphicsOptionsUiInjector {
 
             int x = parentX + component.x;
             int y = parentY + component.y;
-            out.add(new LayoutEntry(component, x, y));
+            out.add(new LayoutEntry(component, x, y, parentX, parentY));
 
             if (component.type == 0) {
                 int childX = x - component.scrollX;
@@ -412,11 +431,21 @@ public final class GraphicsOptionsUiInjector {
         private final Component component;
         private final int x;
         private final int y;
+        private final int parentX;
+        private final int parentY;
 
-        private LayoutEntry(Component component, int x, int y) {
+        private LayoutEntry(
+            Component component,
+            int x,
+            int y,
+            int parentX,
+            int parentY
+        ) {
             this.component = component;
             this.x = x;
             this.y = y;
+            this.parentX = parentX;
+            this.parentY = parentY;
         }
     }
 }

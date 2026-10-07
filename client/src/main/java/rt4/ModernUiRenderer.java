@@ -509,6 +509,13 @@ public final class ModernUiRenderer {
         int x,
         int y
     ) {
+        if (component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_SELECTOR_HIT
+            || component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_SELECTOR_PIECE) {
+            // Native clone pieces exist solely so Standard UI remains exact.
+            // Modern mode draws one vector dropdown over their combined bounds.
+            return;
+        }
+
         String assetKey = "graphics-options/" + componentAssetKey(component);
         int width = Math.max(1, component.width);
         int height = Math.max(1, component.height);
