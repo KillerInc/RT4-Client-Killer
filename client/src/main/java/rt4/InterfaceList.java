@@ -182,6 +182,7 @@ public class InterfaceList {
 					}
 				}
 			}
+			GraphicsOptionsUiInjector.inject(interfaceId);
 			interfaceLoaded[interfaceId] = true;
 			return true;
 		} else {

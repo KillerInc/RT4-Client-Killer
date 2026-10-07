@@ -1211,6 +1211,20 @@ public class Cs1ScriptRunner {
 	@OriginalMember(owner = "client!aa", name = "a", descriptor = "(BLclient!be;)V")
 	public static void applyClientCode(@OriginalArg(1) Component component) {
 		@Pc(16) int clientCode = component.clientCode;
+
+		if (clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_VALUE_TEXT) {
+			component.text = JagString.parse(ModernUiManager.isEnabled() ? "Yes" : "No");
+			component.activeText = component.text;
+			return;
+		}
+		if (clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_STYLE_TEXT) {
+			component.text = JagString.parse("Style Editor");
+			component.activeText = component.text;
+			component.color = ModernUiManager.isEnabled() ? 0x3B2B1B : 0x6D6658;
+			component.activeColor = component.color;
+			return;
+		}
+
 		if (clientCode == 324) {
 			if (cachedDefaultSpriteId == -1) {
 				cachedDefaultSpriteId = component.spriteId;
