@@ -4,10 +4,19 @@ package rt4;
  * Entry point for Modern UI state. Renderer selection and style selection are
  * deliberately independent: switching Modern UI off preserves the last style,
  * add-ons, scales and future window layout settings.
+ *
+ * Style Editor callbacks can arrive on Swing's EDT. Resource destruction and
+ * interface relayout are therefore queued and performed by the game render
+ * thread through processPendingReload().
  */
 public final class ModernUiManager {
     private static boolean initialized;
     private static int reloadGeneration;
+
+    private static volatile boolean reloadRequested;
+    private static volatile String pendingReloadReason = "UI settings changed";
+    private static volatile long reloadNoticeUntil;
+    private static volatile String reloadNotice = "";
 
     private ModernUiManager() {
     }
@@ -37,19 +46,14 @@ public final class ModernUiManager {
             return;
         }
 
-        DisplayDebug.log("MODERN_UI switching enabled=" + enabled);
+        DisplayDebug.log("MODERN_UI requested enabled=" + enabled);
         ModernUiPreferences.setEnabled(enabled);
-        reloadGeneration++;
-
         if (enabled) {
             UiStyleRepository.refresh();
         } else {
             StyleEditorWindow.closeWindow();
         }
-
-        ModernUiRenderer.clearCaches();
-        InterfaceList.layoutTopLevel(true);
-        InterfaceList.fullRedrawAllInterfaces();
+        requestReload(enabled ? "Enabling Modern UI" : "Restoring Standard UI");
     }
 
     public static UiStyleInfo getEffectiveStyle() {
@@ -60,8 +64,7 @@ public final class ModernUiManager {
     public static void refreshStyles() {
         initialize();
         UiStyleRepository.refresh();
-        reloadGeneration++;
-        DisplayDebug.log("MODERN_UI styles refreshed generation=" + reloadGeneration);
+        requestReload("Reloading UI styles");
     }
 
     public static int getReloadGeneration() {
@@ -72,30 +75,30 @@ public final class ModernUiManager {
     public static void selectStyle(String id) {
         initialize();
         ModernUiPreferences.setStyleId(id);
-        reloadGeneration++;
-        DisplayDebug.log("MODERN_UI style=" + id + ", generation=" + reloadGeneration);
+        DisplayDebug.log("MODERN_UI requested style=" + id);
+        requestReload("Loading UI style: " + id);
     }
 
     public static void setAddonEnabled(String id, boolean enabled) {
         initialize();
         ModernUiPreferences.setAddonEnabled(id, enabled);
-        reloadGeneration++;
-        DisplayDebug.log("MODERN_UI addon " + id + "=" + enabled + ", generation=" + reloadGeneration);
+        DisplayDebug.log("MODERN_UI requested addon " + id + "=" + enabled);
+        requestReload("Reloading UI add-ons");
     }
 
     public static void setUiScale(float scale) {
         ModernUiPreferences.setUiScale(scale);
-        reloadGeneration++;
+        requestReload("Applying UI scale");
     }
 
     public static void setTextScale(float scale) {
         ModernUiPreferences.setTextScale(scale);
-        reloadGeneration++;
+        requestReload("Applying text scale");
     }
 
     public static void setIconScale(float scale) {
         ModernUiPreferences.setIconScale(scale);
-        reloadGeneration++;
+        requestReload("Applying icon scale");
     }
 
     public static void openStyleEditor() {
@@ -104,6 +107,48 @@ public final class ModernUiManager {
             return;
         }
         StyleEditorWindow.openWindow();
+    }
+
+    public static void requestReload(String reason) {
+        pendingReloadReason = reason == null || reason.trim().isEmpty() ? "Reloading UI" : reason;
+        reloadRequested = true;
+    }
+
+    /**
+     * Must be called from the game/render thread.
+     */
+    public static void processPendingReload() {
+        initialize();
+        if (!reloadRequested) {
+            return;
+        }
+
+        reloadRequested = false;
+        String reason = pendingReloadReason;
+        reloadGeneration++;
+
+        ModernUiRenderer.clearCaches();
+        if (InterfaceList.topLevelInterface != -1) {
+            InterfaceList.layoutTopLevel(true);
+        }
+        ScriptRunner.forceRedrawAllRectangles();
+
+        reloadNotice = reason;
+        reloadNoticeUntil = MonotonicClock.currentTimeMillis() + 650L;
+        DisplayDebug.log(
+            "MODERN_UI reload complete generation=" + reloadGeneration
+                + ", enabled=" + ModernUiPreferences.isEnabled()
+                + ", style=" + ModernUiPreferences.getStyleId()
+                + ", reason=" + reason
+        );
+    }
+
+    public static boolean isReloadNoticeActive() {
+        return MonotonicClock.currentTimeMillis() < reloadNoticeUntil;
+    }
+
+    public static String getReloadNotice() {
+        return reloadNotice;
     }
 
     private static void initializeWithoutStyleLookup() {
