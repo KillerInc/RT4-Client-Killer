@@ -158,6 +158,13 @@ public final class ModernUiRenderer {
         }
 
         if (graphicsOptions) {
+            renderPermanentGraphicsOptionsUi(
+                loadedComponents,
+                parentX,
+                parentY
+            );
+            setClip(clipLeft, clipTop, clipRight, clipBottom);
+
             graphicsOptionsDepth--;
             graphicsOptionsTitleCenterX = oldTitleCenterX;
             graphicsOptionsTitleY = oldTitleY;
@@ -2503,6 +2510,91 @@ public final class ModernUiRenderer {
             }
         }
         return null;
+    }
+
+    private static void renderPermanentGraphicsOptionsUi(
+        Component[] components,
+        int parentX,
+        int parentY
+    ) {
+        // As with the main menu, the entire Modern Graphics Options surface is
+        // a foreground layer. Any login-scene fade/transition has already been
+        // drawn by the legacy component pass before we reach this point.
+        graphicsOptionsBrightnessRendered = false;
+        renderGraphicsOptionsBackdrop(
+            0,
+            0,
+            GameShell.canvasWidth,
+            GameShell.canvasHeight
+        );
+
+        setClip(0, 0, GameShell.canvasWidth, GameShell.canvasHeight);
+        renderGraphicsOptionsForegroundComponents(
+            components,
+            -1,
+            parentX,
+            parentY
+        );
+    }
+
+    private static void renderGraphicsOptionsForegroundComponents(
+        Component[] components,
+        int layer,
+        int parentX,
+        int parentY
+    ) {
+        if (components == null) {
+            return;
+        }
+
+        for (Component component : components) {
+            if (component == null || component.overlayer != layer) {
+                continue;
+            }
+            if (component.if3 && InterfaceList.isHidden(component)) {
+                continue;
+            }
+            if (component.type == 0
+                && !component.if3
+                && InterfaceList.isHidden(component)
+                && InterfaceList.hoveredComponent != component) {
+                continue;
+            }
+
+            int x = parentX + component.x;
+            int y = parentY + component.y;
+
+            if (component.type == 0) {
+                int childX = x - component.scrollX;
+                int childY = y - component.scrollY;
+
+                renderGraphicsOptionsForegroundComponents(
+                    components,
+                    component.id,
+                    childX,
+                    childY
+                );
+
+                if (component.createdComponents != null) {
+                    renderGraphicsOptionsForegroundComponents(
+                        component.createdComponents,
+                        component.id,
+                        childX,
+                        childY
+                    );
+                }
+                continue;
+            }
+
+            // The permanent pass intentionally contains only Modern UI visual
+            // primitives. Viewports, plugins and other client components stay
+            // below this layer with the animated login scene.
+            if (component.type == 4) {
+                renderText(component, x, y);
+            } else if (component.type == 5) {
+                renderImage(component, x, y);
+            }
+        }
     }
 
     private static void renderGraphicsOptionsBackdrop(
