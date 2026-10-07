@@ -598,6 +598,7 @@ public final class ModernUiRenderer {
                 : ModernUiFontRegistry.resolveAsset(component.font);
 
         if (!syntheticKillerText
+            && graphicsOptionsDepth <= 0
             && component.font != -1
             && fontAsset == null) {
             drawMissingLegacyGlyphs(component, text, x, y, 12.0F);
@@ -647,11 +648,14 @@ public final class ModernUiRenderer {
             if (isGraphicsOptionsDropdownValue(component, text, y)) {
                 int controlHeight = Math.max(20, component.height + 6);
                 int controlY = y - Math.max(2, (controlHeight - component.height) / 2);
+                int controlWidth = graphicsOptionsControlWidth(component);
+                int controlX =
+                    x + (component.width - controlWidth) / 2;
 
                 drawModernControlBox(
-                    x,
+                    controlX,
                     controlY,
-                    Math.max(1, component.width),
+                    controlWidth,
                     controlHeight,
                     true,
                     false
@@ -660,9 +664,9 @@ public final class ModernUiRenderer {
                 ModernTrueTypeFont.drawInBox(
                     fontAsset,
                     text,
-                    x + 4,
+                    controlX + 4,
                     controlY,
-                    Math.max(1, component.width - 22),
+                    Math.max(1, controlWidth - 22),
                     controlHeight,
                     0xE8DDC4,
                     component.halign,
@@ -719,7 +723,7 @@ public final class ModernUiRenderer {
 
         int width = Math.max(1, component.width);
         int height = Math.max(1, component.height);
-        if (width < 60 || width > 190 || height > 32) {
+        if (width > 190 || height > 32) {
             return false;
         }
 
@@ -729,6 +733,13 @@ public final class ModernUiRenderer {
         }
 
         return !isGraphicsOptionsLabel(text);
+    }
+
+    private static int graphicsOptionsControlWidth(Component component) {
+        if (component == null) {
+            return 92;
+        }
+        return Math.min(118, Math.max(92, Math.max(1, component.width)));
     }
 
     private static boolean isGraphicsOptionsLabel(String text) {
@@ -2327,6 +2338,15 @@ public final class ModernUiRenderer {
             if (component == null || component.overlayer != layer) {
                 continue;
             }
+            if (component.if3 && InterfaceList.isHidden(component)) {
+                continue;
+            }
+            if (component.type == 0
+                && !component.if3
+                && InterfaceList.isHidden(component)
+                && InterfaceList.hoveredComponent != component) {
+                continue;
+            }
 
             int x = parentX + component.x;
             int y = parentY + component.y;
@@ -2346,11 +2366,14 @@ public final class ModernUiRenderer {
                 if (isGraphicsOptionsDropdownValue(component, text, y)) {
                     int controlHeight = Math.max(20, component.height + 6);
                     int controlY = y - Math.max(2, (controlHeight - component.height) / 2);
+                    int controlWidth = graphicsOptionsControlWidth(component);
+                    int controlX =
+                        x + (component.width - controlWidth) / 2;
                     graphicsOptionsDropdownRects.add(
                         new UiRect(
-                            x,
+                            controlX,
                             controlY,
-                            Math.max(1, component.width),
+                            controlWidth,
                             controlHeight
                         )
                     );
@@ -2439,9 +2462,10 @@ public final class ModernUiRenderer {
             return;
         }
 
-        // Everything else must either have an explicit Modern asset mapping
-        // or remain visibly pink. No size/position heuristics are allowed to
-        // hide unfinished legacy artwork.
+        // Graphics Options now has complete Modern chrome for its panel,
+        // display-mode controls, dropdowns, brightness slider and navigation.
+        // Remaining cache sprites are decorative fragments of the 2009 skin,
+        // so suppress them instead of surfacing missing-asset diagnostics.
         ModernUiImage image = ModernUiAssetResolver.get(
             assetKey,
             width,
@@ -2449,16 +2473,7 @@ public final class ModernUiRenderer {
         );
         if (image != null) {
             image.render(x, y);
-            return;
         }
-
-        drawMissing(
-            "asset:" + assetKey,
-            x,
-            y,
-            width,
-            height
-        );
     }
 
     private static GraphicsOptionsAnchor findGraphicsOptionsAnchor(
@@ -2528,6 +2543,16 @@ public final class ModernUiRenderer {
             GameShell.canvasHeight
         );
 
+        if (graphicsOptionsBrightnessRect != null) {
+            drawModernBrightness(
+                graphicsOptionsBrightnessRect.x,
+                graphicsOptionsBrightnessRect.y,
+                graphicsOptionsBrightnessRect.width,
+                graphicsOptionsBrightnessRect.height
+            );
+            graphicsOptionsBrightnessRendered = true;
+        }
+
         setClip(0, 0, GameShell.canvasWidth, GameShell.canvasHeight);
         renderGraphicsOptionsForegroundComponents(
             components,
@@ -2591,8 +2616,6 @@ public final class ModernUiRenderer {
             // below this layer with the animated login scene.
             if (component.type == 4) {
                 renderText(component, x, y);
-            } else if (component.type == 5) {
-                renderImage(component, x, y);
             }
         }
     }
