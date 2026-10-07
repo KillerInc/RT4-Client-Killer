@@ -635,15 +635,35 @@ public class InterfaceList {
 			if (component != null && component.overlayer == overlayerId && (!component.if3 || component.type == 0 || component.hasEventHandlers || getServerActiveProperties(component).events != 0 || component == Cs1ScriptRunner.dragParentComponent || component.clientCode == 1338) && (!component.if3 || !isHidden(component))) {
 				@Pc(50) int absX = component.x + parentX;
 				@Pc(55) int absY = component.y + parentY;
+				if (ModernUiRenderer.usesMainMenuContentBounds(component)) {
+					absY = ModernUiRenderer.adjustMainMenuComponentY(
+						component,
+						absY
+					);
+				}
 				@Pc(61) int left;
 				@Pc(63) int top;
 				@Pc(65) int right;
 				@Pc(67) int bottom;
+				int effectiveClipLeft = clipLeft;
+				int effectiveClipTop = clipTop;
+				int effectiveClipRight = clipRight;
+				int effectiveClipBottom = clipBottom;
+				if (ModernUiRenderer.usesMainMenuContentBounds(component)) {
+					effectiveClipLeft =
+						ModernUiRenderer.getMainMenuContentLeft(clipLeft);
+					effectiveClipTop =
+						ModernUiRenderer.getMainMenuContentTop(clipTop);
+					effectiveClipRight =
+						ModernUiRenderer.getMainMenuContentRight(clipRight);
+					effectiveClipBottom =
+						ModernUiRenderer.getMainMenuContentBottom(clipBottom);
+				}
 				if (component.type == 2) {
-					left = clipLeft;
-					top = clipTop;
-					right = clipRight;
-					bottom = clipBottom;
+					left = effectiveClipLeft;
+					top = effectiveClipTop;
+					right = effectiveClipRight;
+					bottom = effectiveClipBottom;
 				} else {
 					@Pc(73) int compRight = absX + component.width;
 					@Pc(78) int compBottom = absY + component.height;
@@ -651,10 +671,14 @@ public class InterfaceList {
 						compRight++;
 						compBottom++;
 					}
-					left = absX > clipLeft ? absX : clipLeft;
-					top = absY > clipTop ? absY : clipTop;
-					right = compRight < clipRight ? compRight : clipRight;
-					bottom = compBottom < clipBottom ? compBottom : clipBottom;
+					left = absX > effectiveClipLeft ? absX : effectiveClipLeft;
+					top = absY > effectiveClipTop ? absY : effectiveClipTop;
+					right = compRight < effectiveClipRight
+						? compRight
+						: effectiveClipRight;
+					bottom = compBottom < effectiveClipBottom
+						? compBottom
+						: effectiveClipBottom;
 				}
 				if (component == Cs1ScriptRunner.draggedComponent) {
 					dragSourceFound = true;
