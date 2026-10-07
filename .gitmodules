@@ -1,0 +1,3 @@
+[submodule "rt4-client"]
+	path = rt4-client
+	url = https://github.com/pazaz/rt4-client.git
