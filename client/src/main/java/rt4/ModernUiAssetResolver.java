@@ -50,6 +50,7 @@ public final class ModernUiAssetResolver {
         };
 
     private static final Map<String, String> resolvedSources = new LinkedHashMap<>();
+    private static final Set<String> missingPaths = new java.util.HashSet<>();
 
     private ModernUiAssetResolver() {
     }
@@ -71,6 +72,7 @@ public final class ModernUiAssetResolver {
         try {
             ResolvedBytes resolved = resolve(path);
             if (resolved == null) {
+                logMissingOnce(path);
                 return null;
             }
 
@@ -108,6 +110,7 @@ public final class ModernUiAssetResolver {
         try {
             ResolvedBytes resolved = resolveCandidates(new String[] {path});
             if (resolved == null) {
+                logMissingOnce(path);
                 return null;
             }
             synchronized (imageCache) {
@@ -133,7 +136,20 @@ public final class ModernUiAssetResolver {
             }
             imageCache.clear();
             resolvedSources.clear();
+            missingPaths.clear();
         }
+    }
+
+    private static void logMissingOnce(String path) {
+        synchronized (imageCache) {
+            if (!missingPaths.add(path)) {
+                return;
+            }
+        }
+        DisplayDebug.log(
+            "MODERN_UI RESOURCE MISSING path=\"" + path + "\""
+                + " style=" + ModernUiPreferences.getStyleId()
+        );
     }
 
     private static ResolvedBytes resolve(String logicalPath) throws Exception {

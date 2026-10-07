@@ -120,6 +120,11 @@ public final class ModernUiManager {
      */
     public static void processPendingReload() {
         initialize();
+
+        if (ModernUiPreferences.isEnabled()) {
+            ModernUiResourceAudit.tick();
+        }
+
         if (!reloadRequested) {
             return;
         }
