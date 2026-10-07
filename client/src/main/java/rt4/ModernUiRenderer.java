@@ -471,17 +471,16 @@ public final class ModernUiRenderer {
         int width = Math.max(1, component.width);
         int height = Math.max(1, component.height);
 
-        // Large parchment/backdrop images become the modern panel. Decorative
-        // logos and very large artwork are omitted rather than shown as a
-        // diagnostic box over the game world.
+        // Missing major UI artwork must be impossible to mistake for a
+        // finished style. Use a high-contrast checkerboard diagnostic.
         if (width >= 500 && height >= 180) {
-            if (GlRenderer.enabled) {
-                GlRaster.fillRectAlpha(x, y, width, height, 0x2B241B, 235);
-                GlRaster.drawRect(x, y, width, height, 0x8C744A);
-            } else {
-                SoftwareRaster.fillRectAlpha(x, y, width, height, 0x2B241B, 235);
-                SoftwareRaster.drawRect(x, y, width, height, 0x8C744A);
-            }
+            drawMissingBackdrop(
+                key,
+                x,
+                y,
+                width,
+                height
+            );
             return;
         }
 
@@ -504,6 +503,50 @@ public final class ModernUiRenderer {
 
         // Tiny decorative pieces are skipped. Their absence remains logged,
         // but we do not cover the screen with magenta debug tiles.
+    }
+
+    private static void drawMissingBackdrop(String key, int x, int y, int width, int height) {
+        int tile = 28;
+        for (int row = 0; row < height; row += tile) {
+            for (int col = 0; col < width; col += tile) {
+                boolean alternate = ((row / tile) + (col / tile) & 1) != 0;
+                int color = alternate ? 0xFF00A8 : 0x171717;
+                int drawW = Math.min(tile, width - col);
+                int drawH = Math.min(tile, height - row);
+                if (GlRenderer.enabled) {
+                    GlRaster.fillRectAlpha(x + col, y + row, drawW, drawH, color, 220);
+                } else {
+                    SoftwareRaster.fillRectAlpha(x + col, y + row, drawW, drawH, color, 220);
+                }
+            }
+        }
+
+        if (GlRenderer.enabled) {
+            GlRaster.drawRect(x, y, width, height, 0xFF66CC);
+            GlRaster.drawRect(x + 1, y + 1, width - 2, height - 2, 0xFFFFFF);
+        } else {
+            SoftwareRaster.drawRect(x, y, width, height, 0xFF66CC);
+            SoftwareRaster.drawRect(x + 1, y + 1, width - 2, height - 2, 0xFFFFFF);
+        }
+
+        int centerX = x + width / 2;
+        int centerY = y + height / 2;
+        ModernTrueTypeFont.drawCentered(
+            "MISSING MODERN UI ASSET",
+            centerX,
+            centerY - 4,
+            0xFFFFFF,
+            18.0F,
+            true
+        );
+        ModernTrueTypeFont.drawCentered(
+            key,
+            centerX,
+            centerY + 18,
+            0xFFFFFF,
+            10.0F,
+            true
+        );
     }
 
     private static boolean containsGraphicsOptionsText(Component[] components) {

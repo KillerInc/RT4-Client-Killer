@@ -95,6 +95,7 @@ public final class ModernUiSettingsOverlay {
             Fonts.p12Full.renderCenter(JagString.parse("Modern UI"), centerX, labelBaseline, TEXT, -1);
             drawNativeField(selectorX, selectorY, selectorW, selectorH, true);
             Fonts.p12Full.renderCenter(JagString.parse("No"), centerX - 5, selectorY + 15, TEXT, -1);
+            drawNativeArrows(selectorX, selectorY, selectorW, selectorH);
         }
 
         int editorW = 116;
@@ -136,6 +137,7 @@ public final class ModernUiSettingsOverlay {
                 drawNativeField(popupX, popupY, selectorW, popupH, true);
                 drawNativeChoice("No", popupX, popupY, selectorW, selectorH, !modern);
                 drawNativeChoice("Yes", popupX, popupY + selectorH, selectorW, selectorH, modern);
+                drawNativeArrows(popupX, popupY, selectorW, selectorH);
             }
         }
 
@@ -197,6 +199,37 @@ public final class ModernUiSettingsOverlay {
         outline(x, y, width, height, border);
         hline(x + 1, y + 1, width - 2, enabled ? 0xC7B07B : 0x989184);
         hline(x + 1, y + height - 2, width - 2, 0x6F5B3B);
+    }
+
+    private static void drawNativeArrows(int x, int y, int width, int height) {
+        int midY = y + height / 2;
+
+        // Match the small beveled arrow caps used by the RT4 graphics menu.
+        int leftX = x - 7;
+        int rightX = x + width + 1;
+        int dark = 0x4A3A25;
+        int light = 0xB7A06C;
+
+        hline(leftX + 2, midY - 3, 3, dark);
+        hline(leftX + 1, midY - 2, 4, dark);
+        hline(leftX, midY - 1, 5, dark);
+        hline(leftX + 1, midY, 4, light);
+        hline(leftX + 2, midY + 1, 3, light);
+
+        hline(rightX, midY - 3, 3, dark);
+        hline(rightX, midY - 2, 4, dark);
+        hline(rightX, midY - 1, 5, dark);
+        hline(rightX, midY, 4, light);
+        hline(rightX, midY + 1, 3, light);
+
+        // Classic small down-arrow inside the right side of the field.
+        int ax = x + width - 15;
+        int ay = y + 7;
+        hline(ax, ay, 9, dark);
+        hline(ax + 1, ay + 1, 7, dark);
+        hline(ax + 2, ay + 2, 5, dark);
+        hline(ax + 3, ay + 3, 3, dark);
+        hline(ax + 4, ay + 4, 1, dark);
     }
 
     private static void drawNativeChoice(String text, int x, int y, int width, int height, boolean selected) {
