@@ -1436,8 +1436,8 @@ public final class ModernUiRenderer {
             color = 0x5A351C;
         } else if (detail) {
             fontAsset = ModernUiFontRegistry.PLAIN_11;
-            size = 10.0F;
-            color = 0xC8B993;
+            size = 16.0F;
+            color = 0x5A351C;
         } else if (normalized.equals("log in")
             || normalized.equals("create account")
             || normalized.startsWith("world ")) {
