@@ -1199,7 +1199,7 @@ public final class ModernUiRenderer {
                     + mainMenuLayout.logo.height
                     + 10,
                 0xE4D2A2,
-                11.0F,
+                33.0F,
                 true
             );
         }
@@ -1518,11 +1518,11 @@ public final class ModernUiRenderer {
 
             // Give the vector parchment a little more breathing room around
             // the existing login controls without moving the control layout.
-            int scrollWidth = Math.max(360, content.width + 200);
-            int scrollHeight = Math.max(380, content.height + 150);
+            int scrollWidth = Math.max(403, content.width + 224);
+            int scrollHeight = Math.max(426, content.height + 168);
             scroll = new UiRect(
                 centerX - scrollWidth / 2,
-                content.y - 74,
+                content.y - 83,
                 scrollWidth,
                 scrollHeight
             );
