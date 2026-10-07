@@ -434,18 +434,13 @@ public final class ModernUiRenderer {
             ScriptRunner.renderGameScene(component.height, component.clientCode == 1403, x, component.width, y);
             setClip(clipLeft, clipTop, clipRight, clipBottom);
 
-            if (mainMenuDepth > 0
-                && mainMenuLayout != null
-                && !mainMenuBackdropRendered) {
-                renderMainMenuBackdrop(
-                    clipLeft,
-                    clipTop,
-                    clipRight,
-                    clipBottom
-                );
-                mainMenuBackdropRendered = true;
-                setClip(clipLeft, clipTop, clipRight, clipBottom);
-            }
+            // Do not draw the Modern main-menu parchment/logo here.
+            // The login scene can draw a transition/fade overlay later in the
+            // same legacy component pass, which would incorrectly fade the
+            // Modern backdrop with the animated background. The first Modern
+            // main-menu control calls ensureMainMenuBackdrop() instead, so the
+            // parchment and title are composited after scene transitions but
+            // before the controls themselves.
             return true;
         }
 
