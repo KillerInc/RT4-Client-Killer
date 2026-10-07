@@ -1,0 +1,78 @@
+name: Vendor RuneScape TTFs
+
+on:
+  push:
+    branches: [ modern-client ]
+
+permissions:
+  contents: write
+
+jobs:
+  vendor:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: modern-client
+          fetch-depth: 0
+
+      - name: Vendor RuneStar RuneScape TTF family
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          target="client/src/main/resources/ui/killer-modern/fonts"
+          mirror="client/src/main/resources/ui/fonts"
+
+          if [ -f "$target/RuneScape-Plain-11.ttf" ] &&
+             [ -f "$target/RuneScape-Plain-12.ttf" ] &&
+             [ -f "$target/RuneScape-Bold-12.ttf" ] &&
+             [ -f "$target/RuneScape-Quill-8.ttf" ] &&
+             [ -f "$target/RuneScape-Quill.ttf" ] &&
+             [ -f "$target/RuneScape-Quill-Caps.ttf" ] &&
+             [ -f "$target/RuneScape-Fairy.ttf" ] &&
+             [ -f "$target/RuneScape-Fairy-Large.ttf" ] &&
+             [ -f "$target/RuneScape-Barbarian-Assault.ttf" ] &&
+             [ -f "$target/RuneScape-Surok.ttf" ]; then
+            echo "RuneScape TTF family already vendored."
+            exit 0
+          fi
+
+          curl -fL --retry 4             -o RuneScape-Fonts.zip             https://github.com/RuneStar/fonts/releases/download/1.103-0/RuneScape-Fonts.zip
+
+          rm -rf runestar-fonts
+          mkdir -p runestar-fonts "$target" "$mirror"
+          unzip -q RuneScape-Fonts.zip -d runestar-fonts
+
+          for name in             RuneScape-Plain-11             RuneScape-Plain-12             RuneScape-Bold-12             RuneScape-Quill-8             RuneScape-Quill             RuneScape-Quill-Caps             RuneScape-Fairy             RuneScape-Fairy-Large             RuneScape-Barbarian-Assault             RuneScape-Surok
+          do
+            src="$(find runestar-fonts -type f -iname "$name.ttf" -print -quit)"
+            if [ -z "$src" ]; then
+              echo "Missing expected RuneStar font: $name.ttf" >&2
+              find runestar-fonts -maxdepth 4 -type f -print
+              exit 1
+            fi
+            cp "$src" "$target/$name.ttf"
+            cp "$src" "$mirror/$name.ttf"
+          done
+
+          cat > "$target/RUNESTAR-FONTS.txt" <<'EOF'
+          RuneScape TTF family from RuneStar/fonts release 1.103-0.
+          Source: https://github.com/RuneStar/fonts
+          License: CC0-1.0 / Public Domain (see upstream project).
+          Used only by Killer Edition Modern UI; vanilla RT4 font rendering is unchanged.
+          EOF
+          cp "$target/RUNESTAR-FONTS.txt" "$mirror/RUNESTAR-FONTS.txt"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$target" "$mirror"
+
+          if git diff --cached --quiet; then
+            echo "No font changes to commit."
+            exit 0
+          fi
+
+          git commit -m "Vendor RuneStar RuneScape TTF family [skip ci]"
+          git push origin HEAD:modern-client
