@@ -51,7 +51,7 @@ public final class ModernUiManager {
         if (enabled) {
             UiStyleRepository.refresh();
         } else {
-            StyleEditorWindow.closeWindow();
+            ModernUiStyleEditorOverlay.close();
         }
         requestReload(enabled ? "Enabling Modern UI" : "Restoring Standard UI");
     }
@@ -106,7 +106,7 @@ public final class ModernUiManager {
         if (!isEnabled()) {
             return;
         }
-        StyleEditorWindow.openWindow();
+        ModernUiStyleEditorOverlay.open();
     }
 
     public static void requestReload(String reason) {
@@ -127,11 +127,16 @@ public final class ModernUiManager {
         String reason = pendingReloadReason;
         reloadGeneration++;
 
+        int gameStateBefore = client.gameState;
+        int interfaceBefore = InterfaceList.topLevelInterface;
+        int npcCountBefore = NpcList.size;
+        String playerBefore = PlayerList.self == null || PlayerList.self.username == null
+            ? "<login/null>"
+            : PlayerList.self.username.toString();
+
         ModernUiRenderer.clearCaches();
-        if (InterfaceList.topLevelInterface != -1) {
-            InterfaceList.layoutTopLevel(true);
-        }
         ScriptRunner.forceRedrawAllRectangles();
+        GameShell.fullRedraw = true;
 
         reloadNotice = reason;
         reloadNoticeUntil = MonotonicClock.currentTimeMillis() + 650L;
@@ -140,6 +145,10 @@ public final class ModernUiManager {
                 + ", enabled=" + ModernUiPreferences.isEnabled()
                 + ", style=" + ModernUiPreferences.getStyleId()
                 + ", reason=" + reason
+                + ", gameState=" + gameStateBefore + "->" + client.gameState
+                + ", topInterface=" + interfaceBefore + "->" + InterfaceList.topLevelInterface
+                + ", npcCount=" + npcCountBefore + "->" + NpcList.size
+                + ", player=" + playerBefore
         );
     }
 

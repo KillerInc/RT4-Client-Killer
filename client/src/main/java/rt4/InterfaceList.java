@@ -627,6 +627,9 @@ public class InterfaceList {
 
 	@OriginalMember(owner = "client!client", name = "a", descriptor = "([Lclient!be;IIIIIII)V")
 	public static void processComponents(@OriginalArg(0) Component[] children, @OriginalArg(1) int overlayerId, @OriginalArg(2) int clipLeft, @OriginalArg(3) int clipTop, @OriginalArg(4) int clipRight, @OriginalArg(5) int clipBottom, @OriginalArg(6) int parentX, @OriginalArg(7) int parentY) {
+		if (ModernUiStyleEditorOverlay.isOpen()) {
+			return;
+		}
 		for (@Pc(1) int i = 0; i < children.length; i++) {
 			@Pc(9) Component component = children[i];
 			if (component != null && component.overlayer == overlayerId && (!component.if3 || component.type == 0 || component.hasEventHandlers || getServerActiveProperties(component).events != 0 || component == Cs1ScriptRunner.dragParentComponent || component.clientCode == 1338) && (!component.if3 || !isHidden(component))) {

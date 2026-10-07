@@ -1,16 +1,23 @@
 package rt4;
 
 /**
- * Settings bridge shown inside Graphics Options.
+ * Settings bridge shown inside the original RuneScape Graphics Options panel.
  *
- * In Standard mode it is drawn with the existing settings renderer. In Modern
- * mode the control text/icons use the new TrueType/vector pipeline.
+ * This intentionally uses the original RT4 font and a matching 2009-era
+ * beige/brown control treatment so the new option looks native to the screen.
  */
 public final class ModernUiSettingsOverlay {
     private static int titleCenterX;
     private static int titleY;
     private static boolean graphicsOptionsSeen;
     private static boolean dropdownOpen;
+
+    private static final int TEXT = 0x3B2B1B;
+    private static final int FIELD = 0x9B8458;
+    private static final int FIELD_HI = 0xC7B07B;
+    private static final int FIELD_BORDER = 0x4A3A25;
+    private static final int FIELD_DARK = 0x6F5B3B;
+    private static final int DISABLED = 0x6D6658;
 
     private ModernUiSettingsOverlay() {
     }
@@ -23,9 +30,7 @@ public final class ModernUiSettingsOverlay {
         if (component == null || component.text == null || component.text.length() == 0) {
             return;
         }
-
-        String text = component.text.toString();
-        if (!text.contains("Graphics Options")) {
+        if (!component.text.toString().contains("Graphics Options")) {
             return;
         }
 
@@ -35,16 +40,13 @@ public final class ModernUiSettingsOverlay {
     }
 
     public static void render() {
-        if (!graphicsOptionsSeen) {
+        if (!graphicsOptionsSeen || Fonts.p12Full == null) {
             dropdownOpen = false;
             return;
         }
 
         ModernUiManager.initialize();
         boolean modern = ModernUiManager.isEnabled();
-        if (!modern && Fonts.p12Full == null) {
-            return;
-        }
 
         int labelX = titleCenterX - 125;
         int rowY = titleY + 334;
@@ -53,124 +55,117 @@ public final class ModernUiSettingsOverlay {
         int selectorW = 82;
         int selectorH = 20;
 
-        drawTextLeft("Modern UI:", labelX, rowY, 0xFFFFFF, modern);
-        drawButton(selectorX, selectorY, selectorW, selectorH, true);
-        drawSelectorValue(modern ? "Yes" : "No", selectorX, selectorY, selectorW, selectorH, modern);
+        Fonts.p12Full.renderLeft(JagString.parse("Modern UI:"), labelX, rowY, TEXT, -1);
+        drawNativeField(selectorX, selectorY, selectorW, selectorH, true);
+        Fonts.p12Full.renderCenter(
+            JagString.parse(modern ? "Yes" : "No"),
+            selectorX + selectorW / 2 - 5,
+            selectorY + 15,
+            TEXT,
+            -1
+        );
+        Fonts.p12Full.renderLeft(JagString.parse("v"), selectorX + selectorW - 14, selectorY + 15, TEXT, -1);
 
         int editorW = 142;
         int editorH = 20;
         int editorX = titleCenterX - editorW / 2;
         int editorY = rowY + 12;
-        boolean editorEnabled = modern;
-        drawButton(editorX, editorY, editorW, editorH, editorEnabled);
-        drawTextCentered(
-            "Style Editor",
+
+        drawNativeField(editorX, editorY, editorW, editorH, modern);
+        Fonts.p12Full.renderCenter(
+            JagString.parse("Style Editor"),
             editorX + editorW / 2,
             editorY + 15,
-            editorEnabled ? 0xFFFFFF : 0x777777,
-            modern
+            modern ? TEXT : DISABLED,
+            -1
         );
 
-        // The popup intentionally overlays the Style Editor button just like
-        // an ordinary combo box popup. Its hit testing takes precedence.
         int popupX = selectorX;
         int popupY = selectorY + selectorH;
         int popupH = selectorH * 2;
         if (dropdownOpen) {
-            drawButton(popupX, popupY, selectorW, popupH, true);
-            drawChoice("No", popupX, popupY, selectorW, selectorH, !modern, modern);
-            drawChoice("Yes", popupX, popupY + selectorH, selectorW, selectorH, modern, modern);
+            drawNativeField(popupX, popupY, selectorW, popupH, true);
+            drawChoice("No", popupX, popupY, selectorW, selectorH, !modern);
+            drawChoice("Yes", popupX, popupY + selectorH, selectorW, selectorH, modern);
         }
 
         if (Mouse.clickButton != 1) {
             return;
         }
 
-        int mouseX = Mouse.clickX;
-        int mouseY = Mouse.clickY;
+        int mx = Mouse.clickX;
+        int my = Mouse.clickY;
 
         if (dropdownOpen) {
-            if (contains(mouseX, mouseY, popupX, popupY, selectorW, selectorH)) {
+            if (contains(mx, my, popupX, popupY, selectorW, selectorH)) {
                 Mouse.clickButton = 0;
                 dropdownOpen = false;
                 ModernUiManager.setEnabled(false);
                 return;
             }
-            if (contains(mouseX, mouseY, popupX, popupY + selectorH, selectorW, selectorH)) {
+            if (contains(mx, my, popupX, popupY + selectorH, selectorW, selectorH)) {
                 Mouse.clickButton = 0;
                 dropdownOpen = false;
                 ModernUiManager.setEnabled(true);
                 return;
             }
-            if (!contains(mouseX, mouseY, selectorX, selectorY, selectorW, selectorH)) {
+            if (!contains(mx, my, selectorX, selectorY, selectorW, selectorH)) {
                 dropdownOpen = false;
             }
         }
 
-        if (contains(mouseX, mouseY, selectorX, selectorY, selectorW, selectorH)) {
+        if (contains(mx, my, selectorX, selectorY, selectorW, selectorH)) {
             Mouse.clickButton = 0;
             dropdownOpen = !dropdownOpen;
-        } else if (!dropdownOpen && editorEnabled && contains(mouseX, mouseY, editorX, editorY, editorW, editorH)) {
+        } else if (!dropdownOpen && modern && contains(mx, my, editorX, editorY, editorW, editorH)) {
             Mouse.clickButton = 0;
             ModernUiManager.openStyleEditor();
         }
     }
 
-    private static void drawSelectorValue(String value, int x, int y, int width, int height, boolean modern) {
-        drawTextCentered(value, x + width / 2 - 5, y + 15, 0xFFFFFF, modern);
-
-        if (modern) {
-            ModernUiImage arrow = ModernUiAssetResolver.get("icons/dropdown", 9, 6);
-            if (arrow != null) {
-                arrow.render(x + width - 15, y + 7);
-            } else {
-                ModernTrueTypeFont.draw("v", x + width - 14, y + 14, 0xFFFFFF, 9.0F, false);
-            }
-        } else {
-            Fonts.p12Full.renderLeft(JagString.parse("v"), x + width - 15, y + 15, 0xFFFFFF, 0);
-        }
-    }
-
-    private static void drawChoice(String text, int x, int y, int width, int height, boolean selected, boolean modern) {
+    private static void drawChoice(String text, int x, int y, int width, int height, boolean selected) {
         if (selected) {
-            if (GlRenderer.enabled) {
-                GlRaster.fillRectAlpha(x + 1, y + 1, width - 2, height - 2, 0x6E5A38, 220);
-            } else {
-                SoftwareRaster.fillRectAlpha(x + 1, y + 1, width - 2, height - 2, 0x6E5A38, 220);
-            }
+            fill(x + 2, y + 2, width - 4, height - 4, FIELD_HI);
         }
-        drawTextCentered(text, x + width / 2, y + 15, 0xFFFFFF, modern);
+        Fonts.p12Full.renderCenter(JagString.parse(text), x + width / 2, y + 15, TEXT, -1);
     }
 
-    private static void drawTextLeft(String text, int x, int baselineY, int color, boolean modern) {
-        if (modern) {
-            ModernTrueTypeFont.draw(text, x, baselineY, color, 12.0F, true);
-        } else {
-            Fonts.p12Full.renderLeft(JagString.parse(text), x, baselineY, color, 0);
-        }
+    private static void drawNativeField(int x, int y, int width, int height, boolean enabled) {
+        int fill = enabled ? FIELD : 0x817967;
+        int border = enabled ? FIELD_BORDER : 0x5F5A50;
+        int highlight = enabled ? FIELD_HI : 0x989184;
+
+        fill(x, y, width, height, fill);
+        outline(x, y, width, height, border);
+        hline(x + 1, y + 1, width - 2, highlight);
+        hline(x + 1, y + height - 2, width - 2, FIELD_DARK);
     }
 
-    private static void drawTextCentered(String text, int centerX, int baselineY, int color, boolean modern) {
-        if (modern) {
-            ModernTrueTypeFont.drawCentered(text, centerX, baselineY, color, 11.0F, true);
-        } else {
-            Fonts.p12Full.renderCenter(JagString.parse(text), centerX, baselineY, color, 0);
-        }
+    private static boolean contains(int mx, int my, int x, int y, int width, int height) {
+        return mx >= x && my >= y && mx < x + width && my < y + height;
     }
 
-    private static void drawButton(int x, int y, int width, int height, boolean enabled) {
-        int fill = enabled ? 0x3A3024 : 0x282828;
-        int border = enabled ? 0xB59A68 : 0x555555;
+    private static void fill(int x, int y, int width, int height, int color) {
         if (GlRenderer.enabled) {
-            GlRaster.fillRect(x, y, width, height, fill);
-            GlRaster.drawRect(x, y, width, height, border);
+            GlRaster.fillRect(x, y, width, height, color);
         } else {
-            SoftwareRaster.fillRect(x, y, width, height, fill);
-            SoftwareRaster.drawRect(x, y, width, height, border);
+            SoftwareRaster.fillRect(x, y, width, height, color);
         }
     }
 
-    private static boolean contains(int mouseX, int mouseY, int x, int y, int width, int height) {
-        return mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + height;
+    private static void outline(int x, int y, int width, int height, int color) {
+        if (GlRenderer.enabled) {
+            GlRaster.drawRect(x, y, width, height, color);
+        } else {
+            SoftwareRaster.drawRect(x, y, width, height, color);
+        }
+    }
+
+    private static void hline(int x, int y, int width, int color) {
+        if (GlRenderer.enabled) {
+            GlRaster.drawHorizontalLine(x, y, width, color);
+        } else {
+            SoftwareRaster.drawHorizontalLine(x, y, width, color);
+        }
     }
 }
