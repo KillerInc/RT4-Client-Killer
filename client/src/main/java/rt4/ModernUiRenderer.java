@@ -43,7 +43,31 @@ public final class ModernUiRenderer {
     ) {
         if (!InterfaceList.load(interfaceId)) {
             markDirty(rectangle);
-            drawMissing("interface:" + interfaceId, parentX + 8, parentY + 8, 220, 36);
+
+            // The login interface can be requested for a frame or two while
+            // its JS5 group is still arriving. Log that condition, but never
+            // paint a giant pink bootstrap rectangle over the game scene.
+            if (interfaceId == LoginManager.loginScreenId
+                && !loginUiActivated) {
+                suppressDiagnosticsDepth++;
+                drawMissing(
+                    "interface:" + interfaceId,
+                    parentX + 8,
+                    parentY + 8,
+                    220,
+                    36
+                );
+                suppressDiagnosticsDepth--;
+                return;
+            }
+
+            drawMissing(
+                "interface:" + interfaceId,
+                parentX + 8,
+                parentY + 8,
+                220,
+                36
+            );
             return;
         }
 
