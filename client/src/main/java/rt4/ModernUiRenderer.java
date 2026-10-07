@@ -560,9 +560,11 @@ public final class ModernUiRenderer {
 
         int glyphHeight = Math.max(
             9,
-            Math.round(size * ModernUiPreferences.getTextScale())
+            ModernTrueTypeFont.getLineHeight(
+                ModernUiFontRegistry.DEFAULT,
+                size
+            )
         );
-        int advance = Math.max(6, Math.round(glyphHeight * 0.62F));
         int lineHeight = glyphHeight + 2;
 
         String[] lines = visible.split("\n", -1);
@@ -577,7 +579,14 @@ public final class ModernUiRenderer {
 
         for (int lineIndex = 0; lineIndex < lines.length; lineIndex++) {
             String line = lines[lineIndex];
-            int lineWidth = Math.max(advance, line.length() * advance);
+            int lineWidth = Math.max(
+                1,
+                ModernTrueTypeFont.getWidth(
+                    ModernUiFontRegistry.DEFAULT,
+                    line,
+                    size
+                )
+            );
 
             int drawX = x;
             if (component.halign == 1) {
@@ -587,34 +596,39 @@ public final class ModernUiRenderer {
             }
 
             int drawY = top + lineIndex * lineHeight;
+            int slots = Math.max(1, line.length());
+
             for (int i = 0; i < line.length(); i++) {
                 char ch = line.charAt(i);
                 if (!Character.isWhitespace(ch)) {
+                    int slotLeft = drawX + Math.round((float) i * lineWidth / slots);
+                    int slotRight = drawX + Math.round((float) (i + 1) * lineWidth / slots);
                     drawMissingGlyphCell(
-                        drawX + i * advance,
+                        slotLeft,
                         drawY,
-                        Math.max(5, advance - 1),
+                        Math.max(3, slotRight - slotLeft - 1),
                         glyphHeight
                     );
                 }
             }
-
-            // Diagnostic readability only: keep every unresolved glyph visibly
-            // pink, but overlay the source text in high-contrast cyan so a
-            // screenshot remains readable while we trace the legacy font ID.
-            // This is NOT a font fallback; the pink cells remain authoritative.
-            if (!line.isEmpty()) {
-                ModernTrueTypeFont.draw(
-                    ModernUiFontRegistry.DEFAULT,
-                    line,
-                    drawX,
-                    drawY + glyphHeight - 1,
-                    0x00FFFF,
-                    size,
-                    true
-                );
-            }
         }
+
+        // Diagnostic readability only: use the exact same box/alignment logic
+        // as normal Modern TTF rendering. Pink remains underneath, so this is
+        // visibly a diagnostic and never a silent legacy-font substitution.
+        ModernTrueTypeFont.drawInBox(
+            ModernUiFontRegistry.DEFAULT,
+            visible,
+            x,
+            y,
+            component.width,
+            component.height,
+            0x00FFFF,
+            component.halign,
+            component.valign,
+            size,
+            true
+        );
     }
 
     private static void drawMissingGlyphCell(
