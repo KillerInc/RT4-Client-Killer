@@ -1139,6 +1139,7 @@ public class Cs1ScriptRunner {
 
 	@OriginalMember(owner = "client!al", name = "a", descriptor = "(Z)V")
 	public static void renderTopLevelInterface() {
+		ModernUiManager.processPendingReload();
 		ModernUiSettingsOverlay.beginFrame();
 		deferredDragComponents = null;
 		renderInterface(InterfaceList.topLevelInterface, 0, GameShell.canvasWidth, 0, -1, GameShell.canvasHeight, 0, 0);
@@ -1147,6 +1148,7 @@ public class Cs1ScriptRunner {
 			deferredDragComponents = null;
 		}
 		ModernUiSettingsOverlay.render();
+		ModernUiReloadOverlay.render();
 	}
 
 	@OriginalMember(owner = "client!mj", name = "a", descriptor = "(IILclient!be;IB)V")
