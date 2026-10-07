@@ -598,6 +598,22 @@ public final class ModernUiRenderer {
                     );
                 }
             }
+
+            // Diagnostic readability only: keep every unresolved glyph visibly
+            // pink, but overlay the source text in high-contrast cyan so a
+            // screenshot remains readable while we trace the legacy font ID.
+            // This is NOT a font fallback; the pink cells remain authoritative.
+            if (!line.isEmpty()) {
+                ModernTrueTypeFont.draw(
+                    ModernUiFontRegistry.DEFAULT,
+                    line,
+                    drawX,
+                    drawY + glyphHeight - 1,
+                    0x00FFFF,
+                    size,
+                    true
+                );
+            }
         }
     }
 
