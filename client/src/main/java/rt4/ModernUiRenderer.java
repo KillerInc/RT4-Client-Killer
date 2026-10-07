@@ -290,6 +290,11 @@ public final class ModernUiRenderer {
     }
 
     private static void renderText(Component component, int x, int y) {
+        if (graphicsOptionsDepth > 0
+            && component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_VALUE_TEXT) {
+            return;
+        }
+
         JagString display = component.text;
         int color = component.color;
 
@@ -446,24 +451,41 @@ public final class ModernUiRenderer {
 
     public static void drawMissing(String key, int x, int y, int width, int height) {
         if (loggedMissing.add(key)) {
-            DisplayDebug.log("MODERN_UI MISSING " + key);
+            DisplayDebug.log(
+                "MODERN_UI MISSING " + key
+                    + " bounds=" + x + "," + y
+                    + " " + width + "x" + height
+            );
         }
 
-        width = Math.max(width, 24);
-        height = Math.max(height, 18);
+        int requestedWidth = Math.max(width, 24);
+        int requestedHeight = Math.max(height, 18);
+
+        int left = Math.max(0, x);
+        int top = Math.max(0, y);
+        int right = Math.min(GameShell.canvasWidth, x + requestedWidth);
+        int bottom = Math.min(GameShell.canvasHeight, y + requestedHeight);
+
+        if (right <= left || bottom <= top) {
+            return;
+        }
+
+        int drawWidth = right - left;
+        int drawHeight = bottom - top;
+
         if (GlRenderer.enabled) {
-            GlRaster.fillRectAlpha(x, y, width, height, 0x4C1733, 210);
-            GlRaster.drawRect(x, y, width, height, 0xFF44AA);
+            GlRaster.fillRectAlpha(left, top, drawWidth, drawHeight, 0x4C1733, 210);
+            GlRaster.drawRect(left, top, drawWidth, drawHeight, 0xFF44AA);
         } else {
-            SoftwareRaster.fillRectAlpha(x, y, width, height, 0x4C1733, 210);
-            SoftwareRaster.drawRect(x, y, width, height, 0xFF44AA);
+            SoftwareRaster.fillRectAlpha(left, top, drawWidth, drawHeight, 0x4C1733, 210);
+            SoftwareRaster.drawRect(left, top, drawWidth, drawHeight, 0xFF44AA);
         }
 
         String label = "[MISSING " + key + "]";
         ModernTrueTypeFont.draw(
             label,
-            x + 3,
-            y + Math.min(height - 3, 14),
+            left + 3,
+            top + Math.min(drawHeight - 3, 14),
             0xFFFFFF,
             10.0F,
             true
@@ -509,6 +531,11 @@ public final class ModernUiRenderer {
         int x,
         int y
     ) {
+        if (component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_SELECTOR_HIT
+            || component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_SELECTOR_PIECE) {
+            return;
+        }
+
         String assetKey = "graphics-options/" + componentAssetKey(component);
         int width = Math.max(1, component.width);
         int height = Math.max(1, component.height);

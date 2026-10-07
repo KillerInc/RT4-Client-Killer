@@ -1,11 +1,8 @@
 package rt4;
 
 /**
- * Behavior bridge for the Modern UI selector that is injected into the actual
- * Graphics Options component tree by GraphicsOptionsUiInjector.
- *
- * Layout, fonts and closed-control artwork are rendered by the normal
- * Component renderer. This class only owns the Yes/No popup and click actions.
+ * Killer Edition behavior layer for the Modern UI controls added to Graphics
+ * Options. Vanilla interface processing remains authoritative and untouched.
  */
 public final class ModernUiSettingsOverlay {
     private static boolean graphicsOptionsSeen;
@@ -15,8 +12,8 @@ public final class ModernUiSettingsOverlay {
 
     private static int selectorX;
     private static int selectorY;
-    private static int selectorW;
-    private static int selectorH;
+    private static int selectorRight;
+    private static int selectorBottom;
 
     private static int editorX;
     private static int editorY;
@@ -32,6 +29,11 @@ public final class ModernUiSettingsOverlay {
         graphicsOptionsSeen = false;
         selectorSeen = false;
         editorSeen = false;
+
+        selectorX = Integer.MAX_VALUE;
+        selectorY = Integer.MAX_VALUE;
+        selectorRight = Integer.MIN_VALUE;
+        selectorBottom = Integer.MIN_VALUE;
     }
 
     public static void observeComponent(Component component, int x, int y) {
@@ -45,13 +47,17 @@ public final class ModernUiSettingsOverlay {
             graphicsOptionsSeen = true;
         }
 
-        if (component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_SELECTOR_HIT) {
-            selectorX = x;
-            selectorY = y;
-            selectorW = Math.max(1, component.width);
-            selectorH = Math.max(1, component.height);
-            selectorSeen = true;
-        } else if (component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_STYLE_TEXT) {
+        int code = component.clientCode;
+        if (code == GraphicsOptionsUiInjector.CLIENT_CODE_SELECTOR_HIT
+            || code == GraphicsOptionsUiInjector.CLIENT_CODE_SELECTOR_PIECE
+            || code == GraphicsOptionsUiInjector.CLIENT_CODE_VALUE_TEXT) {
+            includeSelectorBounds(
+                x,
+                y,
+                Math.max(1, component.width),
+                Math.max(1, component.height)
+            );
+        } else if (code == GraphicsOptionsUiInjector.CLIENT_CODE_STYLE_TEXT) {
             editorX = x;
             editorY = y;
             editorW = Math.max(1, component.width);
@@ -64,6 +70,56 @@ public final class ModernUiSettingsOverlay {
         return graphicsOptionsSeen;
     }
 
+    /**
+     * Runs after the original RT4 interface processing in client.mainUpdate().
+     * Reads Mouse's normal click snapshot but deliberately never changes it.
+     */
+    public static void processInput() {
+        if (!graphicsOptionsSeen || !selectorSeen || Mouse.clickButton != 1) {
+            return;
+        }
+
+        int selectorW = selectorWidth();
+        int selectorH = selectorHeight();
+        int popupX = selectorX;
+        int popupY = selectorBottom;
+        int popupW = selectorW;
+        int rowH = Math.max(18, selectorH);
+
+        int mx = Mouse.clickX;
+        int my = Mouse.clickY;
+
+        if (dropdownOpen) {
+            if (contains(mx, my, popupX, popupY, popupW, rowH)) {
+                dropdownOpen = false;
+                ModernUiManager.setEnabled(false);
+                return;
+            }
+
+            if (contains(mx, my, popupX, popupY + rowH, popupW, rowH)) {
+                dropdownOpen = false;
+                ModernUiManager.setEnabled(true);
+                return;
+            }
+
+            if (!contains(mx, my, selectorX, selectorY, selectorW, selectorH)) {
+                dropdownOpen = false;
+                return;
+            }
+        }
+
+        if (contains(mx, my, selectorX, selectorY, selectorW, selectorH)) {
+            dropdownOpen = !dropdownOpen;
+            return;
+        }
+
+        if (ModernUiManager.isEnabled()
+            && editorSeen
+            && contains(mx, my, editorX, editorY, editorW, editorH)) {
+            ModernUiManager.openStyleEditor();
+        }
+    }
+
     public static void render() {
         if (!graphicsOptionsSeen || !selectorSeen) {
             dropdownOpen = false;
@@ -71,63 +127,104 @@ public final class ModernUiSettingsOverlay {
         }
 
         ModernUiManager.initialize();
-        boolean modern = ModernUiManager.isEnabled();
+
+        int selectorW = selectorWidth();
+        int selectorH = selectorHeight();
+
+        // Standard UI continues to draw the injected copy through the original
+        // renderer. Modern mode covers only our injected copy with pack art.
+        if (ModernUiManager.isEnabled()) {
+            drawModernClosedSelector(
+                selectorX,
+                selectorY,
+                selectorW,
+                selectorH
+            );
+        }
+
+        if (!dropdownOpen) {
+            return;
+        }
 
         int popupX = selectorX;
-        int popupY = selectorY + selectorH;
+        int popupY = selectorBottom;
         int popupW = selectorW;
         int rowH = Math.max(18, selectorH);
         int popupH = rowH * 2;
 
-        if (dropdownOpen) {
-            if (modern) {
-                drawModernPopup(popupX, popupY, popupW, popupH);
-                drawModernChoice("No", popupX, popupY, popupW, rowH, false);
-                drawModernChoice("Yes", popupX, popupY + rowH, popupW, rowH, true);
-            } else {
-                drawNativePopup(popupX, popupY, popupW, popupH);
-                drawNativeChoice("No", popupX, popupY, popupW, rowH, true);
-                drawNativeChoice("Yes", popupX, popupY + rowH, popupW, rowH, false);
-            }
+        if (ModernUiManager.isEnabled()) {
+            drawModernPopup(popupX, popupY, popupW, popupH);
+            drawModernChoice("No", popupX, popupY, popupW, rowH, false);
+            drawModernChoice("Yes", popupX, popupY + rowH, popupW, rowH, true);
+        } else {
+            drawNativePopup(popupX, popupY, popupW, popupH);
+            drawNativeChoice("No", popupX, popupY, popupW, rowH, true);
+            drawNativeChoice("Yes", popupX, popupY + rowH, popupW, rowH, false);
+        }
+    }
+
+    private static void includeSelectorBounds(int x, int y, int width, int height) {
+        selectorX = Math.min(selectorX, x);
+        selectorY = Math.min(selectorY, y);
+        selectorRight = Math.max(selectorRight, x + width);
+        selectorBottom = Math.max(selectorBottom, y + height);
+        selectorSeen = true;
+    }
+
+    private static int selectorWidth() {
+        return Math.max(1, selectorRight - selectorX);
+    }
+
+    private static int selectorHeight() {
+        return Math.max(1, selectorBottom - selectorY);
+    }
+
+    private static void drawModernClosedSelector(
+        int x,
+        int y,
+        int width,
+        int height
+    ) {
+        ModernUiImage field = ModernUiAssetResolver.get(
+            "controls/dropdown",
+            width,
+            height
+        );
+        if (field != null) {
+            field.render(x, y);
+        } else {
+            ModernUiRenderer.drawMissing(
+                "asset:controls/dropdown",
+                x,
+                y,
+                width,
+                height
+            );
         }
 
-        if (Mouse.clickButton != 1) {
-            return;
+        ModernUiImage arrow = ModernUiAssetResolver.get("icons/dropdown", 9, 6);
+        int arrowX = x + width - 15;
+        int arrowY = y + Math.max(4, (height - 6) / 2);
+        if (arrow != null) {
+            arrow.render(arrowX, arrowY);
+        } else {
+            ModernUiRenderer.drawMissing(
+                "asset:icons/dropdown",
+                arrowX,
+                arrowY,
+                9,
+                6
+            );
         }
 
-        int mx = Mouse.clickX;
-        int my = Mouse.clickY;
-
-        if (dropdownOpen) {
-            if (contains(mx, my, popupX, popupY, popupW, rowH)) {
-                Mouse.clickButton = 0;
-                dropdownOpen = false;
-                ModernUiManager.setEnabled(false);
-                return;
-            }
-            if (contains(mx, my, popupX, popupY + rowH, popupW, rowH)) {
-                Mouse.clickButton = 0;
-                dropdownOpen = false;
-                ModernUiManager.setEnabled(true);
-                return;
-            }
-            if (!contains(mx, my, selectorX, selectorY, selectorW, selectorH)) {
-                dropdownOpen = false;
-            }
-        }
-
-        if (contains(mx, my, selectorX, selectorY, selectorW, selectorH)) {
-            Mouse.clickButton = 0;
-            dropdownOpen = !dropdownOpen;
-            return;
-        }
-
-        if (modern
-            && editorSeen
-            && contains(mx, my, editorX, editorY, editorW, editorH)) {
-            Mouse.clickButton = 0;
-            ModernUiManager.openStyleEditor();
-        }
+        ModernTrueTypeFont.draw(
+            "Yes",
+            x + 5,
+            y + Math.min(height - 3, 14),
+            0xE8DDC4,
+            11.0F,
+            false
+        );
     }
 
     private static void drawModernPopup(int x, int y, int width, int height) {

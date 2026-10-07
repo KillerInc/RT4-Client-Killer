@@ -21,6 +21,7 @@ public final class GraphicsOptionsUiInjector {
     public static final int CLIENT_CODE_STYLE_HIT = 1902;
     public static final int CLIENT_CODE_VALUE_TEXT = 1903;
     public static final int CLIENT_CODE_STYLE_TEXT = 1904;
+    public static final int CLIENT_CODE_SELECTOR_PIECE = 1905;
 
     private static final int COLUMN_DELTA_X = 130;
     private static final int STYLE_DELTA_Y = 30;
@@ -148,6 +149,7 @@ public final class GraphicsOptionsUiInjector {
                 source.x + COLUMN_DELTA_X,
                 source.y
             );
+            clone.clientCode = CLIENT_CODE_SELECTOR_PIECE;
             added.add(clone);
 
             int area = Math.max(1, clone.width) * Math.max(1, clone.height);
