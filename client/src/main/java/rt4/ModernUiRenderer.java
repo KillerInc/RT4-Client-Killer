@@ -1516,11 +1516,13 @@ public final class ModernUiRenderer {
                     ? rectCenterX(content)
                     : rectCenterX(graphics.rect);
 
-            int scrollWidth = Math.max(320, content.width + 160);
-            int scrollHeight = Math.max(340, content.height + 110);
+            // Give the vector parchment a little more breathing room around
+            // the existing login controls without moving the control layout.
+            int scrollWidth = Math.max(360, content.width + 200);
+            int scrollHeight = Math.max(380, content.height + 150);
             scroll = new UiRect(
                 centerX - scrollWidth / 2,
-                content.y - 54,
+                content.y - 74,
                 scrollWidth,
                 scrollHeight
             );
@@ -1584,9 +1586,11 @@ public final class ModernUiRenderer {
                 logoComponentId = bestLogo.componentId;
             }
 
+            // Keep the 2008 vector logo prominent in resizable mode.
+            // The upper cap prevents it from overwhelming smaller layouts.
             int logoWidth = Math.min(
-                520,
-                Math.max(360, GameShell.canvasWidth * 48 / 100)
+                620,
+                Math.max(400, GameShell.canvasWidth * 54 / 100)
             );
             logoWidth = Math.min(
                 logoWidth,
