@@ -14,6 +14,7 @@ import java.util.Set;
  */
 public final class ModernUiRenderer {
     private static final Set<String> loggedMissing = new HashSet<>();
+    private static int graphicsOptionsDepth;
 
     private ModernUiRenderer() {
     }
@@ -34,8 +35,14 @@ public final class ModernUiRenderer {
             return;
         }
 
+        Component[] loadedComponents = InterfaceList.components[interfaceId];
+        boolean graphicsOptions = containsGraphicsOptionsText(loadedComponents);
+        if (graphicsOptions) {
+            graphicsOptionsDepth++;
+        }
+
         renderComponents(
-            InterfaceList.components[interfaceId],
+            loadedComponents,
             -1,
             clipLeft,
             clipTop,
@@ -45,6 +52,10 @@ public final class ModernUiRenderer {
             parentY,
             rectangle
         );
+
+        if (graphicsOptions) {
+            graphicsOptionsDepth--;
+        }
     }
 
     private static void renderComponents(
@@ -230,6 +241,20 @@ public final class ModernUiRenderer {
     }
 
     private static void renderRectangle(Component component, int x, int y) {
+        if (graphicsOptionsDepth > 0) {
+            int alpha = 230;
+            if (component.filled) {
+                if (GlRenderer.enabled) {
+                    GlRaster.fillRectAlpha(x, y, component.width, component.height, 0x2B241B, alpha);
+                } else {
+                    SoftwareRaster.fillRectAlpha(x, y, component.width, component.height, 0x2B241B, alpha);
+                }
+            } else {
+                drawOutline(x, y, component.width, component.height, 0x8C744A);
+            }
+            return;
+        }
+
         int color = safeColor(component.color);
         int alpha = 256 - (component.alpha & 0xFF);
         if (component.filled) {
@@ -281,7 +306,7 @@ public final class ModernUiRenderer {
             y,
             component.width,
             component.height,
-            safeColor(color),
+            graphicsOptionsDepth > 0 ? 0xE4D2A3 : safeColor(color),
             component.halign,
             component.valign,
             12.0F,
@@ -308,6 +333,11 @@ public final class ModernUiRenderer {
 
         // Deliberately do not call component.getSprite(). Modern mode has no
         // Index-8/legacy UI sprite fallback.
+        if (graphicsOptionsDepth > 0) {
+            renderGraphicsOptionsImageFallback(component, x, y);
+            return;
+        }
+
         String assetKey = componentAssetKey(component);
         ModernUiImage image = ModernUiAssetResolver.get(
             assetKey,
@@ -430,6 +460,70 @@ public final class ModernUiRenderer {
         } else if (rectangle < InterfaceList.rectangleDirty.length) {
             InterfaceList.rectangleDirty[rectangle] = true;
         }
+    }
+
+    private static void renderGraphicsOptionsImageFallback(Component component, int x, int y) {
+        String key = "graphics-options/" + componentAssetKey(component);
+        if (loggedMissing.add(key)) {
+            DisplayDebug.log("MODERN_UI MISSING " + key);
+        }
+
+        int width = Math.max(1, component.width);
+        int height = Math.max(1, component.height);
+
+        // Large parchment/backdrop images become the modern panel. Decorative
+        // logos and very large artwork are omitted rather than shown as a
+        // diagnostic box over the game world.
+        if (width >= 500 && height >= 180) {
+            if (GlRenderer.enabled) {
+                GlRaster.fillRectAlpha(x, y, width, height, 0x2B241B, 235);
+                GlRaster.drawRect(x, y, width, height, 0x8C744A);
+            } else {
+                SoftwareRaster.fillRectAlpha(x, y, width, height, 0x2B241B, 235);
+                SoftwareRaster.drawRect(x, y, width, height, 0x8C744A);
+            }
+            return;
+        }
+
+        if (width >= 250 && height >= 80) {
+            return;
+        }
+
+        // Controls/buttons get a consistent modern field treatment while the
+        // proper style assets are still being authored.
+        if (width >= 45 && height >= 14) {
+            if (GlRenderer.enabled) {
+                GlRaster.fillRectAlpha(x, y, width, height, 0x3A3022, 235);
+                GlRaster.drawRect(x, y, width, height, 0xA58956);
+            } else {
+                SoftwareRaster.fillRectAlpha(x, y, width, height, 0x3A3022, 235);
+                SoftwareRaster.drawRect(x, y, width, height, 0xA58956);
+            }
+            return;
+        }
+
+        // Tiny decorative pieces are skipped. Their absence remains logged,
+        // but we do not cover the screen with magenta debug tiles.
+    }
+
+    private static boolean containsGraphicsOptionsText(Component[] components) {
+        if (components == null) {
+            return false;
+        }
+        for (Component component : components) {
+            if (component == null) {
+                continue;
+            }
+            if (component.text != null
+                && component.text.length() > 0
+                && component.text.toString().contains("Graphics Options")) {
+                return true;
+            }
+            if (component.createdComponents != null && containsGraphicsOptionsText(component.createdComponents)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static String componentAssetKey(Component component) {
