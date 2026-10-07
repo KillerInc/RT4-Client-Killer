@@ -24,7 +24,7 @@ import java.util.Map;
  */
 public final class ModernTrueTypeFont {
     private static final int MAX_CACHE_ENTRIES = 384;
-    private static final String BUILTIN_FONT = "/ui/fonts/runescape_small.ttf";
+    private static final String BUILTIN_FONT = "/ui/killer-modern/fonts/runescape_small.ttf";
 
     private static java.awt.Font baseFont;
     private static int cacheContextId = -1;

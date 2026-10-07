@@ -27,6 +27,7 @@ public final class ModernUiManager {
         }
         initialized = true;
         ModernUiPreferences.load();
+        ModernUiDevelopmentMirror.sync();
         UiStyleRepository.refresh();
         DisplayDebug.log(
             "MODERN_UI init enabled=" + ModernUiPreferences.isEnabled()
