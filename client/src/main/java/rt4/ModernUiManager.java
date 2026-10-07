@@ -47,6 +47,8 @@ public final class ModernUiManager {
             StyleEditorWindow.closeWindow();
         }
 
+        ModernUiRenderer.clearCaches();
+        InterfaceList.layoutTopLevel(true);
         InterfaceList.fullRedrawAllInterfaces();
     }
 

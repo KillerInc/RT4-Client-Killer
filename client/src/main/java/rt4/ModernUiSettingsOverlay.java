@@ -35,11 +35,14 @@ public final class ModernUiSettingsOverlay {
     }
 
     public static void render() {
-        if (!graphicsOptionsSeen || Fonts.p12Full == null) {
+        if (!graphicsOptionsSeen) {
             return;
         }
 
         ModernUiManager.initialize();
+        if (!ModernUiManager.isEnabled() && Fonts.p12Full == null) {
+            return;
+        }
 
         int labelX = titleCenterX - 125;
         int rowY = titleY + 334;
@@ -48,15 +51,23 @@ public final class ModernUiSettingsOverlay {
         int selectorW = 82;
         int selectorH = 20;
 
-        Fonts.p12Full.renderLeft(JagString.parse("Modern UI:"), labelX, rowY, 0xFFFFFF, 0);
+        if (ModernUiManager.isEnabled()) {
+            ModernTrueTypeFont.draw("Modern UI:", labelX, rowY, 0xFFFFFF, 12.0F, true);
+        } else {
+            Fonts.p12Full.renderLeft(JagString.parse("Modern UI:"), labelX, rowY, 0xFFFFFF, 0);
+        }
         drawButton(selectorX, selectorY, selectorW, selectorH, true);
-        Fonts.p12Full.renderCenter(
-            JagString.parse(ModernUiManager.isEnabled() ? "Yes  v" : "No  v"),
-            selectorX + selectorW / 2,
-            selectorY + 15,
-            0xFFFFFF,
-            0
-        );
+        if (ModernUiManager.isEnabled()) {
+            ModernTrueTypeFont.drawCentered("Yes  v", selectorX + selectorW / 2, selectorY + 15, 0xFFFFFF, 11.0F, true);
+        } else {
+            Fonts.p12Full.renderCenter(
+                JagString.parse("No  v"),
+                selectorX + selectorW / 2,
+                selectorY + 15,
+                0xFFFFFF,
+                0
+            );
+        }
 
         int editorW = 142;
         int editorH = 20;
@@ -64,13 +75,24 @@ public final class ModernUiSettingsOverlay {
         int editorY = rowY + 12;
         boolean editorEnabled = ModernUiManager.isEnabled();
         drawButton(editorX, editorY, editorW, editorH, editorEnabled);
-        Fonts.p12Full.renderCenter(
-            JagString.parse("Style Editor"),
-            editorX + editorW / 2,
-            editorY + 15,
-            editorEnabled ? 0xFFFFFF : 0x777777,
-            0
-        );
+        if (ModernUiManager.isEnabled()) {
+            ModernTrueTypeFont.drawCentered(
+                "Style Editor",
+                editorX + editorW / 2,
+                editorY + 15,
+                editorEnabled ? 0xFFFFFF : 0x777777,
+                11.0F,
+                true
+            );
+        } else {
+            Fonts.p12Full.renderCenter(
+                JagString.parse("Style Editor"),
+                editorX + editorW / 2,
+                editorY + 15,
+                editorEnabled ? 0xFFFFFF : 0x777777,
+                0
+            );
+        }
 
         if (Mouse.clickButton == 1) {
             if (contains(Mouse.clickX, Mouse.clickY, selectorX, selectorY, selectorW, selectorH)) {

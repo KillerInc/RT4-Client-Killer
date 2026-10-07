@@ -1122,6 +1122,10 @@ public class Cs1ScriptRunner {
 
 	@OriginalMember(owner = "client!ag", name = "a", descriptor = "(IIIIIIIII)V")
 	public static void renderInterface(@OriginalArg(1) int interfaceId, @OriginalArg(2) int clipLeft, @OriginalArg(3) int clipRight, @OriginalArg(4) int parentX, @OriginalArg(5) int rectangle, @OriginalArg(6) int clipBottom, @OriginalArg(7) int clipTop, @OriginalArg(8) int parentY) {
+		if (ModernUiManager.isEnabled()) {
+			ModernUiRenderer.renderInterface(interfaceId, clipLeft, clipRight, parentX, rectangle, clipBottom, clipTop, parentY);
+			return;
+		}
 		if (InterfaceList.load(interfaceId)) {
 			renderComponent(clipLeft, parentY, parentX, InterfaceList.components[interfaceId], clipRight, -1, clipTop, clipBottom, rectangle);
 		} else if (rectangle == -1) {
