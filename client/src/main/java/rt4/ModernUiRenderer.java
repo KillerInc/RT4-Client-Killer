@@ -2,7 +2,9 @@ package rt4;
 
 import plugin.PluginRepository;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -18,6 +20,8 @@ public final class ModernUiRenderer {
     private static int graphicsOptionsTitleCenterX;
     private static int graphicsOptionsTitleY;
     private static boolean graphicsOptionsBrightnessRendered;
+    private static final List<UiRect> graphicsOptionsDropdownRects = new ArrayList<>();
+    private static UiRect graphicsOptionsBrightnessRect;
 
     private ModernUiRenderer() {
     }
@@ -43,6 +47,8 @@ public final class ModernUiRenderer {
         int oldTitleCenterX = graphicsOptionsTitleCenterX;
         int oldTitleY = graphicsOptionsTitleY;
         boolean oldBrightnessRendered = graphicsOptionsBrightnessRendered;
+        List<UiRect> oldDropdownRects = new ArrayList<>(graphicsOptionsDropdownRects);
+        UiRect oldBrightnessRect = graphicsOptionsBrightnessRect;
 
         if (graphicsOptions) {
             GraphicsOptionsAnchor anchor = findGraphicsOptionsAnchor(
@@ -57,6 +63,14 @@ public final class ModernUiRenderer {
             }
             graphicsOptionsDepth++;
             graphicsOptionsBrightnessRendered = false;
+            graphicsOptionsDropdownRects.clear();
+            graphicsOptionsBrightnessRect = null;
+            collectGraphicsOptionsReplacementRegions(
+                loadedComponents,
+                -1,
+                parentX,
+                parentY
+            );
             renderGraphicsOptionsBackdrop(
                 clipLeft,
                 clipTop,
@@ -82,6 +96,9 @@ public final class ModernUiRenderer {
             graphicsOptionsTitleCenterX = oldTitleCenterX;
             graphicsOptionsTitleY = oldTitleY;
             graphicsOptionsBrightnessRendered = oldBrightnessRendered;
+            graphicsOptionsDropdownRects.clear();
+            graphicsOptionsDropdownRects.addAll(oldDropdownRects);
+            graphicsOptionsBrightnessRect = oldBrightnessRect;
         }
     }
 
@@ -703,6 +720,95 @@ public final class ModernUiRenderer {
         }
     }
 
+    private static void collectGraphicsOptionsReplacementRegions(
+        Component[] components,
+        int layer,
+        int parentX,
+        int parentY
+    ) {
+        if (components == null) {
+            return;
+        }
+
+        for (Component component : components) {
+            if (component == null || component.overlayer != layer) {
+                continue;
+            }
+
+            int x = parentX + component.x;
+            int y = parentY + component.y;
+
+            if (component.type == 4) {
+                JagString display = component.text;
+                if (Cs1ScriptRunner.isTrue(component)
+                    && component.activeText != null
+                    && component.activeText.length() > 0) {
+                    display = component.activeText;
+                }
+                if (!component.if3 && display != null) {
+                    display = Cs1ScriptRunner.interpolate(component, display);
+                }
+
+                String text = display == null ? "" : display.toString();
+                if (isGraphicsOptionsDropdownValue(component, text, y)) {
+                    int controlHeight = Math.max(20, component.height + 6);
+                    int controlY = y - Math.max(2, (controlHeight - component.height) / 2);
+                    graphicsOptionsDropdownRects.add(
+                        new UiRect(
+                            x,
+                            controlY,
+                            Math.max(1, component.width),
+                            controlHeight
+                        )
+                    );
+                } else if (normalizeGraphicsOptionsText(text).equals("brightness")) {
+                    graphicsOptionsBrightnessRect = new UiRect(
+                        x - 18,
+                        y + 12,
+                        Math.max(90, component.width + 36),
+                        24
+                    );
+                }
+            }
+
+            if (component.type == 0) {
+                int childX = x - component.scrollX;
+                int childY = y - component.scrollY;
+                collectGraphicsOptionsReplacementRegions(
+                    components,
+                    component.id,
+                    childX,
+                    childY
+                );
+                if (component.createdComponents != null) {
+                    collectGraphicsOptionsReplacementRegions(
+                        component.createdComponents,
+                        component.id,
+                        childX,
+                        childY
+                    );
+                }
+            }
+        }
+    }
+
+    private static boolean intersects(UiRect rect, int x, int y, int width, int height) {
+        return rect != null
+            && x < rect.x + rect.width
+            && x + width > rect.x
+            && y < rect.y + rect.height
+            && y + height > rect.y;
+    }
+
+    private static boolean insideCompletedDropdown(int x, int y, int width, int height) {
+        for (UiRect rect : graphicsOptionsDropdownRects) {
+            if (intersects(rect, x, y, width, height)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static void renderGraphicsOptionsImageFallback(
         Component component,
         int x,
@@ -710,53 +816,39 @@ public final class ModernUiRenderer {
     ) {
         if (component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_SELECTOR_HIT
             || component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_SELECTOR_PIECE) {
-            // Synthetic Standard-UI selector pieces are replaced by the
-            // Modern overlay and are never missing Modern assets.
+            // These are Killer Edition synthetic native pieces. The Modern
+            // selector overlay is their complete replacement.
             return;
         }
 
         String assetKey = "graphics-options/" + componentAssetKey(component);
         int width = Math.max(1, component.width);
         int height = Math.max(1, component.height);
-        int relativeY = y - graphicsOptionsTitleY;
-        int centerX = x + width / 2;
 
-        // The parchment/frame/background is legacy cache chrome. Modern mode
-        // already supplies one scalable panel and divider set.
-        if (width >= 165 || height >= 55 || relativeY < -20) {
+        // A completed Modern dropdown owns the legacy sprite fragments that
+        // overlap its exact semantic control rectangle.
+        if (insideCompletedDropdown(x, y, width, height)) {
             return;
         }
 
-        // SD/HD display-mode buttons contain legacy sprite lettering. The
-        // Modern backdrop draws vector buttons and TrueType SD/HD labels.
-        if (relativeY >= 10 && relativeY <= 90
-            && width >= 36 && width <= 100
-            && height >= 20 && height <= 55) {
+        // Brightness has a complete Modern slider replacement. Only sprite
+        // fragments overlapping that explicit object rectangle are suppressed.
+        if (intersects(graphicsOptionsBrightnessRect, x, y, width, height)) {
+            if (!graphicsOptionsBrightnessRendered) {
+                drawModernBrightness(
+                    graphicsOptionsBrightnessRect.x,
+                    graphicsOptionsBrightnessRect.y,
+                    graphicsOptionsBrightnessRect.width,
+                    graphicsOptionsBrightnessRect.height
+                );
+                graphicsOptionsBrightnessRendered = true;
+            }
             return;
         }
 
-        // Brightness is the only non-dropdown control in the advanced grid.
-        // Replace its sprite assembly once with our scalable slider assets.
-        if (!graphicsOptionsBrightnessRendered
-            && relativeY >= 120 && relativeY <= 230
-            && Math.abs(centerX - (graphicsOptionsTitleCenterX - 260)) <= 45
-            && width >= 65 && width <= 165
-            && height >= 10 && height <= 34) {
-            drawModernBrightness(x, y, width, Math.max(18, height));
-            graphicsOptionsBrightnessRendered = true;
-            return;
-        }
-
-        // Selector boxes, end caps and arrow pieces are legacy sprite chrome.
-        // Their value text components now draw one scalable vector dropdown
-        // at the real component bounds, so these individual sprite fragments
-        // must disappear in Modern mode.
-        if (relativeY >= 65 && relativeY <= 360
-            && width <= 190
-            && height <= 34) {
-            return;
-        }
-
+        // Everything else must either have an explicit Modern asset mapping
+        // or remain visibly pink. No size/position heuristics are allowed to
+        // hide unfinished legacy artwork.
         ModernUiImage image = ModernUiAssetResolver.get(
             assetKey,
             width,
@@ -767,8 +859,6 @@ public final class ModernUiRenderer {
             return;
         }
 
-        // Do not hide genuinely unidentified graphics while developing the
-        // replacement renderer.
         drawMissing(
             "asset:" + assetKey,
             x,
@@ -1031,6 +1121,20 @@ public final class ModernUiRenderer {
             GlRaster.drawHorizontalLine(x, y, width, color);
         } else {
             SoftwareRaster.drawHorizontalLine(x, y, width, color);
+        }
+    }
+
+    private static final class UiRect {
+        private final int x;
+        private final int y;
+        private final int width;
+        private final int height;
+
+        private UiRect(int x, int y, int width, int height) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
         }
     }
 
