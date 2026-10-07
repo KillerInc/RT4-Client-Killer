@@ -103,3 +103,13 @@ tasks.named('jar') {
     }
     exclude 'META-INF/*.SF', 'META-INF/*.RSA', 'META-INF/*.DSA'
 }
+
+
+tasks.register('verifyModernSvgAssets', JavaExec) {
+    group = 'verification'
+    description = 'Rasterizes representative Modern UI SVG assets through the live Batik renderer.'
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'rt4.ModernSvgAssetVerifier'
+    args '/ui/killer-modern/main-menu/scroll.svg'
+}
