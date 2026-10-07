@@ -137,10 +137,11 @@ public final class PluginRepository {
                     if (skipped.length() > 0) skipped.append(", ");
                     skipped.append(directory.getName());
                 }
-                System.out.println(
+                String skippedMessage =
                     "Legacy loose plugins disabled by default; skipped: " + skipped
-                    + ". Use -D" + LEGACY_PLUGIN_PROPERTY + "=true only for migration testing."
-                );
+                    + ". Use -D" + LEGACY_PLUGIN_PROPERTY + "=true only for migration testing.";
+                System.out.println(skippedMessage);
+                DisplayDebug.log("PLUGIN " + skippedMessage);
             }
         }
     }
@@ -208,9 +209,10 @@ public final class PluginRepository {
             pluginClassLoaders.add(loader);
             loader = null;
 
-            System.out.println(
-                "Loaded plugin " + info.name + " " + info.version + " (" + info.id + ") from " + jarFile.getName()
-            );
+            String loadedMessage =
+                "Loaded plugin " + info.name + " " + info.version + " (" + info.id + ") from " + jarFile.getName();
+            System.out.println(loadedMessage);
+            DisplayDebug.log("PLUGIN " + loadedMessage);
         } catch (Throwable ex) {
             System.err.println("Unable to load plugin JAR " + jarFile.getAbsolutePath());
             ex.printStackTrace();
@@ -262,6 +264,7 @@ public final class PluginRepository {
             pluginClassLoaders.add(loader);
             loader = null;
             System.out.println("Loaded legacy plugin " + directory.getName());
+            DisplayDebug.log("PLUGIN Loaded legacy plugin " + directory.getName());
         } catch (Throwable ex) {
             System.err.println("Unable to load legacy plugin " + directory.getAbsolutePath());
             ex.printStackTrace();
