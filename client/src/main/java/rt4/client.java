@@ -1463,6 +1463,7 @@ public final class client extends GameShell {
 				mainLoadPercentage = 20;
 				mainLoadSecondaryText = LocalizedText.MAINLOAD40B;
 				Sprites.init(js5Archive8);
+				ModernUiFontRegistry.capture(js5Archive8);
 				TitleScreen.init(js5Archive8);
 				Flames.init(js5Archive8);
 				mainLoadState = 45;

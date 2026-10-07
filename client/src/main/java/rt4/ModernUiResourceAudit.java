@@ -114,10 +114,11 @@ public final class ModernUiResourceAudit {
         String name = knownSpriteName(group);
         String classification;
 
-        if (group == Sprites.p11FullId
-            || group == Sprites.p12FullId
-            || group == Sprites.b12FullId) {
-            classification = "LEGACY_FONT_GLYPHS";
+        if (ModernUiFontRegistry.isMapped(group)) {
+            String fontName = ModernUiFontRegistry.resolveCacheName(group);
+            classification =
+                "LEGACY_FONT_GLYPHS_TTF_MAPPED"
+                    + (fontName == null ? "" : "(" + fontName + ")");
         } else {
             classification = "UNCLASSIFIED";
             spriteUnclassified++;
@@ -141,11 +142,8 @@ public final class ModernUiResourceAudit {
         }
 
         fontGroups++;
-        String name = knownFontName(group);
-        boolean mapped =
-            group == Sprites.p11FullId
-                || group == Sprites.p12FullId
-                || group == Sprites.b12FullId;
+        String name = ModernUiFontRegistry.resolveCacheName(group);
+        boolean mapped = ModernUiFontRegistry.isMapped(group);
 
         if (!mapped) {
             fontUnmapped++;
@@ -163,6 +161,8 @@ public final class ModernUiResourceAudit {
     }
 
     private static String knownFontName(int group) {
+        String mapped = ModernUiFontRegistry.resolveCacheName(group);
+        if (mapped != null) return mapped;
         if (group == Sprites.p11FullId) return "p11_full";
         if (group == Sprites.p12FullId) return "p12_full";
         if (group == Sprites.b12FullId) return "b12_full";

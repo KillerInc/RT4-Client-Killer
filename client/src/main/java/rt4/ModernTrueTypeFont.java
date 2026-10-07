@@ -26,7 +26,7 @@ import java.util.Map;
 public final class ModernTrueTypeFont {
     private static final int MAX_CACHE_ENTRIES = 384;
 
-    private static java.awt.Font baseFont;
+    private static final Map<String, java.awt.Font> baseFonts = new LinkedHashMap<>();
     private static int cacheContextId = -1;
 
     private static final LinkedHashMap<TextKey, TextMask> cache =
@@ -50,11 +50,23 @@ public final class ModernTrueTypeFont {
                 mask.disposeGlTexture();
             }
             cache.clear();
-            baseFont = null;
+            baseFonts.clear();
         }
     }
 
     public static void draw(String text, int x, int baselineY, int rgb, float size, boolean shadow) {
+        draw(ModernUiFontRegistry.DEFAULT, text, x, baselineY, rgb, size, shadow);
+    }
+
+    public static void draw(
+        String fontAsset,
+        String text,
+        int x,
+        int baselineY,
+        int rgb,
+        float size,
+        boolean shadow
+    ) {
         if (text == null || text.isEmpty()) {
             return;
         }
@@ -66,31 +78,79 @@ public final class ModernTrueTypeFont {
 
         int pixelSize = Math.max(7, Math.round(size * ModernUiPreferences.getTextScale()));
         if (shadow) {
-            drawMask(clean, x + 1, baselineY + 1, 0x000000, pixelSize);
+            drawMask(fontAsset, clean, x + 1, baselineY + 1, 0x000000, pixelSize);
         }
-        drawMask(clean, x, baselineY, rgb, pixelSize);
+        drawMask(fontAsset, clean, x, baselineY, rgb, pixelSize);
     }
 
     public static void drawCentered(String text, int centerX, int baselineY, int rgb, float size, boolean shadow) {
-        int width = getWidth(text, size);
-        draw(text, centerX - width / 2, baselineY, rgb, size, shadow);
+        drawCentered(ModernUiFontRegistry.DEFAULT, text, centerX, baselineY, rgb, size, shadow);
+    }
+
+    public static void drawCentered(
+        String fontAsset,
+        String text,
+        int centerX,
+        int baselineY,
+        int rgb,
+        float size,
+        boolean shadow
+    ) {
+        int width = getWidth(fontAsset, text, size);
+        draw(fontAsset, text, centerX - width / 2, baselineY, rgb, size, shadow);
     }
 
     public static int getWidth(String text, float size) {
+        return getWidth(ModernUiFontRegistry.DEFAULT, text, size);
+    }
+
+    public static int getWidth(String fontAsset, String text, float size) {
         String clean = cleanMarkup(text == null ? "" : text);
         if (clean.isEmpty()) {
             return 0;
         }
         int pixelSize = Math.max(7, Math.round(size * ModernUiPreferences.getTextScale()));
-        return getMask(clean, pixelSize).width;
+        return getMask(fontAsset, clean, pixelSize).width;
     }
 
     public static int getLineHeight(float size) {
+        return getLineHeight(ModernUiFontRegistry.DEFAULT, size);
+    }
+
+    public static int getLineHeight(String fontAsset, float size) {
         int pixelSize = Math.max(7, Math.round(size * ModernUiPreferences.getTextScale()));
-        return getMask("Ag", pixelSize).height;
+        return getMask(fontAsset, "Ag", pixelSize).height;
     }
 
     public static void drawInBox(
+        String text,
+        int x,
+        int y,
+        int width,
+        int height,
+        int rgb,
+        int horizontalAlign,
+        int verticalAlign,
+        float size,
+        boolean shadow
+    ) {
+        drawInBox(
+            ModernUiFontRegistry.DEFAULT,
+            text,
+            x,
+            y,
+            width,
+            height,
+            rgb,
+            horizontalAlign,
+            verticalAlign,
+            size,
+            shadow
+        );
+    }
+
+    public static void drawInBox(
+        String fontAsset,
         String text,
         int x,
         int y,
@@ -108,8 +168,8 @@ public final class ModernTrueTypeFont {
 
         String clean = cleanMarkup(text);
         int pixelSize = Math.max(7, Math.round(size * ModernUiPreferences.getTextScale()));
-        java.util.List<String> lines = wrap(clean, width, pixelSize);
-        int lineHeight = Math.max(1, getMask("Ag", pixelSize).height + 2);
+        java.util.List<String> lines = wrap(fontAsset, clean, width, pixelSize);
+        int lineHeight = Math.max(1, getMask(fontAsset, "Ag", pixelSize).height + 2);
         int totalHeight = lines.size() * lineHeight;
 
         int top = y;
@@ -119,10 +179,10 @@ public final class ModernTrueTypeFont {
             top = y + Math.max(0, height - totalHeight);
         }
 
-        int baseline = top + getMask("Ag", pixelSize).ascent;
+        int baseline = top + getMask(fontAsset, "Ag", pixelSize).ascent;
         for (String line : lines) {
             int drawX = x;
-            int lineWidth = getMask(line.isEmpty() ? " " : line, pixelSize).width;
+            int lineWidth = getMask(fontAsset, line.isEmpty() ? " " : line, pixelSize).width;
             if (horizontalAlign == 1) {
                 drawX = x + (width - lineWidth) / 2;
             } else if (horizontalAlign == 2) {
@@ -130,9 +190,9 @@ public final class ModernTrueTypeFont {
             }
 
             if (shadow) {
-                drawMask(line, drawX + 1, baseline + 1, 0x000000, pixelSize);
+                drawMask(fontAsset, line, drawX + 1, baseline + 1, 0x000000, pixelSize);
             }
-            drawMask(line, drawX, baseline, rgb, pixelSize);
+            drawMask(fontAsset, line, drawX, baseline, rgb, pixelSize);
             baseline += lineHeight;
             if (baseline - top > height + lineHeight) {
                 break;
@@ -140,7 +200,7 @@ public final class ModernTrueTypeFont {
         }
     }
 
-    private static java.util.List<String> wrap(String text, int width, int pixelSize) {
+    private static java.util.List<String> wrap(String fontAsset, String text, int width, int pixelSize) {
         java.util.List<String> out = new java.util.ArrayList<>();
         if (text.isEmpty()) {
             out.add("");
@@ -156,7 +216,7 @@ public final class ModernTrueTypeFont {
             StringBuilder line = new StringBuilder();
             for (String word : paragraph.split(" ")) {
                 String candidate = line.length() == 0 ? word : line + " " + word;
-                if (line.length() > 0 && getMask(candidate, pixelSize).width > width) {
+                if (line.length() > 0 && getMask(fontAsset, candidate, pixelSize).width > width) {
                     out.add(line.toString());
                     line.setLength(0);
                     line.append(word);
@@ -192,12 +252,12 @@ public final class ModernTrueTypeFont {
         return out.toString();
     }
 
-    private static void drawMask(String text, int x, int baselineY, int rgb, int pixelSize) {
+    private static void drawMask(String fontAsset, String text, int x, int baselineY, int rgb, int pixelSize) {
         if (text == null || text.isEmpty()) {
             return;
         }
 
-        TextMask mask = getMask(text, pixelSize);
+        TextMask mask = getMask(fontAsset, text, pixelSize);
         int top = baselineY - mask.ascent;
         if (GlRenderer.enabled) {
             drawGl(mask, x, top, rgb);
@@ -206,7 +266,7 @@ public final class ModernTrueTypeFont {
         }
     }
 
-    private static TextMask getMask(String text, int pixelSize) {
+    private static TextMask getMask(String fontAsset, String text, int pixelSize) {
         if (GlRenderer.enabled && cacheContextId != GlCleaner.contextId) {
             synchronized (cache) {
                 cache.clear();
@@ -214,20 +274,20 @@ public final class ModernTrueTypeFont {
             }
         }
 
-        TextKey key = new TextKey(text, pixelSize);
+        TextKey key = new TextKey(fontAsset, text, pixelSize);
         synchronized (cache) {
             TextMask mask = cache.get(key);
             if (mask != null) {
                 return mask;
             }
-            mask = createMask(text, pixelSize);
+            mask = createMask(fontAsset, text, pixelSize);
             cache.put(key, mask);
             return mask;
         }
     }
 
-    private static TextMask createMask(String text, int pixelSize) {
-        java.awt.Font font = getBaseFont().deriveFont(java.awt.Font.PLAIN, (float) pixelSize);
+    private static TextMask createMask(String fontAsset, String text, int pixelSize) {
+        java.awt.Font font = getBaseFont(fontAsset).deriveFont(java.awt.Font.PLAIN, (float) pixelSize);
 
         BufferedImage measure = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
         Graphics2D mg = measure.createGraphics();
@@ -263,27 +323,43 @@ public final class ModernTrueTypeFont {
         g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
     }
 
-    private static java.awt.Font getBaseFont() {
-        if (baseFont != null) {
-            return baseFont;
+    private static java.awt.Font getBaseFont(String fontAsset) {
+        String asset =
+            fontAsset == null || fontAsset.trim().isEmpty()
+                ? ModernUiFontRegistry.DEFAULT
+                : fontAsset;
+
+        synchronized (cache) {
+            java.awt.Font cached = baseFonts.get(asset);
+            if (cached != null) {
+                return cached;
+            }
         }
 
-        byte[] bytes = ModernUiAssetResolver.getBytes("fonts/runescape_small.ttf");
+        byte[] bytes = ModernUiAssetResolver.getBytes(asset);
         if (bytes == null || bytes.length == 0) {
             throw new IllegalStateException(
-                "Modern UI requires fonts/runescape_small.ttf; no legacy or system-font fallback is allowed"
+                "Modern UI requires " + asset
+                    + "; no legacy or system-font fallback is allowed"
             );
         }
 
         try (InputStream input = new ByteArrayInputStream(bytes)) {
-            baseFont = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, input);
+            java.awt.Font loaded =
+                java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, input);
+            synchronized (cache) {
+                baseFonts.put(asset, loaded);
+            }
             DisplayDebug.log(
-                "MODERN_UI loaded TTF fonts/runescape_small.ttf from "
-                    + ModernUiAssetResolver.getResolvedSource("fonts/runescape_small.ttf")
+                "MODERN_UI loaded TTF " + asset + " from "
+                    + ModernUiAssetResolver.getResolvedSource(asset)
             );
-            return baseFont;
+            return loaded;
         } catch (Exception ex) {
-            throw new IllegalStateException("Modern UI TTF load failed", ex);
+            throw new IllegalStateException(
+                "Modern UI TTF load failed asset=" + asset,
+                ex
+            );
         }
     }
 
@@ -349,10 +425,15 @@ public final class ModernTrueTypeFont {
     }
 
     private static final class TextKey {
+        private final String fontAsset;
         private final String text;
         private final int size;
 
-        private TextKey(String text, int size) {
+        private TextKey(String fontAsset, String text, int size) {
+            this.fontAsset =
+                fontAsset == null || fontAsset.trim().isEmpty()
+                    ? ModernUiFontRegistry.DEFAULT
+                    : fontAsset;
             this.text = text;
             this.size = size;
         }
@@ -363,12 +444,16 @@ public final class ModernTrueTypeFont {
                 return false;
             }
             TextKey key = (TextKey) other;
-            return size == key.size && text.equals(key.text);
+            return size == key.size
+                && fontAsset.equals(key.fontAsset)
+                && text.equals(key.text);
         }
 
         @Override
         public int hashCode() {
-            return 31 * text.hashCode() + size;
+            int result = fontAsset.hashCode();
+            result = 31 * result + text.hashCode();
+            return 31 * result + size;
         }
     }
 

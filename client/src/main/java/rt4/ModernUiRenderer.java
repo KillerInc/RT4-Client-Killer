@@ -346,13 +346,25 @@ public final class ModernUiRenderer {
 
         String text = display == null ? "" : display.toString();
 
-        if (component.clientCode != GraphicsOptionsUiInjector.CLIENT_CODE_VALUE_TEXT
-            && component.clientCode != GraphicsOptionsUiInjector.CLIENT_CODE_STYLE_TEXT
-            && component.clientCode != GraphicsOptionsUiInjector.CLIENT_CODE_LABEL_TEXT
+        boolean syntheticKillerText =
+            component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_VALUE_TEXT
+                || component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_STYLE_TEXT
+                || component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_LABEL_TEXT;
+
+        String fontAsset =
+            component.font == -1
+                ? ModernUiFontRegistry.DEFAULT
+                : ModernUiFontRegistry.resolveAsset(component.font);
+
+        if (!syntheticKillerText
             && component.font != -1
-            && !hasModernFontMapping(component.font)) {
+            && fontAsset == null) {
             drawMissingLegacyGlyphs(component, text, x, y, 12.0F);
             return;
+        }
+
+        if (fontAsset == null) {
+            fontAsset = ModernUiFontRegistry.DEFAULT;
         }
 
         if (graphicsOptionsDepth > 0) {
@@ -376,6 +388,7 @@ public final class ModernUiRenderer {
                 }
 
                 ModernTrueTypeFont.drawInBox(
+                    fontAsset,
                     text,
                     x,
                     buttonY,
@@ -404,6 +417,7 @@ public final class ModernUiRenderer {
                 );
 
                 ModernTrueTypeFont.drawInBox(
+                    fontAsset,
                     text,
                     x + 4,
                     controlY,
@@ -434,6 +448,7 @@ public final class ModernUiRenderer {
         }
 
         ModernTrueTypeFont.drawInBox(
+            fontAsset,
             text,
             x,
             y,
@@ -508,16 +523,6 @@ public final class ModernUiRenderer {
         }
 
         return normalized.startsWith("high detail");
-    }
-
-    private static boolean hasModernFontMapping(int legacyFontId) {
-        // These are the three normal RT4 interface font families loaded by
-        // Fonts.load(). They currently route through the Modern TTF path.
-        // Any other legacy font ID is deliberately unresolved until we
-        // identify and map its proper TTF/OTF equivalent.
-        return legacyFontId == Sprites.p11FullId
-            || legacyFontId == Sprites.p12FullId
-            || legacyFontId == Sprites.b12FullId;
     }
 
     private static void drawMissingLegacyGlyphs(
@@ -793,14 +798,29 @@ public final class ModernUiRenderer {
                     if (object != null && object.name != null) {
                         int tx = x + column * (component.invMarginX + 115);
                         int ty = y + row * (component.invMarginY + 12);
-                        ModernTrueTypeFont.draw(
-                            object.name.toString(),
-                            tx,
-                            ty + 11,
-                            safeColor(component.color),
-                            11.0F,
-                            component.shadowed
-                        );
+                        String fontAsset =
+                            component.font == -1
+                                ? ModernUiFontRegistry.DEFAULT
+                                : ModernUiFontRegistry.resolveAsset(component.font);
+                        if (fontAsset == null) {
+                            drawMissingLegacyGlyphs(
+                                component,
+                                object.name.toString(),
+                                tx,
+                                ty,
+                                11.0F
+                            );
+                        } else {
+                            ModernTrueTypeFont.draw(
+                                fontAsset,
+                                object.name.toString(),
+                                tx,
+                                ty + 11,
+                                safeColor(component.color),
+                                11.0F,
+                                component.shadowed
+                            );
+                        }
                     }
                 }
                 index++;
@@ -1154,6 +1174,7 @@ public final class ModernUiRenderer {
                 || (GlRenderer.enabled && i == 2);
             drawModernControlBox(buttonX, buttonY, 84, 40, false, active);
             ModernTrueTypeFont.drawCentered(
+                ModernUiFontRegistry.BOLD_12,
                 labels[i],
                 centers[i],
                 buttonY + 27,
