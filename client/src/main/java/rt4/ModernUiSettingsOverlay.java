@@ -134,6 +134,8 @@ public final class ModernUiSettingsOverlay {
         ModernUiImage popup = ModernUiAssetResolver.get("controls/popup", width, height);
         if (popup != null) {
             popup.render(x, y);
+        } else {
+            ModernUiRenderer.drawMissing("asset:controls/popup", x, y, width, height);
         }
     }
 
@@ -158,6 +160,14 @@ public final class ModernUiSettingsOverlay {
             );
             if (row != null) {
                 row.render(x + 2, y + 1);
+            } else {
+                ModernUiRenderer.drawMissing(
+                    "asset:" + asset,
+                    x + 2,
+                    y + 1,
+                    Math.max(1, width - 4),
+                    Math.max(1, height - 2)
+                );
             }
         }
 

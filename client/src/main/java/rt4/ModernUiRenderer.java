@@ -324,6 +324,14 @@ public final class ModernUiRenderer {
             );
             if (button != null) {
                 button.render(x, y);
+            } else {
+                drawMissing(
+                    "asset:controls/button",
+                    x,
+                    y,
+                    Math.max(1, component.width),
+                    Math.max(1, component.height)
+                );
             }
         }
 
@@ -532,8 +540,15 @@ public final class ModernUiRenderer {
             return;
         }
 
-        // Tiny decorative pieces and remaining parchment fragments are
-        // intentionally omitted. Modern UI never falls back to Index-8 art.
+        // Anything reaching here has no Modern replacement mapping yet.
+        // Keep this visible during development so missing UI work cannot hide.
+        drawMissing(
+            "unmapped:" + key,
+            x,
+            y,
+            Math.max(1, component.width),
+            Math.max(1, component.height)
+        );
     }
 
     private static GraphicsOptionsAnchor findGraphicsOptionsAnchor(
@@ -611,6 +626,8 @@ public final class ModernUiRenderer {
         );
         if (panel != null) {
             panel.render(x, y);
+        } else {
+            drawMissing("asset:graphics-options/panel", x, y, width, height);
         }
 
         ModernUiImage divider = ModernUiAssetResolver.get(
@@ -621,6 +638,21 @@ public final class ModernUiRenderer {
         if (divider != null) {
             divider.render(x + 18, graphicsOptionsTitleY + 114);
             divider.render(x + 18, graphicsOptionsTitleY + 324);
+        } else {
+            drawMissing(
+                "asset:graphics-options/divider",
+                x + 18,
+                graphicsOptionsTitleY + 114,
+                width - 36,
+                4
+            );
+            drawMissing(
+                "asset:graphics-options/divider",
+                x + 18,
+                graphicsOptionsTitleY + 324,
+                width - 36,
+                4
+            );
         }
 
         // The legacy SD/HD lettering is part of cache sprites. Modern mode
@@ -685,6 +717,8 @@ public final class ModernUiRenderer {
         );
         if (chrome != null) {
             chrome.render(x, y);
+        } else {
+            drawMissing("asset:" + asset, x, y, width, height);
         }
 
         if (dropdown && width >= 22) {
@@ -693,11 +727,12 @@ public final class ModernUiRenderer {
                 9,
                 6
             );
+            int arrowX = x + width - 15;
+            int arrowY = y + Math.max(4, (height - 6) / 2);
             if (arrow != null) {
-                arrow.render(
-                    x + width - 15,
-                    y + Math.max(4, (height - 6) / 2)
-                );
+                arrow.render(arrowX, arrowY);
+            } else {
+                drawMissing("asset:icons/dropdown", arrowX, arrowY, 9, 6);
             }
         }
     }
@@ -722,6 +757,8 @@ public final class ModernUiRenderer {
         );
         if (track != null) {
             track.render(x, y);
+        } else {
+            drawMissing("asset:controls/slider-track", x, y, width, Math.max(8, height));
         }
 
         int left = x + 10;
@@ -736,6 +773,8 @@ public final class ModernUiRenderer {
         );
         if (knob != null) {
             knob.render(knobX, centerY - 9);
+        } else {
+            drawMissing("asset:controls/slider-knob", knobX, centerY - 9, 13, 18);
         }
     }
 
