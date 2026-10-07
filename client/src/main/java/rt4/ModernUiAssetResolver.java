@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 /**
  * Layered Modern UI asset resolver.
@@ -32,6 +33,7 @@ import java.util.zip.ZipFile;
  * There is intentionally no JS5/Index-8 fallback.
  */
 public final class ModernUiAssetResolver {
+    private static final String BUILT_IN_PACK_RESOURCE = "/ui/packs/KillerModernUI.uipack";
     private static final int MAX_ASSET_BYTES = 16 * 1024 * 1024;
     private static final int MAX_CACHE = 256;
 
@@ -97,6 +99,27 @@ public final class ModernUiAssetResolver {
         }
     }
 
+    public static byte[] getBytes(String logicalPath) {
+        String path = normalizeExact(logicalPath);
+        if (path == null) {
+            return null;
+        }
+
+        try {
+            ResolvedBytes resolved = resolveCandidates(new String[] {path});
+            if (resolved == null) {
+                return null;
+            }
+            synchronized (imageCache) {
+                resolvedSources.put(path, resolved.source);
+            }
+            return resolved.bytes;
+        } catch (Exception ex) {
+            DisplayDebug.log("MODERN_UI asset failed " + path + ": " + ex.getMessage());
+            return null;
+        }
+    }
+
     public static String getResolvedSource(String logicalPath) {
         synchronized (imageCache) {
             return resolvedSources.get(normalize(logicalPath));
@@ -114,8 +137,10 @@ public final class ModernUiAssetResolver {
     }
 
     private static ResolvedBytes resolve(String logicalPath) throws Exception {
-        String[] candidates = {logicalPath + ".svg", logicalPath + ".png"};
+        return resolveCandidates(new String[] {logicalPath + ".svg", logicalPath + ".png"});
+    }
 
+    private static ResolvedBytes resolveCandidates(String[] candidates) throws Exception {
         File overrides = new File(ModernUiPreferences.getUiRootDirectory(), "overrides");
         for (String candidate : candidates) {
             File file = new File(overrides, candidate);
@@ -159,15 +184,37 @@ public final class ModernUiAssetResolver {
             current = UiStyleRepository.get(current.base);
         }
 
-        for (String candidate : candidates) {
-            String resource = "/ui/killer-modern/" + candidate;
-            try (InputStream input = ModernUiAssetResolver.class.getResourceAsStream(resource)) {
-                if (input != null) {
-                    return new ResolvedBytes(candidate, readStream(input, MAX_ASSET_BYTES), "Killer Modern UI");
-                }
-            }
+        ResolvedBytes builtIn = readBuiltInPackCandidates(candidates);
+        if (builtIn != null) {
+            return builtIn;
         }
 
+        return null;
+    }
+
+    private static ResolvedBytes readBuiltInPackCandidates(String[] candidates) throws Exception {
+        InputStream resource = ModernUiAssetResolver.class.getResourceAsStream(BUILT_IN_PACK_RESOURCE);
+        if (resource == null) {
+            throw new IllegalStateException("built-in UI pack is missing: " + BUILT_IN_PACK_RESOURCE);
+        }
+
+        java.util.HashSet<String> wanted = new java.util.HashSet<>(java.util.Arrays.asList(candidates));
+        try (ZipInputStream zip = new ZipInputStream(resource)) {
+            ZipEntry entry;
+            while ((entry = zip.getNextEntry()) != null) {
+                if (entry.isDirectory() || !wanted.contains(entry.getName())) {
+                    continue;
+                }
+                if (entry.getSize() > MAX_ASSET_BYTES) {
+                    throw new IllegalArgumentException(entry.getName() + " is too large");
+                }
+                return new ResolvedBytes(
+                    entry.getName(),
+                    readStream(zip, MAX_ASSET_BYTES),
+                    "Killer Modern UI (" + BUILT_IN_PACK_RESOURCE + ")"
+                );
+            }
+        }
         return null;
     }
 
@@ -233,6 +280,17 @@ public final class ModernUiAssetResolver {
     }
 
     private static String normalize(String value) {
+        String path = normalizeExact(value);
+        if (path == null) {
+            return null;
+        }
+        if (path.endsWith(".svg") || path.endsWith(".png")) {
+            path = path.substring(0, path.length() - 4);
+        }
+        return path;
+    }
+
+    private static String normalizeExact(String value) {
         if (value == null) {
             return null;
         }
@@ -242,9 +300,6 @@ public final class ModernUiAssetResolver {
         }
         if (path.isEmpty() || path.contains("..") || path.contains(":")) {
             return null;
-        }
-        if (path.endsWith(".svg") || path.endsWith(".png")) {
-            path = path.substring(0, path.length() - 4);
         }
         return path;
     }

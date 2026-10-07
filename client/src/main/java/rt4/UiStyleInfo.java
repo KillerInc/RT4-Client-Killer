@@ -8,7 +8,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 /**
- * Metadata read from style.info at the root of a UI style ZIP.
+ * Metadata read from style.info at the root of a Modern UI style archive.
  */
 public final class UiStyleInfo {
     public final String id;

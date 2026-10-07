@@ -1,0 +1,11 @@
+id=killer-modern
+name=Killer Modern UI
+version=1.0
+author=KillerInc
+description=Built-in strict Modern UI base style for OSRS Client Killer Edition.
+type=style
+renderer=killer-modern
+base=none
+requires=
+provides=windows,icons,fonts,textures
+priority=0

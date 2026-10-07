@@ -7,6 +7,7 @@ import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.LinkedHashMap;
@@ -24,7 +25,6 @@ import java.util.Map;
  */
 public final class ModernTrueTypeFont {
     private static final int MAX_CACHE_ENTRIES = 384;
-    private static final String BUILTIN_FONT = "/ui/killer-modern/fonts/runescape_small.ttf";
 
     private static java.awt.Font baseFont;
     private static int cacheContextId = -1;
@@ -50,6 +50,7 @@ public final class ModernTrueTypeFont {
                 mask.disposeGlTexture();
             }
             cache.clear();
+            baseFont = null;
         }
     }
 
@@ -267,20 +268,23 @@ public final class ModernTrueTypeFont {
             return baseFont;
         }
 
-        try (InputStream input = ModernTrueTypeFont.class.getResourceAsStream(BUILTIN_FONT)) {
-            if (input != null) {
-                baseFont = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, input);
-                DisplayDebug.log("MODERN_UI loaded TTF " + BUILTIN_FONT);
-                return baseFont;
-            }
-        } catch (Exception ex) {
-            DisplayDebug.log("MODERN_UI TTF load failed: " + ex.getMessage());
+        byte[] bytes = ModernUiAssetResolver.getBytes("fonts/runescape_small.ttf");
+        if (bytes == null || bytes.length == 0) {
+            throw new IllegalStateException(
+                "Modern UI requires fonts/runescape_small.ttf; no legacy or system-font fallback is allowed"
+            );
         }
 
-        // Still a vector/native font path; never use RT4's bitmap font fallback.
-        baseFont = new java.awt.Font("Dialog", java.awt.Font.PLAIN, 12);
-        DisplayDebug.log("MODERN_UI using system vector font because bundled TTF is unavailable");
-        return baseFont;
+        try (InputStream input = new ByteArrayInputStream(bytes)) {
+            baseFont = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, input);
+            DisplayDebug.log(
+                "MODERN_UI loaded TTF fonts/runescape_small.ttf from "
+                    + ModernUiAssetResolver.getResolvedSource("fonts/runescape_small.ttf")
+            );
+            return baseFont;
+        } catch (Exception ex) {
+            throw new IllegalStateException("Modern UI TTF load failed", ex);
+        }
     }
 
     private static void drawGl(TextMask mask, int x, int y, int rgb) {

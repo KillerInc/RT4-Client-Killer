@@ -55,8 +55,44 @@ dependencies {
     implementation 'org.apache.xmlgraphics:batik-transcoder:1.19'
 }
 
+def generatedUiPacksRoot = layout.buildDirectory.dir('generated/ui-packs')
+def generatedUiPacksDirectory = generatedUiPacksRoot.map { it.dir('ui/packs') }
+
+tasks.register('buildKillerModernUiPack', Zip) {
+    group = 'distribution'
+    description = 'Builds the authoritative Killer Modern UI archive.'
+    archiveFileName = 'KillerModernUI.uipack'
+    destinationDirectory = generatedUiPacksDirectory
+    from('src/main/resources/ui/killer-modern')
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+
+tasks.register('buildModernUiModderTemplate', Zip) {
+    group = 'distribution'
+    description = 'Builds the starter Modern UI modder archive.'
+    archiveFileName = 'KillerModernUI-Modder-Template.uipack'
+    destinationDirectory = layout.buildDirectory.dir('distributions')
+    from('src/main/ui-packs/modder-template')
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDir(generatedUiPacksRoot)
+        }
+    }
+}
+
+tasks.named('processResources') {
+    dependsOn tasks.named('buildKillerModernUiPack')
+}
+
 tasks.named('jar') {
     dependsOn(configurations.runtimeClasspath)
+    dependsOn(tasks.named('buildModernUiModderTemplate'))
     archiveBaseName = 'osrs-client-killer'
     manifest {
         attributes 'Main-Class': application.mainClass.get()

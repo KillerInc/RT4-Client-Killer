@@ -1,0 +1,11 @@
+id=example-modern-style
+name=Example Modern UI Style
+version=1.0
+author=Your Name
+description=Starter style pack inheriting from Killer Modern UI.
+type=style
+renderer=killer-modern
+base=killer-modern
+requires=
+provides=icons
+priority=100

@@ -50,6 +50,12 @@ jobs:
           sha256sum 2009scape.jar | awk '{print $1}' > 2009scape.jar.sha256
           zip -j 2009scape_beta2.zip 2009scape.jar 2009scape.jar.sha256
 
+          cp client/build/generated/ui-packs/ui/packs/KillerModernUI.uipack KillerModernUI.uipack
+          sha256sum KillerModernUI.uipack | awk '{print $1}' > KillerModernUI.uipack.sha256
+
+          cp client/build/distributions/KillerModernUI-Modder-Template.uipack KillerModernUI-Modder-Template.uipack
+          sha256sum KillerModernUI-Modder-Template.uipack | awk '{print $1}' > KillerModernUI-Modder-Template.uipack.sha256
+
       - uses: actions/upload-artifact@v5
         with:
           name: osrs-client-killer
@@ -59,6 +65,10 @@ jobs:
             2009scape.jar
             2009scape.jar.sha256
             2009scape_beta2.zip
+            KillerModernUI.uipack
+            KillerModernUI.uipack.sha256
+            KillerModernUI-Modder-Template.uipack
+            KillerModernUI-Modder-Template.uipack.sha256
 
       - name: Publish rolling preview
         uses: softprops/action-gh-release@v2
@@ -70,6 +80,10 @@ jobs:
           files: |
             osrs-client-killer.jar
             osrs-client-killer.jar.sha256
+            KillerModernUI.uipack
+            KillerModernUI.uipack.sha256
+            KillerModernUI-Modder-Template.uipack
+            KillerModernUI-Modder-Template.uipack.sha256
           body: |
             Automated preview from modern-client. This remains separate from the current stable RT4 release while the modern baseline is validated.
 
@@ -84,6 +98,10 @@ jobs:
             2009scape.jar
             2009scape.jar.sha256
             2009scape_beta2.zip
+            KillerModernUI.uipack
+            KillerModernUI.uipack.sha256
+            KillerModernUI-Modder-Template.uipack
+            KillerModernUI-Modder-Template.uipack.sha256
           body: |
             BETA BUILD - Beta 2 checkpoint of the modern revision-530 Killer client rebuild.
 

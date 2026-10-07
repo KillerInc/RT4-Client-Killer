@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Discovers Modern UI style/add-on ZIP archives.
+ * Discovers Modern UI style/add-on .uipack archives (and legacy .zip archives).
  *
  * Archives are read in place and are never extracted.
  */
@@ -35,9 +35,13 @@ public final class UiStyleRepository {
             return;
         }
 
-        File[] archives = directory.listFiles(file ->
-            file.isFile() && file.getName().toLowerCase(Locale.ROOT).endsWith(".zip")
-        );
+        File[] archives = directory.listFiles(file -> {
+            if (!file.isFile()) {
+                return false;
+            }
+            String name = file.getName().toLowerCase(Locale.ROOT);
+            return name.endsWith(".uipack") || name.endsWith(".zip");
+        });
         if (archives == null) {
             return;
         }
