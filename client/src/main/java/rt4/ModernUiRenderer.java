@@ -346,6 +346,15 @@ public final class ModernUiRenderer {
 
         String text = display == null ? "" : display.toString();
 
+        if (component.clientCode != GraphicsOptionsUiInjector.CLIENT_CODE_VALUE_TEXT
+            && component.clientCode != GraphicsOptionsUiInjector.CLIENT_CODE_STYLE_TEXT
+            && component.clientCode != GraphicsOptionsUiInjector.CLIENT_CODE_LABEL_TEXT
+            && component.font != -1
+            && !hasModernFontMapping(component.font)) {
+            drawMissingLegacyGlyphs(component, text, x, y, 12.0F);
+            return;
+        }
+
         if (graphicsOptionsDepth > 0) {
             if (component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_STYLE_TEXT) {
                 ModernUiImage button = ModernUiAssetResolver.get(
@@ -499,6 +508,161 @@ public final class ModernUiRenderer {
         }
 
         return normalized.startsWith("high detail");
+    }
+
+    private static boolean hasModernFontMapping(int legacyFontId) {
+        // These are the three normal RT4 interface font families loaded by
+        // Fonts.load(). They currently route through the Modern TTF path.
+        // Any other legacy font ID is deliberately unresolved until we
+        // identify and map its proper TTF/OTF equivalent.
+        return legacyFontId == Sprites.p11FullId
+            || legacyFontId == Sprites.p12FullId
+            || legacyFontId == Sprites.b12FullId;
+    }
+
+    private static void drawMissingLegacyGlyphs(
+        Component component,
+        String text,
+        int x,
+        int y,
+        float size
+    ) {
+        int interfaceId = component.id >>> 16;
+        int childId = component.id & 0xFFFF;
+        String key =
+            "font:" + component.font
+                + ":component:" + interfaceId + "/" + childId;
+
+        if (loggedMissing.add(key)) {
+            DisplayDebug.log(
+                "MODERN_UI MISSING LEGACY FONT"
+                    + " fontId=" + component.font
+                    + " interface=" + interfaceId
+                    + " child=" + childId
+                    + " type=" + component.type
+                    + " bounds=" + x + "," + y
+                    + " " + component.width + "x" + component.height
+                    + " text='" + sanitizeDiagnosticText(text) + "'"
+            );
+        }
+
+        String visible = stripLegacyFormattingForDiagnostics(text);
+        if (visible.isEmpty()) {
+            drawMissingGlyphCell(x, y, Math.max(8, component.width), Math.max(10, component.height));
+            return;
+        }
+
+        int glyphHeight = Math.max(
+            9,
+            Math.round(size * ModernUiPreferences.getTextScale())
+        );
+        int advance = Math.max(6, Math.round(glyphHeight * 0.62F));
+        int lineHeight = glyphHeight + 2;
+
+        String[] lines = visible.split("\n", -1);
+        int totalHeight = Math.max(lineHeight, lines.length * lineHeight);
+
+        int top = y;
+        if (component.valign == 1) {
+            top = y + Math.max(0, (component.height - totalHeight) / 2);
+        } else if (component.valign == 2) {
+            top = y + Math.max(0, component.height - totalHeight);
+        }
+
+        for (int lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+            String line = lines[lineIndex];
+            int lineWidth = Math.max(advance, line.length() * advance);
+
+            int drawX = x;
+            if (component.halign == 1) {
+                drawX = x + (component.width - lineWidth) / 2;
+            } else if (component.halign == 2) {
+                drawX = x + component.width - lineWidth;
+            }
+
+            int drawY = top + lineIndex * lineHeight;
+            for (int i = 0; i < line.length(); i++) {
+                char ch = line.charAt(i);
+                if (!Character.isWhitespace(ch)) {
+                    drawMissingGlyphCell(
+                        drawX + i * advance,
+                        drawY,
+                        Math.max(5, advance - 1),
+                        glyphHeight
+                    );
+                }
+            }
+        }
+    }
+
+    private static void drawMissingGlyphCell(
+        int x,
+        int y,
+        int width,
+        int height
+    ) {
+        int left = Math.max(0, x);
+        int top = Math.max(0, y);
+        int right = Math.min(GameShell.canvasWidth, x + Math.max(1, width));
+        int bottom = Math.min(GameShell.canvasHeight, y + Math.max(1, height));
+
+        if (right <= left || bottom <= top) {
+            return;
+        }
+
+        int drawWidth = right - left;
+        int drawHeight = bottom - top;
+        if (GlRenderer.enabled) {
+            GlRaster.fillRectAlpha(left, top, drawWidth, drawHeight, 0x4C1733, 220);
+            GlRaster.drawRect(left, top, drawWidth, drawHeight, 0xFF44AA);
+        } else {
+            SoftwareRaster.fillRectAlpha(left, top, drawWidth, drawHeight, 0x4C1733, 220);
+            SoftwareRaster.drawRect(left, top, drawWidth, drawHeight, 0xFF44AA);
+        }
+    }
+
+    private static String stripLegacyFormattingForDiagnostics(String text) {
+        if (text == null || text.isEmpty()) {
+            return "";
+        }
+
+        StringBuilder out = new StringBuilder(text.length());
+        for (int i = 0; i < text.length();) {
+            if (text.regionMatches(true, i, "<br>", 0, 4)) {
+                out.append('\n');
+                i += 4;
+                continue;
+            }
+
+            if (text.charAt(i) == '<') {
+                int end = text.indexOf('>', i + 1);
+                if (end >= 0) {
+                    String tag = text.substring(i + 1, end).trim();
+                    if (tag.regionMatches(true, 0, "img=", 0, 4)) {
+                        // Preserve one visible diagnostic cell for an inline
+                        // legacy image/glyph token instead of silently
+                        // deleting it like ordinary formatting markup.
+                        out.append('\u25A1');
+                    }
+                    i = end + 1;
+                    continue;
+                }
+            }
+
+            out.append(text.charAt(i++));
+        }
+        return out.toString();
+    }
+
+    private static String sanitizeDiagnosticText(String text) {
+        if (text == null) {
+            return "";
+        }
+        String clean = text.replace('\n', ' ').replace('\r', ' ');
+        if (clean.length() > 120) {
+            return clean.substring(0, 117) + "...";
+        }
+        return clean;
     }
 
     private static String normalizeGraphicsOptionsText(String text) {
