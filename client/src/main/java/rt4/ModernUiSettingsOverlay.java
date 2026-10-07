@@ -51,7 +51,7 @@ public final class ModernUiSettingsOverlay {
             selectorW = Math.max(1, component.width);
             selectorH = Math.max(1, component.height);
             selectorSeen = true;
-        } else if (component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_STYLE_HIT) {
+        } else if (component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_STYLE_TEXT) {
             editorX = x;
             editorY = y;
             editorW = Math.max(1, component.width);

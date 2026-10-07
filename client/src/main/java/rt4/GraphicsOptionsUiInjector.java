@@ -143,33 +143,11 @@ public final class GraphicsOptionsUiInjector {
         value.activeText = value.text;
         added.add(value);
 
-        // Style Editor is a second native-sized field below the selector.
-        // Use only the main sizeable field pieces, not AA's tiny arrow/caps.
-        Component styleHit = null;
-        int styleHitArea = -1;
-        for (LayoutEntry source : selectorSprites) {
-            if (source.component.width < 60 || source.component.height < 12) {
-                continue;
-            }
-
-            Component clone = cloneAtRoot(
-                source,
-                source.x + COLUMN_DELTA_X,
-                source.y + STYLE_DELTA_Y
-            );
-            added.add(clone);
-
-            int area = Math.max(1, clone.width) * Math.max(1, clone.height);
-            if (area > styleHitArea) {
-                styleHit = clone;
-                styleHitArea = area;
-            }
-        }
-
-        if (styleHit != null) {
-            styleHit.clientCode = CLIENT_CODE_STYLE_HIT;
-        }
-
+        // Style Editor is intentionally NOT another clone of AA's sprite
+        // assembly. Those dropdown cap/arrow pieces are meaningless on a
+        // button and were the extra ornaments visible in the menu.
+        // Reuse only AA's text geometry as a real component/hitbox. Modern
+        // mode draws the button artwork from the .uipack behind this text.
         Component styleText = cloneAtRoot(
             valueText,
             valueText.x + COLUMN_DELTA_X,
@@ -265,7 +243,6 @@ public final class GraphicsOptionsUiInjector {
             if (component != null
                 && (component.clientCode == CLIENT_CODE_SELECTOR_HIT
                     || component.clientCode == CLIENT_CODE_VALUE_TEXT
-                    || component.clientCode == CLIENT_CODE_STYLE_HIT
                     || component.clientCode == CLIENT_CODE_STYLE_TEXT)) {
                 return true;
             }

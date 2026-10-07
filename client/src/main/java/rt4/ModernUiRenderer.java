@@ -10,7 +10,7 @@ import java.util.Set;
  *
  * Existing Component objects are currently used only as UI state/layout input
  * while the migration is in progress. Visuals do not call Component.getSprite
- * or Component.getFont. Missing visual implementations are drawn explicitly.
+ * or Component.getFont. Missing visual implementations are logged and left transparent.
  */
 public final class ModernUiRenderer {
     private static final Set<String> loggedMissing = new HashSet<>();
@@ -315,6 +315,18 @@ public final class ModernUiRenderer {
             display = Cs1ScriptRunner.interpolate(component, display);
         }
 
+        if (graphicsOptionsDepth > 0
+            && component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_STYLE_TEXT) {
+            ModernUiImage button = ModernUiAssetResolver.get(
+                "controls/button",
+                Math.max(1, component.width),
+                Math.max(1, component.height)
+            );
+            if (button != null) {
+                button.render(x, y);
+            }
+        }
+
         ModernTrueTypeFont.drawInBox(
             display == null ? "" : display.toString(),
             x,
@@ -425,22 +437,12 @@ public final class ModernUiRenderer {
     }
 
     public static void drawMissing(String key, int x, int y, int width, int height) {
+        // Strict Modern UI still never falls back to legacy/cache artwork.
+        // Missing assets are diagnostic-only: leave the area transparent and
+        // record it once in the log. Do not cover gameplay with debug tiles.
         if (loggedMissing.add(key)) {
             DisplayDebug.log("MODERN_UI MISSING " + key);
         }
-
-        width = Math.max(width, 24);
-        height = Math.max(height, 18);
-        if (GlRenderer.enabled) {
-            GlRaster.fillRectAlpha(x, y, width, height, 0x4C1733, 210);
-            GlRaster.drawRect(x, y, width, height, 0xFF44AA);
-        } else {
-            SoftwareRaster.fillRectAlpha(x, y, width, height, 0x4C1733, 210);
-            SoftwareRaster.drawRect(x, y, width, height, 0xFF44AA);
-        }
-
-        String label = "[MISSING " + key + "]";
-        ModernTrueTypeFont.draw(label, x + 3, y + Math.min(height - 3, 14), 0xFFFFFF, 10.0F, true);
     }
 
     private static void drawOutline(int x, int y, int width, int height, int color) {
@@ -767,47 +769,10 @@ public final class ModernUiRenderer {
     }
 
     private static void drawMissingBackdrop(String key, int x, int y, int width, int height) {
-        int tile = 28;
-        for (int row = 0; row < height; row += tile) {
-            for (int col = 0; col < width; col += tile) {
-                boolean alternate = ((row / tile) + (col / tile) & 1) != 0;
-                int color = alternate ? 0xFF00A8 : 0x171717;
-                int drawW = Math.min(tile, width - col);
-                int drawH = Math.min(tile, height - row);
-                if (GlRenderer.enabled) {
-                    GlRaster.fillRectAlpha(x + col, y + row, drawW, drawH, color, 220);
-                } else {
-                    SoftwareRaster.fillRectAlpha(x + col, y + row, drawW, drawH, color, 220);
-                }
-            }
+        // Diagnostic-only. Missing Modern UI artwork is transparent.
+        if (loggedMissing.add(key)) {
+            DisplayDebug.log("MODERN_UI MISSING " + key);
         }
-
-        if (GlRenderer.enabled) {
-            GlRaster.drawRect(x, y, width, height, 0xFF66CC);
-            GlRaster.drawRect(x + 1, y + 1, width - 2, height - 2, 0xFFFFFF);
-        } else {
-            SoftwareRaster.drawRect(x, y, width, height, 0xFF66CC);
-            SoftwareRaster.drawRect(x + 1, y + 1, width - 2, height - 2, 0xFFFFFF);
-        }
-
-        int centerX = x + width / 2;
-        int centerY = y + height / 2;
-        ModernTrueTypeFont.drawCentered(
-            "MISSING MODERN UI ASSET",
-            centerX,
-            centerY - 4,
-            0xFFFFFF,
-            18.0F,
-            true
-        );
-        ModernTrueTypeFont.drawCentered(
-            key,
-            centerX,
-            centerY + 18,
-            0xFFFFFF,
-            10.0F,
-            true
-        );
     }
 
     private static boolean containsGraphicsOptionsText(Component[] components) {
