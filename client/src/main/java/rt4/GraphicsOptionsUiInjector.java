@@ -47,6 +47,19 @@ public final class GraphicsOptionsUiInjector {
             return;
         }
 
+        // Modern UI is a scalable renderer and is only exposed for the two
+        // scalable HD display modes: resizable HD and fullscreen HD.
+        if (!ModernUiManager.isSupportedDisplayMode()) {
+            if (alreadyInjected(original)) {
+                InterfaceList.components[interfaceId] = removeInjected(original);
+                DisplayDebug.log(
+                    "MODERN_UI removed Graphics Options selector for display mode="
+                        + DisplayMode.getWindowMode()
+                );
+            }
+            return;
+        }
+
         if (alreadyInjected(original)) {
             return;
         }
