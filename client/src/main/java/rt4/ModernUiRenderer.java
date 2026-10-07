@@ -2699,10 +2699,10 @@ public final class ModernUiRenderer {
         String[] labels = {"SD", "HD", "HD", "HD"};
         int buttonY = graphicsOptionsTitleY + 20;
 
+        int activeDisplayMode = DisplayMode.getWindowMode();
         for (int i = 0; i < centers.length; i++) {
             int buttonX = centers[i] - 42;
-            boolean active = (!GlRenderer.enabled && i == 0)
-                || (GlRenderer.enabled && i == 2);
+            boolean active = activeDisplayMode == i;
             drawModernControlBox(buttonX, buttonY, 84, 40, false, active);
             ModernTrueTypeFont.drawCentered(
                 ModernUiFontRegistry.BOLD_12,
