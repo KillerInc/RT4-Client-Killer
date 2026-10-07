@@ -150,6 +150,11 @@ public final class ModernUiRenderer {
             rectangle
         );
 
+        if (mainMenu) {
+            renderMainMenuChoiceIcons();
+            setClip(clipLeft, clipTop, clipRight, clipBottom);
+        }
+
         if (graphicsOptions) {
             graphicsOptionsDepth--;
             graphicsOptionsTitleCenterX = oldTitleCenterX;
@@ -1197,7 +1202,7 @@ public final class ModernUiRenderer {
                 logoCenter,
                 mainMenuLayout.logo.y
                     + mainMenuLayout.logo.height
-                    + 10,
+                    + 22,
                 0xE4D2A2,
                 33.0F,
                 true
@@ -1412,6 +1417,72 @@ public final class ModernUiRenderer {
         return false;
     }
 
+    private static void renderMainMenuChoiceIcons() {
+        if (mainMenuLayout == null) {
+            return;
+        }
+
+        drawMainMenuChoiceIcon(
+            "main-menu/sd-icon",
+            mainMenuLayout.standardChoice,
+            123,
+            80
+        );
+        drawMainMenuChoiceIcon(
+            "main-menu/hd-icon",
+            mainMenuLayout.highChoice,
+            1,
+            1
+        );
+    }
+
+    private static void drawMainMenuChoiceIcon(
+        String asset,
+        UiRect rect,
+        int aspectWidth,
+        int aspectHeight
+    ) {
+        if (rect == null || rect.width <= 0 || rect.height <= 0) {
+            return;
+        }
+
+        int maxHeight = Math.max(12, rect.height * 2 / 3);
+        int maxWidth = Math.max(12, rect.width - 10);
+        int iconHeight = maxHeight;
+        int iconWidth = Math.max(
+            1,
+            iconHeight * aspectWidth / Math.max(1, aspectHeight)
+        );
+
+        if (iconWidth > maxWidth) {
+            iconWidth = maxWidth;
+            iconHeight = Math.max(
+                1,
+                iconWidth * aspectHeight / Math.max(1, aspectWidth)
+            );
+        }
+
+        int iconX = rect.x + (rect.width - iconWidth) / 2;
+        int iconY = rect.y + (rect.height - iconHeight) / 2;
+
+        ModernUiImage image = ModernUiAssetResolver.get(
+            asset,
+            iconWidth,
+            iconHeight
+        );
+        if (image != null) {
+            image.render(iconX, iconY);
+        } else {
+            drawMissing(
+                "asset:" + asset,
+                iconX,
+                iconY,
+                iconWidth,
+                iconHeight
+            );
+        }
+    }
+
     private static UiRect unionRects(List<UiRect> rects) {
         if (rects == null || rects.isEmpty()) {
             return null;
@@ -1468,6 +1539,8 @@ public final class ModernUiRenderer {
         private UiRect leftEdge;
         private UiRect rightEdge;
         private UiRect logo;
+        private UiRect standardChoice;
+        private UiRect highChoice;
 
         private int bodyComponentId = -1;
         private int logoComponentId = -1;
@@ -1518,11 +1591,11 @@ public final class ModernUiRenderer {
 
             // Give the vector parchment a little more breathing room around
             // the existing login controls without moving the control layout.
-            int scrollWidth = Math.max(403, content.width + 224);
-            int scrollHeight = Math.max(426, content.height + 168);
+            int scrollWidth = Math.max(484, content.width + 269);
+            int scrollHeight = Math.max(511, content.height + 202);
             scroll = new UiRect(
                 centerX - scrollWidth / 2,
-                content.y - 83,
+                content.y - 125,
                 scrollWidth,
                 scrollHeight
             );
@@ -1749,6 +1822,9 @@ public final class ModernUiRenderer {
                     leftChoice == null ? null : leftChoice.rect;
                 UiRect rightChoiceRect =
                     rightChoice == null ? null : rightChoice.rect;
+
+                standardChoice = leftChoiceRect;
+                highChoice = rightChoiceRect;
 
                 for (MainMenuImageEntry image : images) {
                     if (intersects(
