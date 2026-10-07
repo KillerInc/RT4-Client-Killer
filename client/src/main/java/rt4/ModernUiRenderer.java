@@ -449,15 +449,24 @@ public final class ModernUiRenderer {
             DisplayDebug.log("MODERN_UI MISSING " + key);
         }
 
-        // Development-only Modern UI missing-texture marker. Keep the
-        // original high-visibility magenta/black checkerboard so missing
-        // artwork is obvious at a glance.
-        drawMissingBackdrop(
-            key,
-            x,
-            y,
-            Math.max(width, 24),
-            Math.max(height, 18)
+        width = Math.max(width, 24);
+        height = Math.max(height, 18);
+        if (GlRenderer.enabled) {
+            GlRaster.fillRectAlpha(x, y, width, height, 0x4C1733, 210);
+            GlRaster.drawRect(x, y, width, height, 0xFF44AA);
+        } else {
+            SoftwareRaster.fillRectAlpha(x, y, width, height, 0x4C1733, 210);
+            SoftwareRaster.drawRect(x, y, width, height, 0xFF44AA);
+        }
+
+        String label = "[MISSING " + key + "]";
+        ModernTrueTypeFont.draw(
+            label,
+            x + 3,
+            y + Math.min(height - 3, 14),
+            0xFFFFFF,
+            10.0F,
+            true
         );
     }
 
@@ -495,57 +504,35 @@ public final class ModernUiRenderer {
         }
     }
 
-    private static void renderGraphicsOptionsImageFallback(Component component, int x, int y) {
-        String key = "graphics-options/" + componentAssetKey(component);
-        if (loggedMissing.add(key)) {
-            DisplayDebug.log("MODERN_UI replaced " + key + " with modern chrome");
-        }
-
+    private static void renderGraphicsOptionsImageFallback(
+        Component component,
+        int x,
+        int y
+    ) {
+        String assetKey = "graphics-options/" + componentAssetKey(component);
         int width = Math.max(1, component.width);
         int height = Math.max(1, component.height);
-        int centerX = x + width / 2;
-        int relativeY = y - graphicsOptionsTitleY;
 
-        // The old parchment frame is composed from many large/long sprite
-        // slices. Do not turn those slices into rectangular placeholders.
-        if (width >= 165 || height >= 55 || relativeY < -20) {
+        // Graphics Options replacements are deliberately 1:1 with the real
+        // interface component that supplied the old artwork. This preserves
+        // the exact source position and dimensions for both replacement art
+        // and the development missing-texture marker.
+        ModernUiImage image = ModernUiAssetResolver.get(
+            assetKey,
+            width,
+            height
+        );
+        if (image != null) {
+            image.render(x, y);
             return;
         }
 
-        // Display-mode controls are drawn once by renderGraphicsOptionsBackdrop.
-        if (relativeY >= 10 && relativeY <= 90
-            && width >= 42 && width <= 92
-            && height >= 24 && height <= 52) {
-            return;
-        }
-
-        // Brightness occupies the first advanced-options column.
-        if (relativeY >= 140 && relativeY <= 195
-            && Math.abs(centerX - (graphicsOptionsTitleCenterX - 260)) <= 30
-            && width >= 70 && width <= 150
-            && height >= 12 && height <= 30) {
-            drawModernBrightness(x, y, width, height);
-            return;
-        }
-
-        // Native selectors are assemblies of a central field plus tiny caps
-        // and arrows. Replace only the central field; tiny pieces fall through
-        // and disappear, preventing the blocky brown mosaic seen previously.
-        if (relativeY >= 85 && relativeY <= 325
-            && width >= 70 && width <= 155
-            && height >= 14 && height <= 30) {
-            drawModernControlBox(x, y, width, height, true, false);
-            return;
-        }
-
-        // Anything reaching here has no Modern replacement mapping yet.
-        // Keep this visible during development so missing UI work cannot hide.
         drawMissing(
-            "unmapped:" + key,
+            "asset:" + assetKey,
             x,
             y,
-            Math.max(1, component.width),
-            Math.max(1, component.height)
+            width,
+            height
         );
     }
 
@@ -822,56 +809,7 @@ public final class ModernUiRenderer {
         int width,
         int height
     ) {
-        int tile = (width < 80 || height < 40) ? 8 : 28;
-        for (int row = 0; row < height; row += tile) {
-            for (int col = 0; col < width; col += tile) {
-                boolean alternate = ((row / tile) + (col / tile) & 1) != 0;
-                int color = alternate ? 0xFF00A8 : 0x171717;
-                int drawW = Math.min(tile, width - col);
-                int drawH = Math.min(tile, height - row);
-                if (GlRenderer.enabled) {
-                    GlRaster.fillRectAlpha(x + col, y + row, drawW, drawH, color, 220);
-                } else {
-                    SoftwareRaster.fillRectAlpha(x + col, y + row, drawW, drawH, color, 220);
-                }
-            }
-        }
-
-        if (GlRenderer.enabled) {
-            GlRaster.drawRect(x, y, width, height, 0xFF66CC);
-            if (width > 3 && height > 3) {
-                GlRaster.drawRect(x + 1, y + 1, width - 2, height - 2, 0xFFFFFF);
-            }
-        } else {
-            SoftwareRaster.drawRect(x, y, width, height, 0xFF66CC);
-            if (width > 3 && height > 3) {
-                SoftwareRaster.drawRect(x + 1, y + 1, width - 2, height - 2, 0xFFFFFF);
-            }
-        }
-
-        // Large missing regions get the full diagnostic label. Small control
-        // assets stay as a clean checkerboard so text does not spill across
-        // neighboring UI.
-        if (width >= 150 && height >= 55) {
-            int centerX = x + width / 2;
-            int centerY = y + height / 2;
-            ModernTrueTypeFont.drawCentered(
-                "MISSING MODERN UI ASSET",
-                centerX,
-                centerY - 4,
-                0xFFFFFF,
-                18.0F,
-                true
-            );
-            ModernTrueTypeFont.drawCentered(
-                key,
-                centerX,
-                centerY + 18,
-                0xFFFFFF,
-                10.0F,
-                true
-            );
-        }
+        drawMissing(key, x, y, width, height);
     }
 
     private static boolean containsGraphicsOptionsText(Component[] components) {
