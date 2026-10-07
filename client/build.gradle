@@ -50,6 +50,9 @@ dependencies {
     implementation 'lib:jogl-all-natives-android-aarch64'
 
     implementation 'org.jetbrains.kotlin:kotlin-stdlib:2.4.20'
+
+    // Vector UI artwork for scalable Modern UI style packs.
+    implementation 'org.apache.xmlgraphics:batik-transcoder:1.19'
 }
 
 tasks.named('jar') {

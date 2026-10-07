@@ -308,7 +308,17 @@ public final class ModernUiRenderer {
 
         // Deliberately do not call component.getSprite(). Modern mode has no
         // Index-8/legacy UI sprite fallback.
-        drawMissing("asset:component-" + component.id, x, y, component.width, component.height);
+        String assetKey = componentAssetKey(component);
+        ModernUiImage image = ModernUiAssetResolver.get(
+            assetKey,
+            Math.max(1, component.width),
+            Math.max(1, component.height)
+        );
+        if (image != null) {
+            image.render(x, y);
+            return;
+        }
+        drawMissing("asset:" + assetKey, x, y, component.width, component.height);
     }
 
     private static void renderInventory(Component component, int x, int y) {
@@ -422,8 +432,15 @@ public final class ModernUiRenderer {
         }
     }
 
+    private static String componentAssetKey(Component component) {
+        int interfaceId = component.id >>> 16;
+        int childId = component.id & 0xFFFF;
+        return "components/" + interfaceId + "/" + childId;
+    }
+
     public static void clearCaches() {
         loggedMissing.clear();
+        ModernUiAssetResolver.clear();
         ModernTrueTypeFont.clear();
     }
 }

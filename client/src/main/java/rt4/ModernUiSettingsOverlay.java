@@ -58,7 +58,11 @@ public final class ModernUiSettingsOverlay {
         }
         drawButton(selectorX, selectorY, selectorW, selectorH, true);
         if (ModernUiManager.isEnabled()) {
-            ModernTrueTypeFont.drawCentered("Yes  v", selectorX + selectorW / 2, selectorY + 15, 0xFFFFFF, 11.0F, true);
+            ModernTrueTypeFont.drawCentered("Yes", selectorX + selectorW / 2 - 5, selectorY + 15, 0xFFFFFF, 11.0F, true);
+            ModernUiImage arrow = ModernUiAssetResolver.get("icons/dropdown", 9, 6);
+            if (arrow != null) {
+                arrow.render(selectorX + selectorW - 15, selectorY + 7);
+            }
         } else {
             Fonts.p12Full.renderCenter(
                 JagString.parse("No  v"),
