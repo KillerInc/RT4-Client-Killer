@@ -1432,7 +1432,7 @@ public final class ModernUiRenderer {
 
         if (subtitle) {
             fontAsset = ModernUiFontRegistry.PLAIN_11;
-            size = 10.0F;
+            size = 16.0F;
             color = 0x5A351C;
         } else if (detail) {
             fontAsset = ModernUiFontRegistry.PLAIN_11;
