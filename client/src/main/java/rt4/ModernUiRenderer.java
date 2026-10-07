@@ -2010,13 +2010,13 @@ public final class ModernUiRenderer {
 
             MainMenuTextEntry music = findText("music volume");
             if (music != null) {
+                int usableWidth =
+                    contentBounds == null
+                        ? scroll.width
+                        : contentBounds.width;
                 int sliderWidth = Math.min(
                     190,
-                    Math.max(160, scroll.width - 300)
-                );
-                sliderWidth = Math.min(
-                    sliderWidth,
-                    Math.max(140, scroll.width - 90)
+                    Math.max(160, usableWidth * 45 / 100)
                 );
                 int sliderHeight = 24;
                 musicSlider = new UiRect(
