@@ -32,9 +32,7 @@ public final class ModernSvgRasterizer {
         if (source.contains("<!doctype")
             || source.contains("<!entity")
             || source.contains("<script")
-            || source.contains("http://")
-            || source.contains("https://")
-            || source.contains("file:")) {
+            || containsExternalReference(source)) {
             throw new IllegalArgumentException("SVG contains external or executable content");
         }
 
@@ -47,6 +45,16 @@ public final class ModernSvgRasterizer {
             throw new IllegalArgumentException("SVG produced no image");
         }
         return image;
+    }
+
+    private static boolean containsExternalReference(String source) {
+        // A normal SVG namespace is itself an http:// URI:
+        // xmlns="http://www.w3.org/2000/svg"
+        // That is metadata, not an external resource. Only URI-bearing
+        // attributes/CSS constructs are blocked here.
+        return source.matches("(?s).*\\b(?:href|xlink:href|src)\\s*=\\s*['\"]\\s*(?:https?://|file:).*")
+            || source.matches("(?s).*url\\(\\s*['\"]?\\s*(?:https?://|file:).*")
+            || source.matches("(?s).*@import\\s+(?:url\\()?\\s*['\"]?\\s*(?:https?://|file:).*");
     }
 
     private static final class BufferedImageTranscoder extends ImageTranscoder {
