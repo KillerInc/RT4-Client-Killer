@@ -111,5 +111,5 @@ tasks.register('verifyModernSvgAssets', JavaExec) {
     dependsOn tasks.named('classes')
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'rt4.ModernSvgAssetVerifier'
-    args '/ui/killer-modern/main-menu/scroll.svg'
+    args '/ui/killer-modern/main-menu/scroll.svg', '/ui/killer-modern/main-menu/logo.svg'
 }

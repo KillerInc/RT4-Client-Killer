@@ -1190,24 +1190,15 @@ public final class ModernUiRenderer {
 
             int logoCenter = mainMenuLayout.logo.x
                 + mainMenuLayout.logo.width / 2;
-            int titleY = mainMenuLayout.logo.y
-                + mainMenuLayout.logo.height / 2 - 2;
 
-            ModernTrueTypeFont.drawCentered(
-                ModernUiFontRegistry.BOLD_12,
-                "OSRS Client",
-                logoCenter,
-                titleY,
-                0xF1D68A,
-                18.0F,
-                true
-            );
             ModernTrueTypeFont.drawCentered(
                 ModernUiFontRegistry.PLAIN_11,
                 "Killer Edition",
                 logoCenter,
-                titleY + 20,
-                0xD9C7A0,
+                mainMenuLayout.logo.y
+                    + mainMenuLayout.logo.height
+                    + 10,
+                0xE4D2A2,
                 11.0F,
                 true
             );
@@ -1525,11 +1516,11 @@ public final class ModernUiRenderer {
                     ? rectCenterX(content)
                     : rectCenterX(graphics.rect);
 
-            int scrollWidth = Math.max(224, content.width + 54);
-            int scrollHeight = Math.max(250, content.height + 72);
+            int scrollWidth = Math.max(320, content.width + 160);
+            int scrollHeight = Math.max(340, content.height + 110);
             scroll = new UiRect(
                 centerX - scrollWidth / 2,
-                content.y - 34,
+                content.y - 54,
                 scrollWidth,
                 scrollHeight
             );
@@ -1591,15 +1582,27 @@ public final class ModernUiRenderer {
 
             if (bestLogo != null) {
                 logoComponentId = bestLogo.componentId;
-                logo = bestLogo.rect;
-            } else {
-                logo = new UiRect(
-                    centerX - 150,
-                    Math.max(8, body.y - 130),
-                    300,
-                    92
-                );
             }
+
+            int logoWidth = Math.min(
+                520,
+                Math.max(360, GameShell.canvasWidth * 48 / 100)
+            );
+            logoWidth = Math.min(
+                logoWidth,
+                Math.max(240, GameShell.canvasWidth - 40)
+            );
+            int logoHeight = Math.max(
+                90,
+                logoWidth * 500 / 1445
+            );
+            int logoBottom = scroll.y - 24;
+            logo = new UiRect(
+                centerX - logoWidth / 2,
+                Math.max(8, logoBottom - logoHeight),
+                logoWidth,
+                logoHeight
+            );
 
             List<UiRect> headerParts = new ArrayList<>();
             List<UiRect> footerParts = new ArrayList<>();

@@ -13,7 +13,7 @@ import java.util.Locale;
  * SVG -> BufferedImage adapter for UI vectors.
  */
 public final class ModernSvgRasterizer {
-    private static final int MAX_SVG_BYTES = 4 * 1024 * 1024;
+    private static final int MAX_SVG_BYTES = 8 * 1024 * 1024;
 
     private ModernSvgRasterizer() {
     }

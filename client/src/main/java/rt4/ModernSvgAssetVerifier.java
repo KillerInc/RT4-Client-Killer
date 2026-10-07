@@ -4,58 +4,75 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 /**
- * Build-time smoke test for the exact Modern UI SVG rasterization path.
- *
- * This deliberately uses ModernSvgRasterizer (Apache Batik), not a separate
- * image tool, so CI proves the same parser/scaler used by the live client can
- * handle the shipped vector artwork.
+ * Build-time smoke tests for the exact Modern UI SVG rasterization path.
  */
 public final class ModernSvgAssetVerifier {
     private ModernSvgAssetVerifier() {
     }
 
     public static void main(String[] args) throws Exception {
-        String resource =
+        String[] resources =
             args.length == 0
-                ? "/ui/killer-modern/main-menu/scroll.svg"
-                : args[0];
+                ? new String[] {
+                    "/ui/killer-modern/main-menu/scroll.svg",
+                    "/ui/killer-modern/main-menu/logo.svg"
+                }
+                : args;
 
+        for (String resource : resources) {
+            verifyResource(resource);
+        }
+    }
+
+    private static void verifyResource(String resource) throws Exception {
         byte[] data = readResource(resource);
         String source =
-            new String(data, StandardCharsets.UTF_8).toLowerCase();
+            new String(data, StandardCharsets.UTF_8).toLowerCase(Locale.ROOT);
 
-        // This scroll intentionally exercises normal modern SVG features that
-        // our renderer must support as a single scalable source file.
-        require(source.contains("<svg"), "missing SVG root");
-        require(source.contains("viewbox="), "missing viewBox");
-        require(source.contains("<lineargradient"), "missing linear gradients");
-        require(source.contains("<radialgradient"), "missing radial gradients");
-        require(source.contains("<filter"), "missing SVG filters");
-        require(source.contains("fegaussianblur"), "missing Gaussian blur");
-        require(source.contains("transform="), "missing transforms");
-        require(
-            source.contains("xlink:href=\"#"),
-            "missing internal xlink references"
-        );
+        require(source.contains("<svg"), resource + ": missing SVG root");
+        require(source.contains("viewbox="), resource + ": missing viewBox");
+        require(!source.contains("<image"), resource + ": embedded raster image is not allowed");
 
-        verifyRaster(data, 236, 292);
-        verifyRaster(data, 472, 584);
-        verifyRaster(data, 535, 505);
+        if (resource.endsWith("/scroll.svg")) {
+            require(source.contains("<lineargradient"), "scroll: missing linear gradients");
+            require(source.contains("<radialgradient"), "scroll: missing radial gradients");
+            require(source.contains("<filter"), "scroll: missing SVG filters");
+            require(source.contains("fegaussianblur"), "scroll: missing Gaussian blur");
+            require(source.contains("transform="), "scroll: missing transforms");
+            require(source.contains("xlink:href=\"#"), "scroll: missing internal references");
+            verifyRaster(data, 320, 340);
+            verifyRaster(data, 640, 680);
+        } else if (resource.endsWith("/logo.svg")) {
+            require(count(source, "<path") >= 20, "logo: expected detailed vector paths");
+            verifyRaster(data, 480, 166);
+            verifyRaster(data, 960, 332);
+        } else {
+            verifyRaster(data, 320, 240);
+        }
 
         System.out.println(
             "Modern SVG verification passed: "
                 + resource
-                + " (gradients, filters, transforms, internal references)"
+                + " bytes="
+                + data.length
         );
     }
 
-    private static void verifyRaster(
-        byte[] data,
-        int width,
-        int height
-    ) throws Exception {
+    private static int count(String source, String token) {
+        int count = 0;
+        int offset = 0;
+        while ((offset = source.indexOf(token, offset)) != -1) {
+            count++;
+            offset += token.length();
+        }
+        return count;
+    }
+
+    private static void verifyRaster(byte[] data, int width, int height)
+        throws Exception {
         BufferedImage image =
             ModernSvgRasterizer.rasterize(data, width, height);
 
@@ -72,9 +89,6 @@ public final class ModernSvgAssetVerifier {
             }
         }
 
-        // Some authored SVGs intentionally have a large transparent
-        // viewBox around their artwork. We are testing whether Batik produced
-        // real vector output, not whether the source was tightly cropped.
         require(
             visible > total / 200,
             "SVG rendered effectively blank at "
@@ -89,7 +103,7 @@ public final class ModernSvgAssetVerifier {
                 + width + "x" + height
                 + " visiblePixels=" + visible
                 + " coverage="
-                + String.format(java.util.Locale.ROOT, "%.2f%%", coverage)
+                + String.format(Locale.ROOT, "%.2f%%", coverage)
         );
     }
 
