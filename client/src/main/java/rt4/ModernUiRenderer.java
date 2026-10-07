@@ -300,7 +300,9 @@ public final class ModernUiRenderer {
             return -6;
         }
         if (normalized.equals("quit")) {
-            return 14;
+            // Keep Quit on its original cache Y. Moving it down pushes the
+            // component beyond its parent clip, leaving only the top edge.
+            return 0;
         }
         return 0;
     }
