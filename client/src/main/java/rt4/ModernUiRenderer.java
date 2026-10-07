@@ -23,6 +23,11 @@ public final class ModernUiRenderer {
     private static final List<UiRect> graphicsOptionsDropdownRects = new ArrayList<>();
     private static UiRect graphicsOptionsBrightnessRect;
 
+    private static int mainMenuDepth;
+    private static MainMenuLayout mainMenuLayout;
+    private static int suppressDiagnosticsDepth;
+    private static boolean loginUiActivated;
+
     private ModernUiRenderer() {
     }
 
@@ -45,11 +50,44 @@ public final class ModernUiRenderer {
         Component[] loadedComponents = InterfaceList.components[interfaceId];
         boolean graphicsOptions =
             GraphicsOptionsUiInjector.isGraphicsOptionsActive(loadedComponents);
+
+        MainMenuLayout detectedMainMenu =
+            interfaceId == LoginManager.loginScreenId
+                ? analyzeMainMenu(loadedComponents, parentX, parentY)
+                : null;
+        boolean mainMenu = detectedMainMenu != null;
+
+        if (mainMenu || graphicsOptions) {
+            loginUiActivated = true;
+        }
+
+        boolean suppressStartupDiagnostics =
+            interfaceId == LoginManager.loginScreenId
+                && !loginUiActivated
+                && !mainMenu
+                && !graphicsOptions;
+
         int oldTitleCenterX = graphicsOptionsTitleCenterX;
         int oldTitleY = graphicsOptionsTitleY;
         boolean oldBrightnessRendered = graphicsOptionsBrightnessRendered;
         List<UiRect> oldDropdownRects = new ArrayList<>(graphicsOptionsDropdownRects);
         UiRect oldBrightnessRect = graphicsOptionsBrightnessRect;
+        MainMenuLayout oldMainMenuLayout = mainMenuLayout;
+
+        if (suppressStartupDiagnostics) {
+            suppressDiagnosticsDepth++;
+        }
+
+        if (mainMenu) {
+            mainMenuDepth++;
+            mainMenuLayout = detectedMainMenu;
+            renderMainMenuBackdrop(
+                clipLeft,
+                clipTop,
+                clipRight,
+                clipBottom
+            );
+        }
 
         if (graphicsOptions) {
             GraphicsOptionsAnchor anchor = findGraphicsOptionsAnchor(
@@ -101,6 +139,15 @@ public final class ModernUiRenderer {
             graphicsOptionsDropdownRects.addAll(oldDropdownRects);
             graphicsOptionsBrightnessRect = oldBrightnessRect;
         }
+
+        if (mainMenu) {
+            mainMenuDepth--;
+            mainMenuLayout = oldMainMenuLayout;
+        }
+
+        if (suppressStartupDiagnostics) {
+            suppressDiagnosticsDepth--;
+        }
     }
 
     private static void renderComponents(
@@ -122,6 +169,12 @@ public final class ModernUiRenderer {
                 continue;
             }
             if (component.if3 && InterfaceList.isHidden(component)) {
+                continue;
+            }
+            if (component.type == 0
+                && !component.if3
+                && InterfaceList.isHidden(component)
+                && InterfaceList.hoveredComponent != component) {
                 continue;
             }
 
@@ -345,6 +398,11 @@ public final class ModernUiRenderer {
         }
 
         String text = display == null ? "" : display.toString();
+
+        if (mainMenuDepth > 0 && isManagedMainMenuText(text)) {
+            renderMainMenuText(component, text, x, y);
+            return;
+        }
 
         boolean syntheticKillerText =
             component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_VALUE_TEXT
@@ -768,6 +826,9 @@ public final class ModernUiRenderer {
 
         // Deliberately do not call component.getSprite(). Modern mode has no
         // Index-8/legacy UI sprite fallback.
+        if (mainMenuDepth > 0 && renderMainMenuImage(component, x, y)) {
+            return;
+        }
         if (graphicsOptionsDepth > 0) {
             renderGraphicsOptionsImageFallback(component, x, y);
             return;
@@ -868,6 +929,10 @@ public final class ModernUiRenderer {
             );
         }
 
+        if (suppressDiagnosticsDepth > 0) {
+            return;
+        }
+
         int requestedWidth = Math.max(width, 24);
         int requestedHeight = Math.max(height, 18);
 
@@ -933,6 +998,722 @@ public final class ModernUiRenderer {
             }
         } else if (rectangle < InterfaceList.rectangleDirty.length) {
             InterfaceList.rectangleDirty[rectangle] = true;
+        }
+    }
+
+
+    private static MainMenuLayout analyzeMainMenu(
+        Component[] components,
+        int parentX,
+        int parentY
+    ) {
+        MainMenuLayout layout = new MainMenuLayout();
+        collectMainMenuEntries(
+            components,
+            -1,
+            parentX,
+            parentY,
+            layout
+        );
+
+        if (!layout.hasText("log in")
+            || !layout.hasText("create account")
+            || !layout.hasText("graphics options")
+            || !layout.hasText("audio options")) {
+            return null;
+        }
+
+        layout.finish();
+        return layout;
+    }
+
+    private static void collectMainMenuEntries(
+        Component[] components,
+        int layer,
+        int parentX,
+        int parentY,
+        MainMenuLayout layout
+    ) {
+        if (components == null) {
+            return;
+        }
+
+        for (Component component : components) {
+            if (component == null || component.overlayer != layer) {
+                continue;
+            }
+            if (component.if3 && InterfaceList.isHidden(component)) {
+                continue;
+            }
+            if (component.type == 0
+                && !component.if3
+                && InterfaceList.isHidden(component)
+                && InterfaceList.hoveredComponent != component) {
+                continue;
+            }
+
+            int x = parentX + component.x;
+            int y = parentY + component.y;
+            UiRect rect = new UiRect(
+                x,
+                y,
+                Math.max(1, component.width),
+                Math.max(1, component.height)
+            );
+
+            if (component.type == 4 || component.type == 8) {
+                JagString display = component.text;
+                if (Cs1ScriptRunner.isTrue(component)
+                    && component.activeText != null
+                    && component.activeText.length() > 0) {
+                    display = component.activeText;
+                }
+                String text =
+                    display == null
+                        ? ""
+                        : normalizeGraphicsOptionsText(display.toString());
+                if (!text.isEmpty()) {
+                    layout.texts.add(
+                        new MainMenuTextEntry(
+                            component.id,
+                            text,
+                            rect
+                        )
+                    );
+                }
+            } else if (component.type == 5) {
+                layout.images.add(
+                    new MainMenuImageEntry(component.id, rect)
+                );
+            }
+
+            if (component.type == 0) {
+                int childX = x - component.scrollX;
+                int childY = y - component.scrollY;
+                collectMainMenuEntries(
+                    components,
+                    component.id,
+                    childX,
+                    childY,
+                    layout
+                );
+                if (component.createdComponents != null) {
+                    collectMainMenuEntries(
+                        component.createdComponents,
+                        component.id,
+                        childX,
+                        childY,
+                        layout
+                    );
+                }
+            }
+        }
+    }
+
+    private static boolean isManagedMainMenuText(String text) {
+        String normalized = normalizeGraphicsOptionsText(text);
+        if (normalized.isEmpty()) {
+            return false;
+        }
+
+        return normalized.equals("log in")
+            || normalized.equals("login")
+            || normalized.equals("create account")
+            || normalized.equals("graphics options")
+            || normalized.equals("audio options")
+            || normalized.equals("music options")
+            || normalized.equals("quit")
+            || normalized.equals("standard detail")
+            || normalized.equals("high detail")
+            || normalized.contains("existing user")
+            || normalized.contains("new user")
+            || normalized.contains("click to switch")
+            || normalized.startsWith("world ");
+    }
+
+    private static void renderMainMenuBackdrop(
+        int clipLeft,
+        int clipTop,
+        int clipRight,
+        int clipBottom
+    ) {
+        if (mainMenuLayout == null) {
+            return;
+        }
+
+        setClip(clipLeft, clipTop, clipRight, clipBottom);
+
+        drawMainMenuAsset(
+            "main-menu/panel",
+            mainMenuLayout.body
+        );
+        drawMainMenuAsset(
+            "main-menu/header",
+            mainMenuLayout.header
+        );
+        drawMainMenuAsset(
+            "main-menu/footer",
+            mainMenuLayout.footer
+        );
+        drawMainMenuAsset(
+            "main-menu/edge",
+            mainMenuLayout.leftEdge
+        );
+        drawMainMenuAsset(
+            "main-menu/edge",
+            mainMenuLayout.rightEdge
+        );
+
+        if (mainMenuLayout.logo != null) {
+            drawMainMenuAsset(
+                "main-menu/logo",
+                mainMenuLayout.logo
+            );
+
+            int logoCenter = mainMenuLayout.logo.x
+                + mainMenuLayout.logo.width / 2;
+            int titleY = mainMenuLayout.logo.y
+                + mainMenuLayout.logo.height / 2 - 2;
+
+            ModernTrueTypeFont.drawCentered(
+                ModernUiFontRegistry.BOLD_12,
+                "OSRS Client",
+                logoCenter,
+                titleY,
+                0xF1D68A,
+                18.0F,
+                true
+            );
+            ModernTrueTypeFont.drawCentered(
+                ModernUiFontRegistry.PLAIN_11,
+                "Killer Edition",
+                logoCenter,
+                titleY + 20,
+                0xD9C7A0,
+                11.0F,
+                true
+            );
+        }
+    }
+
+    private static void drawMainMenuAsset(
+        String asset,
+        UiRect rect
+    ) {
+        if (rect == null || rect.width <= 0 || rect.height <= 0) {
+            return;
+        }
+
+        ModernUiImage image = ModernUiAssetResolver.get(
+            asset,
+            rect.width,
+            rect.height
+        );
+        if (image != null) {
+            image.render(rect.x, rect.y);
+        } else {
+            drawMissing(
+                "asset:" + asset,
+                rect.x,
+                rect.y,
+                rect.width,
+                rect.height
+            );
+        }
+    }
+
+    private static void renderMainMenuText(
+        Component component,
+        String text,
+        int x,
+        int y
+    ) {
+        String normalized = normalizeGraphicsOptionsText(text);
+        boolean subtitle =
+            normalized.contains("existing user")
+                || normalized.contains("new user")
+                || normalized.contains("click to switch");
+        boolean detail =
+            normalized.equals("standard detail")
+                || normalized.equals("high detail");
+
+        String fontAsset;
+        float size;
+        int color;
+
+        if (subtitle) {
+            fontAsset = ModernUiFontRegistry.PLAIN_11;
+            size = 10.0F;
+            color = 0xBEB39B;
+        } else if (detail) {
+            fontAsset = ModernUiFontRegistry.PLAIN_11;
+            size = 10.0F;
+            color = 0xC8B993;
+        } else if (normalized.equals("log in")
+            || normalized.equals("create account")
+            || normalized.startsWith("world ")) {
+            fontAsset = ModernUiFontRegistry.BOLD_12;
+            size = normalized.startsWith("world ") ? 13.0F : 14.0F;
+            color = 0xF1D68A;
+        } else {
+            fontAsset = ModernUiFontRegistry.PLAIN_12;
+            size = 12.0F;
+            color = 0xE8DDC4;
+        }
+
+        if (!subtitle && !detail) {
+            int textWidth = ModernTrueTypeFont.getWidth(
+                fontAsset,
+                text,
+                size
+            );
+            int buttonWidth = Math.max(
+                component.width,
+                Math.min(190, textWidth + 22)
+            );
+            int buttonHeight = Math.max(22, component.height + 8);
+            int buttonX = x + (component.width - buttonWidth) / 2;
+            int buttonY = y + (component.height - buttonHeight) / 2;
+
+            boolean hover =
+                Mouse.lastMouseX >= x
+                    && Mouse.lastMouseX < x + component.width
+                    && Mouse.lastMouseY >= y
+                    && Mouse.lastMouseY < y + component.height;
+
+            String asset =
+                hover
+                    ? "main-menu/button-active"
+                    : "main-menu/button";
+
+            ModernUiImage button = ModernUiAssetResolver.get(
+                asset,
+                buttonWidth,
+                buttonHeight
+            );
+            if (button != null) {
+                button.render(buttonX, buttonY);
+            } else {
+                drawMissing(
+                    "asset:" + asset,
+                    buttonX,
+                    buttonY,
+                    buttonWidth,
+                    buttonHeight
+                );
+            }
+        }
+
+        ModernTrueTypeFont.drawInBox(
+            fontAsset,
+            text,
+            x,
+            y,
+            component.width,
+            component.height,
+            color,
+            component.halign,
+            component.valign,
+            size,
+            component.shadowed
+        );
+    }
+
+    private static boolean renderMainMenuImage(
+        Component component,
+        int x,
+        int y
+    ) {
+        if (mainMenuLayout == null) {
+            return false;
+        }
+
+        int id = component.id;
+        UiRect rect = new UiRect(
+            x,
+            y,
+            Math.max(1, component.width),
+            Math.max(1, component.height)
+        );
+
+        if (id == mainMenuLayout.bodyComponentId
+            || id == mainMenuLayout.logoComponentId
+            || mainMenuLayout.frameComponentIds.contains(id)) {
+            // The complete scalable frame/logo system was drawn once behind
+            // the component tree. These exact legacy pieces are now replaced.
+            return true;
+        }
+
+        if (mainMenuLayout.choiceComponentIds.contains(id)) {
+            boolean active = Cs1ScriptRunner.isTrue(component);
+            String asset =
+                active
+                    ? "main-menu/choice-active"
+                    : "main-menu/choice";
+            ModernUiImage image = ModernUiAssetResolver.get(
+                asset,
+                rect.width,
+                rect.height
+            );
+            if (image != null) {
+                image.render(rect.x, rect.y);
+            } else {
+                drawMissing(
+                    "asset:" + asset,
+                    rect.x,
+                    rect.y,
+                    rect.width,
+                    rect.height
+                );
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    private static UiRect unionRects(List<UiRect> rects) {
+        if (rects == null || rects.isEmpty()) {
+            return null;
+        }
+
+        int left = Integer.MAX_VALUE;
+        int top = Integer.MAX_VALUE;
+        int right = Integer.MIN_VALUE;
+        int bottom = Integer.MIN_VALUE;
+
+        for (UiRect rect : rects) {
+            left = Math.min(left, rect.x);
+            top = Math.min(top, rect.y);
+            right = Math.max(right, rect.x + rect.width);
+            bottom = Math.max(bottom, rect.y + rect.height);
+        }
+
+        return new UiRect(
+            left,
+            top,
+            Math.max(1, right - left),
+            Math.max(1, bottom - top)
+        );
+    }
+
+    private static int rectArea(UiRect rect) {
+        return rect == null ? 0 : rect.width * rect.height;
+    }
+
+    private static int rectCenterX(UiRect rect) {
+        return rect.x + rect.width / 2;
+    }
+
+    private static int rectCenterY(UiRect rect) {
+        return rect.y + rect.height / 2;
+    }
+
+    private static boolean overlapsY(UiRect rect, int top, int bottom) {
+        return rect != null
+            && rect.y < bottom
+            && rect.y + rect.height > top;
+    }
+
+    private static final class MainMenuLayout {
+        private final List<MainMenuTextEntry> texts = new ArrayList<>();
+        private final List<MainMenuImageEntry> images = new ArrayList<>();
+        private final Set<Integer> frameComponentIds = new HashSet<>();
+        private final Set<Integer> choiceComponentIds = new HashSet<>();
+
+        private UiRect body;
+        private UiRect header;
+        private UiRect footer;
+        private UiRect leftEdge;
+        private UiRect rightEdge;
+        private UiRect logo;
+
+        private int bodyComponentId = -1;
+        private int logoComponentId = -1;
+        private int centerX;
+
+        private boolean hasText(String wanted) {
+            for (MainMenuTextEntry entry : texts) {
+                if (entry.text.equals(wanted)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private MainMenuTextEntry findText(String wanted) {
+            for (MainMenuTextEntry entry : texts) {
+                if (entry.text.equals(wanted)) {
+                    return entry;
+                }
+            }
+            return null;
+        }
+
+        private void finish() {
+            List<UiRect> managedTextRects = new ArrayList<>();
+            MainMenuTextEntry graphics = findText("graphics options");
+
+            for (MainMenuTextEntry entry : texts) {
+                if (isManagedMainMenuText(entry.text)) {
+                    managedTextRects.add(entry.rect);
+                }
+            }
+
+            UiRect content = unionRects(managedTextRects);
+            if (content == null) {
+                content = new UiRect(
+                    GameShell.canvasWidth / 2 - 90,
+                    GameShell.canvasHeight / 2 - 120,
+                    180,
+                    240
+                );
+            }
+
+            centerX =
+                graphics == null
+                    ? rectCenterX(content)
+                    : rectCenterX(graphics.rect);
+
+            MainMenuImageEntry bestBody = null;
+            int bestBodyArea = 0;
+            for (MainMenuImageEntry image : images) {
+                UiRect rect = image.rect;
+                boolean containsCenter =
+                    centerX >= rect.x - 8
+                        && centerX <= rect.x + rect.width + 8;
+                boolean coversTextBand =
+                    rect.y <= content.y + 28
+                        && rect.y + rect.height
+                            >= content.y + content.height - 28;
+                if (containsCenter
+                    && coversTextBand
+                    && rect.width >= 120
+                    && rect.height >= 120
+                    && rectArea(rect) > bestBodyArea) {
+                    bestBody = image;
+                    bestBodyArea = rectArea(rect);
+                }
+            }
+
+            if (bestBody != null) {
+                bodyComponentId = bestBody.componentId;
+                body = bestBody.rect;
+            } else {
+                int width = Math.max(190, content.width + 48);
+                int height = Math.max(220, content.height + 38);
+                body = new UiRect(
+                    centerX - width / 2,
+                    content.y - 18,
+                    width,
+                    height
+                );
+            }
+
+            MainMenuImageEntry bestLogo = null;
+            int bestLogoArea = 0;
+            for (MainMenuImageEntry image : images) {
+                UiRect rect = image.rect;
+                if (rect == body) {
+                    continue;
+                }
+
+                int dx = Math.abs(rectCenterX(rect) - centerX);
+                if (dx <= Math.max(120, body.width)
+                    && rect.y + rect.height < body.y - 25
+                    && rect.width >= 180
+                    && rect.height >= 50
+                    && rectArea(rect) > bestLogoArea) {
+                    bestLogo = image;
+                    bestLogoArea = rectArea(rect);
+                }
+            }
+
+            if (bestLogo != null) {
+                logoComponentId = bestLogo.componentId;
+                logo = bestLogo.rect;
+            } else {
+                logo = new UiRect(
+                    centerX - 150,
+                    Math.max(8, body.y - 130),
+                    300,
+                    92
+                );
+            }
+
+            List<UiRect> headerParts = new ArrayList<>();
+            List<UiRect> footerParts = new ArrayList<>();
+
+            int bodyBottom = body.y + body.height;
+            for (MainMenuImageEntry image : images) {
+                if (image.componentId == bodyComponentId
+                    || image.componentId == logoComponentId) {
+                    continue;
+                }
+
+                UiRect rect = image.rect;
+                int dx = Math.abs(rectCenterX(rect) - centerX);
+
+                if (dx <= body.width
+                    && rect.y < body.y + 18
+                    && rect.y + rect.height > body.y - 55) {
+                    frameComponentIds.add(image.componentId);
+                    headerParts.add(rect);
+                    continue;
+                }
+
+                if (dx <= body.width
+                    && rect.y < bodyBottom + 55
+                    && rect.y + rect.height > bodyBottom - 18) {
+                    frameComponentIds.add(image.componentId);
+                    footerParts.add(rect);
+                    continue;
+                }
+
+                boolean nearLeft =
+                    Math.abs(
+                        rectCenterX(rect) - body.x
+                    ) <= 24;
+                boolean nearRight =
+                    Math.abs(
+                        rectCenterX(rect) - (body.x + body.width)
+                    ) <= 24;
+
+                if ((nearLeft || nearRight)
+                    && rect.width <= 42
+                    && rect.height >= body.height / 3
+                    && overlapsY(rect, body.y, bodyBottom)) {
+                    frameComponentIds.add(image.componentId);
+                }
+            }
+
+            UiRect headerUnion = unionRects(headerParts);
+            UiRect footerUnion = unionRects(footerParts);
+
+            header =
+                headerUnion == null
+                    ? new UiRect(
+                        body.x - 34,
+                        body.y - 30,
+                        body.width + 68,
+                        30
+                    )
+                    : headerUnion;
+
+            footer =
+                footerUnion == null
+                    ? new UiRect(
+                        body.x - 34,
+                        bodyBottom,
+                        body.width + 68,
+                        30
+                    )
+                    : footerUnion;
+
+            leftEdge = new UiRect(
+                body.x - 10,
+                body.y,
+                10,
+                body.height
+            );
+            rightEdge = new UiRect(
+                body.x + body.width,
+                body.y,
+                10,
+                body.height
+            );
+
+            MainMenuTextEntry standard = findText("standard detail");
+            MainMenuTextEntry high = findText("high detail");
+            if (standard != null || high != null) {
+                int choiceTop =
+                    Math.min(
+                        standard == null
+                            ? Integer.MAX_VALUE
+                            : standard.rect.y - 48,
+                        high == null
+                            ? Integer.MAX_VALUE
+                            : high.rect.y - 48
+                    );
+                int choiceBottom =
+                    Math.max(
+                        standard == null
+                            ? Integer.MIN_VALUE
+                            : standard.rect.y + standard.rect.height + 12,
+                        high == null
+                            ? Integer.MIN_VALUE
+                            : high.rect.y + high.rect.height + 12
+                    );
+
+                MainMenuImageEntry leftChoice = null;
+                MainMenuImageEntry rightChoice = null;
+                int leftArea = 0;
+                int rightArea = 0;
+
+                for (MainMenuImageEntry image : images) {
+                    if (image.componentId == bodyComponentId
+                        || image.componentId == logoComponentId
+                        || frameComponentIds.contains(image.componentId)) {
+                        continue;
+                    }
+
+                    UiRect rect = image.rect;
+                    if (!overlapsY(rect, choiceTop, choiceBottom)
+                        || rect.width < 32
+                        || rect.width > 120
+                        || rect.height < 18
+                        || rect.height > 70) {
+                        continue;
+                    }
+
+                    int area = rectArea(rect);
+                    if (rectCenterX(rect) < centerX) {
+                        if (area > leftArea) {
+                            leftChoice = image;
+                            leftArea = area;
+                        }
+                    } else if (area > rightArea) {
+                        rightChoice = image;
+                        rightArea = area;
+                    }
+                }
+
+                if (leftChoice != null) {
+                    choiceComponentIds.add(leftChoice.componentId);
+                }
+                if (rightChoice != null) {
+                    choiceComponentIds.add(rightChoice.componentId);
+                }
+            }
+        }
+    }
+
+    private static final class MainMenuTextEntry {
+        private final int componentId;
+        private final String text;
+        private final UiRect rect;
+
+        private MainMenuTextEntry(
+            int componentId,
+            String text,
+            UiRect rect
+        ) {
+            this.componentId = componentId;
+            this.text = text;
+            this.rect = rect;
+        }
+    }
+
+    private static final class MainMenuImageEntry {
+        private final int componentId;
+        private final UiRect rect;
+
+        private MainMenuImageEntry(
+            int componentId,
+            UiRect rect
+        ) {
+            this.componentId = componentId;
+            this.rect = rect;
         }
     }
 
