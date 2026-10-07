@@ -295,7 +295,27 @@ public final class DisplayMode {
 			InterfaceList.rectangleDirty[i] = true;
 		}
 		GameShell.fullRedraw = true;
-		DisplayDebug.log("setWindowMode complete: actual=" + DisplayDebug.modeName(getWindowMode())
+
+		int actualMode = getWindowMode();
+		boolean modernSupportChanged =
+			(currentMode >= 2) != (actualMode >= 2);
+
+		if (LoginManager.loginScreenId >= 0
+			&& InterfaceList.components != null
+			&& LoginManager.loginScreenId < InterfaceList.components.length
+			&& InterfaceList.components[LoginManager.loginScreenId] != null) {
+			GraphicsOptionsUiInjector.inject(LoginManager.loginScreenId);
+		}
+
+		if (modernSupportChanged) {
+			ModernUiManager.requestReload(
+				actualMode >= 2
+					? "Modern UI available in scalable HD mode"
+					: "Modern UI unavailable in fixed display mode"
+			);
+		}
+
+		DisplayDebug.log("setWindowMode complete: actual=" + DisplayDebug.modeName(actualMode)
 			+ ", glEnabled=" + GlRenderer.enabled + ", resizable=" + resizable
 			+ ", frame=" + GameShell.frameWidth + "x" + GameShell.frameHeight
 			+ ", canvas=" + GameShell.canvasWidth + "x" + GameShell.canvasHeight
