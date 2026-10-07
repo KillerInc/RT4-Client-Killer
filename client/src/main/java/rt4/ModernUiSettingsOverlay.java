@@ -19,6 +19,7 @@ public final class ModernUiSettingsOverlay {
     private static boolean dropdownOpen;
 
     private static final List<NativePiece> nativeSpritePieces = new ArrayList<>();
+    private static boolean nativeCloneLogged;
 
     private static final int TEXT = 0x3B2B1B;
     private static final int DISABLED = 0x6D6658;
@@ -241,11 +242,9 @@ public final class ModernUiSettingsOverlay {
             }
         }
 
-        if (drawn > 0) {
-            DisplayDebug.logOnce(
-                "MODERN_UI_NATIVE_SELECTOR",
-                "MODERN_UI cloned " + drawn + " native Graphics Options sprite pieces"
-            );
+        if (drawn > 0 && !nativeCloneLogged) {
+            nativeCloneLogged = true;
+            DisplayDebug.log("MODERN_UI cloned " + drawn + " native Graphics Options sprite pieces");
         }
         return drawn > 0;
     }
