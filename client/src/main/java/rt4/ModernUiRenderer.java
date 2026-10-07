@@ -449,18 +449,16 @@ public final class ModernUiRenderer {
             DisplayDebug.log("MODERN_UI MISSING " + key);
         }
 
-        width = Math.max(width, 24);
-        height = Math.max(height, 18);
-        if (GlRenderer.enabled) {
-            GlRaster.fillRectAlpha(x, y, width, height, 0x4C1733, 210);
-            GlRaster.drawRect(x, y, width, height, 0xFF44AA);
-        } else {
-            SoftwareRaster.fillRectAlpha(x, y, width, height, 0x4C1733, 210);
-            SoftwareRaster.drawRect(x, y, width, height, 0xFF44AA);
-        }
-
-        String label = "[MISSING " + key + "]";
-        ModernTrueTypeFont.draw(label, x + 3, y + Math.min(height - 3, 14), 0xFFFFFF, 10.0F, true);
+        // Development-only Modern UI missing-texture marker. Keep the
+        // original high-visibility magenta/black checkerboard so missing
+        // artwork is obvious at a glance.
+        drawMissingBackdrop(
+            key,
+            x,
+            y,
+            Math.max(width, 24),
+            Math.max(height, 18)
+        );
     }
 
     private static void drawOutline(int x, int y, int width, int height, int color) {
@@ -817,8 +815,14 @@ public final class ModernUiRenderer {
         }
     }
 
-    private static void drawMissingBackdrop(String key, int x, int y, int width, int height) {
-        int tile = 28;
+    private static void drawMissingBackdrop(
+        String key,
+        int x,
+        int y,
+        int width,
+        int height
+    ) {
+        int tile = (width < 80 || height < 40) ? 8 : 28;
         for (int row = 0; row < height; row += tile) {
             for (int col = 0; col < width; col += tile) {
                 boolean alternate = ((row / tile) + (col / tile) & 1) != 0;
@@ -835,30 +839,39 @@ public final class ModernUiRenderer {
 
         if (GlRenderer.enabled) {
             GlRaster.drawRect(x, y, width, height, 0xFF66CC);
-            GlRaster.drawRect(x + 1, y + 1, width - 2, height - 2, 0xFFFFFF);
+            if (width > 3 && height > 3) {
+                GlRaster.drawRect(x + 1, y + 1, width - 2, height - 2, 0xFFFFFF);
+            }
         } else {
             SoftwareRaster.drawRect(x, y, width, height, 0xFF66CC);
-            SoftwareRaster.drawRect(x + 1, y + 1, width - 2, height - 2, 0xFFFFFF);
+            if (width > 3 && height > 3) {
+                SoftwareRaster.drawRect(x + 1, y + 1, width - 2, height - 2, 0xFFFFFF);
+            }
         }
 
-        int centerX = x + width / 2;
-        int centerY = y + height / 2;
-        ModernTrueTypeFont.drawCentered(
-            "MISSING MODERN UI ASSET",
-            centerX,
-            centerY - 4,
-            0xFFFFFF,
-            18.0F,
-            true
-        );
-        ModernTrueTypeFont.drawCentered(
-            key,
-            centerX,
-            centerY + 18,
-            0xFFFFFF,
-            10.0F,
-            true
-        );
+        // Large missing regions get the full diagnostic label. Small control
+        // assets stay as a clean checkerboard so text does not spill across
+        // neighboring UI.
+        if (width >= 150 && height >= 55) {
+            int centerX = x + width / 2;
+            int centerY = y + height / 2;
+            ModernTrueTypeFont.drawCentered(
+                "MISSING MODERN UI ASSET",
+                centerX,
+                centerY - 4,
+                0xFFFFFF,
+                18.0F,
+                true
+            );
+            ModernTrueTypeFont.drawCentered(
+                key,
+                centerX,
+                centerY + 18,
+                0xFFFFFF,
+                10.0F,
+                true
+            );
+        }
     }
 
     private static boolean containsGraphicsOptionsText(Component[] components) {
