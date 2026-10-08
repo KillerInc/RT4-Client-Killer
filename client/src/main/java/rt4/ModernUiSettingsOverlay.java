@@ -45,6 +45,7 @@ public final class ModernUiSettingsOverlay {
     public static void afterInterfaceScripts() {
         if (ModernUiManager.isSupportedDisplayMode()) {
             GraphicsOptionsUiInjector.normalizeNativeDropdowns();
+            GraphicsOptionsUiInjector.syncModernSelectorValueStyle();
         }
     }
 
