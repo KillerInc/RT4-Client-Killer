@@ -272,223 +272,114 @@ public final class GraphicsOptionsUiInjector {
     }
 
     /**
-     * Called from the normal CS2 setHidden opcode. Opening one Graphics
-     * Options dropdown closes every other native dropdown in that interface.
+     * Graphics Options dropdowns are child interfaces, not hidden containers
+     * in the page itself. When RuneScape opens one child popup, close any
+     * previous child popup attached to the same Graphics Options interface.
      */
-    public static void onComponentHiddenChanged(
-        Component component,
-        boolean hidden
+    public static void onSubInterfaceOpened(
+        int parentComponentId,
+        ComponentPointer opened
     ) {
-        if (component == null || hidden || component.type != 0) {
+        if (opened == null) {
             return;
         }
 
-        int interfaceId = component.id >>> 16;
+        int parentInterfaceId = parentComponentId >>> 16;
+        if (parentInterfaceId != activeGraphicsOptionsInterfaceId) {
+            return;
+        }
+
         if (InterfaceList.components == null
-            || interfaceId < 0
-            || interfaceId >= InterfaceList.components.length) {
+            || parentInterfaceId < 0
+            || parentInterfaceId >= InterfaceList.components.length
+            || InterfaceList.components[parentInterfaceId] == null
+            || !isGraphicsOptionsActive(
+                InterfaceList.components[parentInterfaceId]
+            )) {
             return;
         }
 
-        Component[] components = InterfaceList.components[interfaceId];
-        if (components == null
-            || !isGraphicsOptionsActive(components)
-            || !isNativeDropdownPopup(components, component)) {
-            return;
-        }
+        List<ComponentPointer> stale = new ArrayList<>();
+        HashTableIterator iter =
+            new HashTableIterator(InterfaceList.openInterfaces);
 
-        activeGraphicsOptionsInterfaceId = interfaceId;
-
-        for (Component candidate : components) {
-            if (candidate == null
-                || candidate == component
-                || candidate.type != 0
-                || candidate.hidden
-                || !isNativeDropdownPopup(components, candidate)) {
+        for (ComponentPointer ptr =
+                 (ComponentPointer) iter.first();
+             ptr != null;
+             ptr = (ComponentPointer) iter.next()) {
+            if (ptr == opened) {
                 continue;
             }
 
-            candidate.hidden = true;
-            InterfaceList.redraw(candidate);
+            int otherParentComponentId = (int) ptr.key;
+            if ((otherParentComponentId >>> 16)
+                == activeGraphicsOptionsInterfaceId) {
+                stale.add(ptr);
+            }
+        }
+
+        for (ComponentPointer ptr : stale) {
             DisplayDebug.log(
-                "GRAPHICS_OPTIONS dropdown exclusivity: closed "
-                    + candidate.id
-                    + " when opening "
-                    + component.id
+                "GRAPHICS_OPTIONS closing previous dropdown child"
+                    + " parent=" + ptr.key
+                    + " interface=" + ptr.interfaceId
+                    + " for new parent=" + parentComponentId
+                    + " interface=" + opened.interfaceId
             );
+            InterfaceList.closeInterface(true, ptr);
         }
     }
 
+    /**
+     * Exact popup state used by the Modern UI selector. A native Graphics
+     * Options dropdown is open whenever a child interface is attached to a
+     * component belonging to the active Graphics Options page.
+     */
     public static boolean isNativeDropdownOpen() {
-        int interfaceId = activeGraphicsOptionsInterfaceId;
-        if (InterfaceList.components == null
-            || interfaceId < 0
-            || interfaceId >= InterfaceList.components.length) {
+        if (activeGraphicsOptionsInterfaceId < 0) {
             return false;
         }
 
-        Component[] components = InterfaceList.components[interfaceId];
-        if (components == null) {
-            return false;
-        }
+        HashTableIterator iter =
+            new HashTableIterator(InterfaceList.openInterfaces);
 
-        for (Component component : components) {
-            if (component != null
-                && component.type == 0
-                && !component.hidden
-                && isNativeDropdownPopup(components, component)) {
+        for (ComponentPointer ptr =
+                 (ComponentPointer) iter.first();
+             ptr != null;
+             ptr = (ComponentPointer) iter.next()) {
+            int parentComponentId = (int) ptr.key;
+            if ((parentComponentId >>> 16)
+                == activeGraphicsOptionsInterfaceId) {
                 return true;
             }
         }
+
         return false;
     }
 
-    private static boolean isNativeDropdownPopup(
-        Component[] components,
-        Component container
+    public static boolean isGraphicsOptionsDropdownInterface(
+        int interfaceId
     ) {
-        if (components == null
-            || container == null
-            || container.type != 0) {
+        if (activeGraphicsOptionsInterfaceId < 0) {
             return false;
         }
 
-        int width = Math.max(1, container.width);
-        int height = Math.max(1, container.height);
+        HashTableIterator iter =
+            new HashTableIterator(InterfaceList.openInterfaces);
 
-        if (width < 45 || width > 240 || height < 24 || height > 420) {
-            return false;
-        }
-
-        DropdownTextStats stats = new DropdownTextStats();
-        collectDropdownTextStats(
-            components,
-            container.id,
-            stats,
-            0
-        );
-        if (container.createdComponents != null) {
-            collectDropdownTextStats(
-                container.createdComponents,
-                container.id,
-                stats,
-                0
-            );
-        }
-
-        return stats.valueCount >= 2 && !stats.hasPageLabel;
-    }
-
-    private static void collectDropdownTextStats(
-        Component[] components,
-        int layer,
-        DropdownTextStats stats,
-        int depth
-    ) {
-        if (components == null || depth > 4) {
-            return;
-        }
-
-        for (Component component : components) {
-            if (component == null || component.overlayer != layer) {
-                continue;
-            }
-
-            if (component.type == 4
-                && component.text != null
-                && component.text.length() > 0) {
-                String normalized =
-                    normalizeDropdownText(component.text.toString());
-                if (!normalized.isEmpty()) {
-                    if (isGraphicsOptionsPageLabel(normalized)) {
-                        stats.hasPageLabel = true;
-                    } else {
-                        stats.valueCount++;
-                    }
-                }
-            }
-
-            if (component.type == 0) {
-                collectDropdownTextStats(
-                    components,
-                    component.id,
-                    stats,
-                    depth + 1
-                );
-                if (component.createdComponents != null) {
-                    collectDropdownTextStats(
-                        component.createdComponents,
-                        component.id,
-                        stats,
-                        depth + 1
-                    );
-                }
-            }
-        }
-    }
-
-    private static boolean isGraphicsOptionsPageLabel(String text) {
-        return text.equals("graphics options")
-            || text.equals("display modes")
-            || text.equals("advanced options")
-            || text.equals("brightness")
-            || text.equals("visible levels")
-            || text.equals("remove roofs")
-            || text.equals("ground decoration")
-            || text.equals("texture detail")
-            || text.equals("idle animations")
-            || text.equals("flickering effects")
-            || text.equals("ground textures")
-            || text.equals("character shadows")
-            || text.equals("scenery shadows")
-            || text.equals("lighting detail")
-            || text.equals("water detail")
-            || text.equals("fog")
-            || text.equals("anti-aliasing")
-            || text.equals("modern ui")
-            || text.equals("style editor")
-            || text.equals("main menu")
-            || text.equals("standard detail")
-            || text.equals("(small)")
-            || text.equals("(fullscreen)")
-            || text.startsWith("high detail");
-    }
-
-    private static String normalizeDropdownText(String text) {
-        if (text == null) {
-            return "";
-        }
-
-        StringBuilder out = new StringBuilder(text.length());
-        boolean insideTag = false;
-        for (int i = 0; i < text.length(); i++) {
-            char ch = text.charAt(i);
-            if (ch == '<') {
-                insideTag = true;
-                continue;
-            }
-            if (ch == '>' && insideTag) {
-                insideTag = false;
-                continue;
-            }
-            if (!insideTag) {
-                out.append(
-                    ch == '\n' || ch == '\r' || ch == '\t'
-                        ? ' '
-                        : ch
-                );
+        for (ComponentPointer ptr =
+                 (ComponentPointer) iter.first();
+             ptr != null;
+             ptr = (ComponentPointer) iter.next()) {
+            int parentComponentId = (int) ptr.key;
+            if ((parentComponentId >>> 16)
+                    == activeGraphicsOptionsInterfaceId
+                && ptr.interfaceId == interfaceId) {
+                return true;
             }
         }
 
-        return out.toString()
-            .trim()
-            .toLowerCase(Locale.ROOT)
-            .replaceAll("\\s+", " ");
-    }
-
-    private static final class DropdownTextStats {
-        private int valueCount;
-        private boolean hasPageLabel;
+        return false;
     }
 
     public static boolean isGraphicsOptionsActive(Component[] components) {
