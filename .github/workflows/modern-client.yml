@@ -57,7 +57,19 @@ jobs:
           sha256sum KillerModernUI-Modder-Template.uipack | awk '{print $1}' > KillerModernUI-Modder-Template.uipack.sha256
 
           test -d cache-overrides/cache
-          (cd cache-overrides && zip -r "$GITHUB_WORKSPACE/killer-overrides.zip" cache)
+          rm -rf cache-overrides/build
+          mkdir -p cache-overrides/build
+          cp -R cache-overrides/cache cache-overrides/build/cache
+
+          python3 tools/cache/encode_interfaces.py             cache-overrides/source/3/744/104.json             /tmp/744-104.dat             --verify-against cache-overrides/cache/3/744/104.dat
+
+          while IFS= read -r -d '' source_json; do
+            relative="${source_json#cache-overrides/source/}"
+            output="cache-overrides/build/cache/${relative%.json}.dat"
+            python3 tools/cache/encode_interfaces.py "$source_json" "$output"
+          done < <(find cache-overrides/source -type f -name '*.json' -print0 | sort -z)
+
+          (cd cache-overrides/build && zip -r "$GITHUB_WORKSPACE/killer-overrides.zip" cache)
           sha256sum killer-overrides.zip | awk '{print $1}' > killer-overrides.zip.sha256
 
       - uses: actions/upload-artifact@v5
