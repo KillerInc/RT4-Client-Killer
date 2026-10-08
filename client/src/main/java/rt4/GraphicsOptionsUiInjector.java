@@ -34,7 +34,10 @@ public final class GraphicsOptionsUiInjector {
     private static int activeGraphicsOptionsInterfaceId = -1;
     private static final Set<Integer> previousVisibleDropdownGroups =
         new HashSet<>();
+    private static final Set<Integer> suppressedNativeDropdownComponents =
+        new HashSet<>();
     private static int lastVisibleDropdownGroup = -1;
+    private static boolean nativeDropdownOpen;
 
     private GraphicsOptionsUiInjector() {
     }
@@ -52,6 +55,8 @@ public final class GraphicsOptionsUiInjector {
         if (!active) {
             if (activeGraphicsOptionsInterfaceId == interfaceId) {
                 activeGraphicsOptionsInterfaceId = -1;
+                suppressedNativeDropdownComponents.clear();
+                nativeDropdownOpen = false;
             }
             if (alreadyInjected(original)) {
                 InterfaceList.components[interfaceId] = removeInjected(original);
@@ -288,6 +293,9 @@ public final class GraphicsOptionsUiInjector {
      * different dropdown opens.
      */
     public static void normalizeNativeDropdowns() {
+        suppressedNativeDropdownComponents.clear();
+        nativeDropdownOpen = false;
+
         int interfaceId = activeGraphicsOptionsInterfaceId;
         if (InterfaceList.components == null
             || interfaceId < 0
@@ -345,12 +353,15 @@ public final class GraphicsOptionsUiInjector {
             }
         }
 
-        if (groups.size() > 1 && keep != -1) {
+        // Exactly one native popup is allowed to own the foreground. Stale
+        // popup state may still exist in the cache scripts, but every visual
+        // and hit-test component belonging to those stale popups is suppressed.
+        if (keep != -1) {
+            nativeDropdownOpen = true;
             for (DropdownGroup group : groups.values()) {
-                if (group.groupKey == keep) {
-                    continue;
+                if (group.groupKey != keep) {
+                    suppressDropdownGroup(entries, group, false);
                 }
-                closeDropdownGroup(entries, group);
             }
         }
 
@@ -364,21 +375,14 @@ public final class GraphicsOptionsUiInjector {
     }
 
     public static boolean isNativeDropdownOpen() {
-        int interfaceId = activeGraphicsOptionsInterfaceId;
-        if (InterfaceList.components == null
-            || interfaceId < 0
-            || interfaceId >= InterfaceList.components.length) {
-            return false;
-        }
+        return nativeDropdownOpen;
+    }
 
-        Component[] components = InterfaceList.components[interfaceId];
-        if (components == null || !isGraphicsOptionsActive(components)) {
-            return false;
-        }
-
-        List<LayoutEntry> entries = new ArrayList<>();
-        collectVisibleLayout(components, -1, 0, 0, entries);
-        return !findVisibleDropdownGroups(entries).isEmpty();
+    public static boolean shouldSuppressNativeDropdownComponent(
+        Component component
+    ) {
+        return component != null
+            && suppressedNativeDropdownComponents.contains(component.id);
     }
 
     private static Map<Integer, DropdownGroup> findVisibleDropdownGroups(
@@ -501,91 +505,122 @@ public final class GraphicsOptionsUiInjector {
         return groups;
     }
 
-    private static void closeDropdownGroup(
+    private static void suppressDropdownGroup(
         List<LayoutEntry> entries,
-        DropdownGroup group
+        DropdownGroup group,
+        boolean persistHidden
     ) {
-        // The visible text rows are only part of the popup. Their tan box,
-        // borders and arrows are sibling/container components. Close the
-        // popup at that structural level whenever possible, then suppress any
-        // same-parent popup pieces in the popup rectangle as a fallback.
-        int closeBelowY = group.minY + 7;
-        int popupLeft = group.minX - 18;
-        int popupRight = group.maxX + 18;
-        int popupBottom = group.maxY + 10;
+        // The text rows tell us which popup is open, but the tan background,
+        // border and arrow pieces can begin at the selector's Y and extend
+        // below it. Suppress by structure + overlap, not by component top Y.
+        int closedRowBottom = group.minY + 18;
+        int popupBodyTop = group.minY + 8;
+        int popupLeft = group.minX - 24;
+        int popupRight = group.maxX + 24;
+        int popupBottom = group.maxY + 12;
 
-        Set<Integer> closedParents = new HashSet<>();
-        Set<Integer> topParents = new HashSet<>();
-
+        Set<Integer> groupParents = new HashSet<>();
         for (LayoutEntry entry : group.entries) {
-            if (entry.y <= closeBelowY
-                && entry.component != null
+            if (entry.component != null
                 && entry.component.overlayer != -1) {
-                topParents.add(entry.component.overlayer);
+                groupParents.add(entry.component.overlayer);
             }
         }
 
-        int closed = 0;
-
-        // First hide popup-only parent containers. This removes their text,
-        // background sprites, borders and mouse handling together.
-        for (LayoutEntry entry : group.entries) {
-            Component component = entry.component;
-            if (component == null
-                || entry.y <= closeBelowY
-                || component.overlayer == -1
-                || topParents.contains(component.overlayer)
-                || closedParents.contains(component.overlayer)) {
-                continue;
-            }
-
-            Component parent = InterfaceList.getComponent(
-                component.overlayer
-            );
-            if (parent != null && parent.type == 0 && !parent.hidden) {
-                parent.hidden = true;
-                InterfaceList.redraw(parent);
-                closedParents.add(component.overlayer);
-                closed++;
-            }
-        }
-
-        // Some cache dropdowns put the closed row and popup pieces under one
-        // parent. In that case suppress every popup-region sibling, not just
-        // its text, so no empty tan rectangles remain.
+        int suppressed = 0;
         for (LayoutEntry entry : entries) {
             Component component = entry.component;
             if (component == null
-                || component.hidden
-                || entry.y <= closeBelowY
-                || entry.y > popupBottom
-                || entry.x + Math.max(1, component.width) < popupLeft
-                || entry.x > popupRight) {
+                || component.clientCode >= CLIENT_CODE_SELECTOR_HIT
+                    && component.clientCode <= CLIENT_CODE_LABEL_TEXT) {
                 continue;
             }
 
-            boolean sameSharedParent =
-                component.overlayer != -1
-                    && topParents.contains(component.overlayer);
-            boolean directPopupPiece =
-                group.entries.contains(entry);
+            int width = Math.max(1, component.width);
+            int height = Math.max(1, component.height);
+            int right = entry.x + width;
+            int bottom = entry.y + height;
 
-            if (sameSharedParent || directPopupPiece) {
+            boolean horizontalOverlap =
+                right >= popupLeft && entry.x <= popupRight;
+            boolean popupBodyOverlap =
+                bottom > popupBodyTop && entry.y <= popupBottom;
+
+            if (!horizontalOverlap || !popupBodyOverlap) {
+                continue;
+            }
+
+            boolean directRow = group.entries.contains(entry);
+            boolean relatedByParent =
+                belongsToDropdownParents(component, groupParents);
+
+            if (!directRow && !relatedByParent) {
+                continue;
+            }
+
+            // Preserve only compact pieces belonging to the normal closed
+            // selector row. A tall background that starts on this row but
+            // extends into the popup body is popup chrome and must disappear.
+            boolean compactClosedRowPiece =
+                entry.y <= group.minY + 7
+                    && bottom <= closedRowBottom
+                    && height <= 24
+                    && !directRow;
+
+            if (compactClosedRowPiece) {
+                continue;
+            }
+
+            // Preserve the first text row itself; Modern rendering supplies
+            // the closed selector box/value. All following rows are popup.
+            if (directRow && entry.y <= group.minY + 7) {
+                continue;
+            }
+
+            if (suppressedNativeDropdownComponents.add(component.id)) {
+                suppressed++;
+            }
+
+            if (persistHidden && !component.hidden) {
                 component.hidden = true;
                 InterfaceList.redraw(component);
-                closed++;
             }
         }
 
-        if (closed > 0) {
+        if (suppressed > 0) {
             DisplayDebug.log(
-                "GRAPHICS_OPTIONS closed stale dropdown group="
+                "GRAPHICS_OPTIONS suppress stale dropdown group="
                     + group.groupKey
-                    + " pieces=" + closed
-                    + " parents=" + closedParents.size()
+                    + " components=" + suppressed
+                    + " persistent=" + persistHidden
                     + " anchorY=" + group.minY
             );
         }
+    }
+
+    private static boolean belongsToDropdownParents(
+        Component component,
+        Set<Integer> groupParents
+    ) {
+        if (component == null || groupParents.isEmpty()) {
+            return false;
+        }
+
+        int parentId = component.overlayer;
+        int depth = 0;
+        while (parentId != -1 && depth++ < 8) {
+            if (groupParents.contains(parentId)) {
+                return true;
+            }
+
+            Component parent = InterfaceList.getComponent(parentId);
+            if (parent == null || parent.overlayer == parentId) {
+                break;
+            }
+            parentId = parent.overlayer;
+        }
+
+        return false;
     }
 
     public static void closeAllNativeDropdowns() {
@@ -593,11 +628,13 @@ public final class GraphicsOptionsUiInjector {
         if (InterfaceList.components == null
             || interfaceId < 0
             || interfaceId >= InterfaceList.components.length) {
+            nativeDropdownOpen = false;
             return;
         }
 
         Component[] components = InterfaceList.components[interfaceId];
         if (components == null || !isGraphicsOptionsActive(components)) {
+            nativeDropdownOpen = false;
             return;
         }
 
@@ -606,18 +643,28 @@ public final class GraphicsOptionsUiInjector {
         Map<Integer, DropdownGroup> groups =
             findVisibleDropdownGroups(entries);
 
+        suppressedNativeDropdownComponents.clear();
         for (DropdownGroup group : groups.values()) {
-            closeDropdownGroup(entries, group);
+            suppressDropdownGroup(entries, group, true);
         }
 
         previousVisibleDropdownGroups.clear();
         lastVisibleDropdownGroup = -1;
+        nativeDropdownOpen = false;
     }
 
     public static boolean shouldSuppressHiddenComponent(
         Component component
     ) {
-        if (component == null || !component.hidden) {
+        if (component == null) {
+            return false;
+        }
+
+        if (shouldSuppressNativeDropdownComponent(component)) {
+            return true;
+        }
+
+        if (!component.hidden) {
             return false;
         }
 
