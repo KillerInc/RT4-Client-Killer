@@ -389,6 +389,7 @@ public final class GraphicsOptionsUiInjector {
         for (LayoutEntry entry : entries) {
             Component component = entry.component;
             if (component == null
+                || component.hidden
                 || component.type != 4
                 || component.clientCode >= CLIENT_CODE_SELECTOR_HIT
                     && component.clientCode <= CLIENT_CODE_LABEL_TEXT
@@ -504,19 +505,72 @@ public final class GraphicsOptionsUiInjector {
         List<LayoutEntry> entries,
         DropdownGroup group
     ) {
-        // Keep the selector's normal closed value at the top of the vertical
-        // run. Everything below that is popup content and can be hidden
-        // without touching the selector itself.
+        // The visible text rows are only part of the popup. Their tan box,
+        // borders and arrows are sibling/container components. Close the
+        // popup at that structural level whenever possible, then suppress any
+        // same-parent popup pieces in the popup rectangle as a fallback.
         int closeBelowY = group.minY + 7;
-        int closed = 0;
+        int popupLeft = group.minX - 18;
+        int popupRight = group.maxX + 18;
+        int popupBottom = group.maxY + 10;
+
+        Set<Integer> closedParents = new HashSet<>();
+        Set<Integer> topParents = new HashSet<>();
 
         for (LayoutEntry entry : group.entries) {
-            if (entry.y <= closeBelowY) {
+            if (entry.y <= closeBelowY
+                && entry.component != null
+                && entry.component.overlayer != -1) {
+                topParents.add(entry.component.overlayer);
+            }
+        }
+
+        int closed = 0;
+
+        // First hide popup-only parent containers. This removes their text,
+        // background sprites, borders and mouse handling together.
+        for (LayoutEntry entry : group.entries) {
+            Component component = entry.component;
+            if (component == null
+                || entry.y <= closeBelowY
+                || component.overlayer == -1
+                || topParents.contains(component.overlayer)
+                || closedParents.contains(component.overlayer)) {
                 continue;
             }
 
+            Component parent = InterfaceList.getComponent(
+                component.overlayer
+            );
+            if (parent != null && parent.type == 0 && !parent.hidden) {
+                parent.hidden = true;
+                InterfaceList.redraw(parent);
+                closedParents.add(component.overlayer);
+                closed++;
+            }
+        }
+
+        // Some cache dropdowns put the closed row and popup pieces under one
+        // parent. In that case suppress every popup-region sibling, not just
+        // its text, so no empty tan rectangles remain.
+        for (LayoutEntry entry : entries) {
             Component component = entry.component;
-            if (component != null && !component.hidden) {
+            if (component == null
+                || component.hidden
+                || entry.y <= closeBelowY
+                || entry.y > popupBottom
+                || entry.x + Math.max(1, component.width) < popupLeft
+                || entry.x > popupRight) {
+                continue;
+            }
+
+            boolean sameSharedParent =
+                component.overlayer != -1
+                    && topParents.contains(component.overlayer);
+            boolean directPopupPiece =
+                group.entries.contains(entry);
+
+            if (sameSharedParent || directPopupPiece) {
                 component.hidden = true;
                 InterfaceList.redraw(component);
                 closed++;
@@ -527,10 +581,48 @@ public final class GraphicsOptionsUiInjector {
             DisplayDebug.log(
                 "GRAPHICS_OPTIONS closed stale dropdown group="
                     + group.groupKey
-                    + " rows=" + closed
+                    + " pieces=" + closed
+                    + " parents=" + closedParents.size()
                     + " anchorY=" + group.minY
             );
         }
+    }
+
+    public static void closeAllNativeDropdowns() {
+        int interfaceId = activeGraphicsOptionsInterfaceId;
+        if (InterfaceList.components == null
+            || interfaceId < 0
+            || interfaceId >= InterfaceList.components.length) {
+            return;
+        }
+
+        Component[] components = InterfaceList.components[interfaceId];
+        if (components == null || !isGraphicsOptionsActive(components)) {
+            return;
+        }
+
+        List<LayoutEntry> entries = new ArrayList<>();
+        collectVisibleLayout(components, -1, 0, 0, entries);
+        Map<Integer, DropdownGroup> groups =
+            findVisibleDropdownGroups(entries);
+
+        for (DropdownGroup group : groups.values()) {
+            closeDropdownGroup(entries, group);
+        }
+
+        previousVisibleDropdownGroups.clear();
+        lastVisibleDropdownGroup = -1;
+    }
+
+    public static boolean shouldSuppressHiddenComponent(
+        Component component
+    ) {
+        if (component == null || !component.hidden) {
+            return false;
+        }
+
+        int interfaceId = component.id >>> 16;
+        return interfaceId == activeGraphicsOptionsInterfaceId;
     }
 
     private static boolean isGraphicsOptionsPageLabel(String text) {
