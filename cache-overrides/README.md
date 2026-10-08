@@ -24,11 +24,16 @@ vanilla baseline. During development it was round-trip tested against all
 31,622 decoded interface components from the original cache with zero byte
 differences.
 
-Current Graphics Options test:
+Current Graphics Options override:
 - `3/744/104` is restored to the original **Texture detail** component.
-- `3/744/434` is a new empty-slot container in the fifth advanced-options column.
-- `3/744/435` is a new cache-defined **Modern UI** label inside that container.
+- `3/744/434` is the new Modern UI container in the fifth advanced-options column.
+- `3/744/435` is the cache-defined **Modern UI** label.
+- `3/744/436-438` are the native selector left/right/fill sprite pieces.
+- `3/744/439` is the cache-defined selector hit area.
+- `3/744/440` is the cache-defined Standard UI value text (`No`).
 
-The new files intentionally stop at a label for this test. No Java selector is
-being reintroduced. Once the new-component path is visually confirmed, the
-dropdown/value/script pieces can be added as cache-defined components.
+The selector uses the same native sprite IDs and geometry pattern as the
+revision-530 Graphics Options dropdowns. Killer client behavior only owns the
+new selector's two-state popup and maps No/Yes to the existing Modern UI
+preference. Standard mode therefore remains cache-rendered while Modern mode
+replaces those tagged selector pieces with the scalable UI-pack control.
