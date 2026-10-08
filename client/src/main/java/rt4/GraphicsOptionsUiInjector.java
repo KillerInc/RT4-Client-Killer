@@ -27,6 +27,8 @@ public final class GraphicsOptionsUiInjector {
     private static final int COLUMN_DELTA_X = 130;
     private static final int STYLE_DELTA_Y = 30;
 
+    private static int activeGraphicsOptionsInterfaceId = -1;
+
     private GraphicsOptionsUiInjector() {
     }
 
@@ -41,11 +43,16 @@ public final class GraphicsOptionsUiInjector {
 
         boolean active = hasGraphicsOptionsSignature(entries);
         if (!active) {
+            if (activeGraphicsOptionsInterfaceId == interfaceId) {
+                activeGraphicsOptionsInterfaceId = -1;
+            }
             if (alreadyInjected(original)) {
                 InterfaceList.components[interfaceId] = removeInjected(original);
             }
             return;
         }
+
+        activeGraphicsOptionsInterfaceId = interfaceId;
 
         // Modern UI is a scalable renderer and is only exposed for the two
         // scalable HD display modes: resizable HD and fullscreen HD.
@@ -262,6 +269,226 @@ public final class GraphicsOptionsUiInjector {
         clone.yMode = 0;
 
         return clone;
+    }
+
+    /**
+     * Called from the normal CS2 setHidden opcode. Opening one Graphics
+     * Options dropdown closes every other native dropdown in that interface.
+     */
+    public static void onComponentHiddenChanged(
+        Component component,
+        boolean hidden
+    ) {
+        if (component == null || hidden || component.type != 0) {
+            return;
+        }
+
+        int interfaceId = component.id >>> 16;
+        if (InterfaceList.components == null
+            || interfaceId < 0
+            || interfaceId >= InterfaceList.components.length) {
+            return;
+        }
+
+        Component[] components = InterfaceList.components[interfaceId];
+        if (components == null
+            || !isGraphicsOptionsActive(components)
+            || !isNativeDropdownPopup(components, component)) {
+            return;
+        }
+
+        activeGraphicsOptionsInterfaceId = interfaceId;
+
+        for (Component candidate : components) {
+            if (candidate == null
+                || candidate == component
+                || candidate.type != 0
+                || candidate.hidden
+                || !isNativeDropdownPopup(components, candidate)) {
+                continue;
+            }
+
+            candidate.hidden = true;
+            InterfaceList.redraw(candidate);
+            DisplayDebug.log(
+                "GRAPHICS_OPTIONS dropdown exclusivity: closed "
+                    + candidate.id
+                    + " when opening "
+                    + component.id
+            );
+        }
+    }
+
+    public static boolean isNativeDropdownOpen() {
+        int interfaceId = activeGraphicsOptionsInterfaceId;
+        if (InterfaceList.components == null
+            || interfaceId < 0
+            || interfaceId >= InterfaceList.components.length) {
+            return false;
+        }
+
+        Component[] components = InterfaceList.components[interfaceId];
+        if (components == null) {
+            return false;
+        }
+
+        for (Component component : components) {
+            if (component != null
+                && component.type == 0
+                && !component.hidden
+                && isNativeDropdownPopup(components, component)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isNativeDropdownPopup(
+        Component[] components,
+        Component container
+    ) {
+        if (components == null
+            || container == null
+            || container.type != 0) {
+            return false;
+        }
+
+        int width = Math.max(1, container.width);
+        int height = Math.max(1, container.height);
+
+        if (width < 45 || width > 240 || height < 24 || height > 420) {
+            return false;
+        }
+
+        DropdownTextStats stats = new DropdownTextStats();
+        collectDropdownTextStats(
+            components,
+            container.id,
+            stats,
+            0
+        );
+        if (container.createdComponents != null) {
+            collectDropdownTextStats(
+                container.createdComponents,
+                container.id,
+                stats,
+                0
+            );
+        }
+
+        return stats.valueCount >= 2 && !stats.hasPageLabel;
+    }
+
+    private static void collectDropdownTextStats(
+        Component[] components,
+        int layer,
+        DropdownTextStats stats,
+        int depth
+    ) {
+        if (components == null || depth > 4) {
+            return;
+        }
+
+        for (Component component : components) {
+            if (component == null || component.overlayer != layer) {
+                continue;
+            }
+
+            if (component.type == 4
+                && component.text != null
+                && component.text.length() > 0) {
+                String normalized =
+                    normalizeDropdownText(component.text.toString());
+                if (!normalized.isEmpty()) {
+                    if (isGraphicsOptionsPageLabel(normalized)) {
+                        stats.hasPageLabel = true;
+                    } else {
+                        stats.valueCount++;
+                    }
+                }
+            }
+
+            if (component.type == 0) {
+                collectDropdownTextStats(
+                    components,
+                    component.id,
+                    stats,
+                    depth + 1
+                );
+                if (component.createdComponents != null) {
+                    collectDropdownTextStats(
+                        component.createdComponents,
+                        component.id,
+                        stats,
+                        depth + 1
+                    );
+                }
+            }
+        }
+    }
+
+    private static boolean isGraphicsOptionsPageLabel(String text) {
+        return text.equals("graphics options")
+            || text.equals("display modes")
+            || text.equals("advanced options")
+            || text.equals("brightness")
+            || text.equals("visible levels")
+            || text.equals("remove roofs")
+            || text.equals("ground decoration")
+            || text.equals("texture detail")
+            || text.equals("idle animations")
+            || text.equals("flickering effects")
+            || text.equals("ground textures")
+            || text.equals("character shadows")
+            || text.equals("scenery shadows")
+            || text.equals("lighting detail")
+            || text.equals("water detail")
+            || text.equals("fog")
+            || text.equals("anti-aliasing")
+            || text.equals("modern ui")
+            || text.equals("style editor")
+            || text.equals("main menu")
+            || text.equals("standard detail")
+            || text.equals("(small)")
+            || text.equals("(fullscreen)")
+            || text.startsWith("high detail");
+    }
+
+    private static String normalizeDropdownText(String text) {
+        if (text == null) {
+            return "";
+        }
+
+        StringBuilder out = new StringBuilder(text.length());
+        boolean insideTag = false;
+        for (int i = 0; i < text.length(); i++) {
+            char ch = text.charAt(i);
+            if (ch == '<') {
+                insideTag = true;
+                continue;
+            }
+            if (ch == '>' && insideTag) {
+                insideTag = false;
+                continue;
+            }
+            if (!insideTag) {
+                out.append(
+                    ch == '\n' || ch == '\r' || ch == '\t'
+                        ? ' '
+                        : ch
+                );
+            }
+        }
+
+        return out.toString()
+            .trim()
+            .toLowerCase(Locale.ROOT)
+            .replaceAll("\\s+", " ");
+    }
+
+    private static final class DropdownTextStats {
+        private int valueCount;
+        private boolean hasPageLabel;
     }
 
     public static boolean isGraphicsOptionsActive(Component[] components) {
