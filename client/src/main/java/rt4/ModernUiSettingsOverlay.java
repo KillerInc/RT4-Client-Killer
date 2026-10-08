@@ -57,6 +57,11 @@ public final class ModernUiSettingsOverlay {
         if (code == GraphicsOptionsUiInjector.CLIENT_CODE_SELECTOR_HIT
             || code == GraphicsOptionsUiInjector.CLIENT_CODE_SELECTOR_PIECE
             || code == GraphicsOptionsUiInjector.CLIENT_CODE_VALUE_TEXT) {
+            // The cache-defined Killer selector only exists while Graphics
+            // Options is visible, so seeing any of its pieces is a stronger
+            // signal than depending on the non-interactive title component
+            // being visited by the input walker.
+            graphicsOptionsSeen = true;
             includeSelectorBounds(
                 x,
                 y,
@@ -109,6 +114,11 @@ public final class ModernUiSettingsOverlay {
             && GraphicsOptionsUiInjector.isNativeDropdownOpen()) {
             GraphicsOptionsUiInjector.closeAllNativeDropdowns();
             dropdownOpen = true;
+            DisplayDebug.log(
+                "MODERN_UI selector opened after closing native dropdown"
+                    + " x=" + selectorX + " y=" + selectorY
+                    + " w=" + selectorW + " h=" + selectorH
+            );
             return;
         }
 
@@ -120,12 +130,14 @@ public final class ModernUiSettingsOverlay {
         if (dropdownOpen) {
             if (contains(mx, my, popupX, popupY, popupW, rowH)) {
                 dropdownOpen = false;
+                DisplayDebug.log("MODERN_UI selector chose enabled=false");
                 ModernUiManager.setEnabled(false);
                 return;
             }
 
             if (contains(mx, my, popupX, popupY + rowH, popupW, rowH)) {
                 dropdownOpen = false;
+                DisplayDebug.log("MODERN_UI selector chose enabled=true");
                 ModernUiManager.setEnabled(true);
                 return;
             }
@@ -138,6 +150,11 @@ public final class ModernUiSettingsOverlay {
 
         if (contains(mx, my, selectorX, selectorY, selectorW, selectorH)) {
             dropdownOpen = !dropdownOpen;
+            DisplayDebug.log(
+                "MODERN_UI selector popup " + (dropdownOpen ? "opened" : "closed")
+                    + " x=" + selectorX + " y=" + selectorY
+                    + " w=" + selectorW + " h=" + selectorH
+            );
             return;
         }
 
