@@ -23,7 +23,7 @@
   "outlineThickness": 0,
   "shadowColor": 0,
   "vFlip": false,
-  "hFlip": false,
+  "hFlip": true,
   "events": 0,
   "targetMask": 0,
   "optionBase": "",
