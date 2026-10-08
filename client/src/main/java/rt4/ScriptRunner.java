@@ -5919,6 +5919,10 @@ public final class ScriptRunner {
 								if (boolValue != component.hidden) {
 									component.hidden = boolValue;
 									InterfaceList.redraw(component);
+									GraphicsOptionsUiInjector.onComponentHiddenChanged(
+										component,
+										boolValue
+									);
 								}
 								if (component.createdComponentId == -1) {
 									DelayedStateChange.setComponentHiddenClient(component.id);
