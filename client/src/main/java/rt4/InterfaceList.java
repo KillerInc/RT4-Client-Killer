@@ -653,6 +653,7 @@ public class InterfaceList {
 						absY
 					);
 				}
+				ModernUiSettingsOverlay.observeComponent(component, absX, absY);
 				@Pc(61) int left;
 				@Pc(63) int top;
 				@Pc(65) int right;
