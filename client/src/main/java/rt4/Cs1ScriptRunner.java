@@ -298,6 +298,10 @@ public class Cs1ScriptRunner {
 
 		for (@Pc(18) int i = 0; i < components.length; i++) {
 			@Pc(30) Component component = components[i];
+			if (GraphicsOptionsUiInjector.isModernUiControl(component)
+				&& !ModernUiManager.isSupportedDisplayMode()) {
+				continue;
+			}
 			if (component != null && (component.overlayer == layer || layer == 0xabcdabcd && component == draggedComponent)) {
 				@Pc(57) int rectangle;
 				if (parentRectangle == -1) {

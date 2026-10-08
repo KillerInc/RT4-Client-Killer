@@ -899,6 +899,10 @@ public final class GraphicsOptionsUiInjector {
         return cleaned;
     }
 
+    public static boolean isModernUiControl(Component component) {
+        return isInjected(component);
+    }
+
     private static boolean isInjected(Component component) {
         if (component == null) {
             return false;

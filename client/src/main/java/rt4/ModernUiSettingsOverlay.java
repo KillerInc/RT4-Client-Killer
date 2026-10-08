@@ -35,11 +35,17 @@ public final class ModernUiSettingsOverlay {
         selectorRight = Integer.MIN_VALUE;
         selectorBottom = Integer.MIN_VALUE;
 
-        GraphicsOptionsUiInjector.normalizeNativeDropdowns();
+        if (ModernUiManager.isSupportedDisplayMode()) {
+            GraphicsOptionsUiInjector.normalizeNativeDropdowns();
+        } else {
+            dropdownOpen = false;
+        }
     }
 
     public static void afterInterfaceScripts() {
-        GraphicsOptionsUiInjector.normalizeNativeDropdowns();
+        if (ModernUiManager.isSupportedDisplayMode()) {
+            GraphicsOptionsUiInjector.normalizeNativeDropdowns();
+        }
     }
 
     public static void observeComponent(Component component, int x, int y) {

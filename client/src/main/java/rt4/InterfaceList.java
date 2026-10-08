@@ -644,6 +644,10 @@ public class InterfaceList {
 		}
 		for (@Pc(1) int i = 0; i < children.length; i++) {
 			@Pc(9) Component component = children[i];
+			if (GraphicsOptionsUiInjector.isModernUiControl(component)
+				&& !ModernUiManager.isSupportedDisplayMode()) {
+				continue;
+			}
 			if (component != null && component.overlayer == overlayerId && (!component.if3 || component.type == 0 || component.hasEventHandlers || getServerActiveProperties(component).events != 0 || component == Cs1ScriptRunner.dragParentComponent || component.clientCode == 1338) && (!component.if3 || !isHidden(component))) {
 				@Pc(50) int absX = component.x + parentX;
 				@Pc(55) int absY = component.y + parentY;
