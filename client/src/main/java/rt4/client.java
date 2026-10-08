@@ -1240,6 +1240,7 @@ public final class client extends GameShell {
 											if (loop % 1500 == 0) {
 												topBannerRefresh();
 											}
+											ModernUiSettingsOverlay.afterInterfaceScripts();
 											return;
 										}
 										prioritySource = priorityRequest.source;
