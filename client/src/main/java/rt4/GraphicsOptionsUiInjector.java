@@ -384,13 +384,12 @@ public final class GraphicsOptionsUiInjector {
     private static Map<Integer, DropdownGroup> findVisibleDropdownGroups(
         List<LayoutEntry> entries
     ) {
-        Map<Integer, DropdownGroup> groups = new HashMap<>();
+        List<LayoutEntry> candidates = new ArrayList<>();
 
         for (LayoutEntry entry : entries) {
             Component component = entry.component;
             if (component == null
                 || component.type != 4
-                || component.overlayer == -1
                 || component.clientCode >= CLIENT_CODE_SELECTOR_HIT
                     && component.clientCode <= CLIENT_CODE_LABEL_TEXT
                 || component.text == null
@@ -407,28 +406,95 @@ public final class GraphicsOptionsUiInjector {
                 continue;
             }
 
-            DropdownGroup group = groups.get(component.overlayer);
-            if (group == null) {
-                group = new DropdownGroup(component.overlayer);
-                groups.put(component.overlayer, group);
-            }
-            group.include(entry);
+            candidates.add(entry);
         }
 
-        Set<Integer> rejected = new HashSet<>();
-        for (DropdownGroup group : groups.values()) {
-            // A dropdown popup is a compact vertical stack. This excludes the
-            // normal settings grid, whose values span several columns.
-            if (group.textCount < 2
-                || group.maxX - group.minX > 180
-                || group.maxY - group.minY < 10
-                || group.maxY - group.minY > 360) {
-                rejected.add(group.layerId);
-            }
-        }
+        // Popup lists are vertical runs of short values with almost identical
+        // X centers and roughly one text-line of Y separation. Closed values
+        // in the normal settings grid are ~60px apart vertically, so they do
+        // not form a run. This works whether Jagex attached the popup pieces
+        // to a dedicated overlayer or directly to the page.
+        candidates.sort(
+            Comparator.comparingInt(
+                (LayoutEntry e) ->
+                    e.x + Math.max(1, e.component.width) / 2
+            ).thenComparingInt(e -> e.y)
+        );
 
-        for (Integer layerId : rejected) {
-            groups.remove(layerId);
+        Map<Integer, DropdownGroup> groups = new HashMap<>();
+        Set<Component> assigned = new HashSet<>();
+
+        for (LayoutEntry seed : candidates) {
+            if (assigned.contains(seed.component)) {
+                continue;
+            }
+
+            int seedCenter =
+                seed.x + Math.max(1, seed.component.width) / 2;
+
+            List<LayoutEntry> column = new ArrayList<>();
+            for (LayoutEntry candidate : candidates) {
+                if (assigned.contains(candidate.component)) {
+                    continue;
+                }
+
+                int center =
+                    candidate.x
+                        + Math.max(1, candidate.component.width) / 2;
+                if (Math.abs(center - seedCenter) <= 24) {
+                    column.add(candidate);
+                }
+            }
+
+            column.sort(Comparator.comparingInt(e -> e.y));
+
+            int seedIndex = column.indexOf(seed);
+            if (seedIndex < 0) {
+                continue;
+            }
+
+            int first = seedIndex;
+            while (first > 0) {
+                LayoutEntry prev = column.get(first - 1);
+                LayoutEntry cur = column.get(first);
+                int gap = cur.y - prev.y;
+                if (gap < 0 || gap > 24) {
+                    break;
+                }
+                first--;
+            }
+
+            int last = seedIndex;
+            while (last + 1 < column.size()) {
+                LayoutEntry cur = column.get(last);
+                LayoutEntry next = column.get(last + 1);
+                int gap = next.y - cur.y;
+                if (gap < 0 || gap > 24) {
+                    break;
+                }
+                last++;
+            }
+
+            if (last - first + 1 < 2) {
+                assigned.add(seed.component);
+                continue;
+            }
+
+            DropdownGroup group = new DropdownGroup();
+            for (int i = first; i <= last; i++) {
+                LayoutEntry entry = column.get(i);
+                group.include(entry);
+                assigned.add(entry.component);
+            }
+
+            if (group.maxY - group.minY < 8
+                || group.maxY - group.minY > 360
+                || group.maxX - group.minX > 220) {
+                continue;
+            }
+
+            group.finishKey();
+            groups.put(group.groupKey, group);
         }
 
         return groups;
@@ -438,21 +504,19 @@ public final class GraphicsOptionsUiInjector {
         List<LayoutEntry> entries,
         DropdownGroup group
     ) {
-        // Keep the closed selector row itself (the topmost value/sprites) and
-        // hide only the popup rows below it. This works even when the cache
-        // uses one shared overlayer for the closed control and its popup.
+        // Keep the selector's normal closed value at the top of the vertical
+        // run. Everything below that is popup content and can be hidden
+        // without touching the selector itself.
         int closeBelowY = group.minY + 7;
         int closed = 0;
 
-        for (LayoutEntry entry : entries) {
-            Component component = entry.component;
-            if (component == null
-                || component.overlayer != group.layerId
-                || entry.y <= closeBelowY) {
+        for (LayoutEntry entry : group.entries) {
+            if (entry.y <= closeBelowY) {
                 continue;
             }
 
-            if (!component.hidden) {
+            Component component = entry.component;
+            if (component != null && !component.hidden) {
                 component.hidden = true;
                 InterfaceList.redraw(component);
                 closed++;
@@ -461,9 +525,10 @@ public final class GraphicsOptionsUiInjector {
 
         if (closed > 0) {
             DisplayDebug.log(
-                "GRAPHICS_OPTIONS closed stale dropdown layer="
-                    + group.layerId
+                "GRAPHICS_OPTIONS closed stale dropdown group="
+                    + group.groupKey
                     + " rows=" + closed
+                    + " anchorY=" + group.minY
             );
         }
     }
@@ -528,19 +593,15 @@ public final class GraphicsOptionsUiInjector {
     }
 
     private static final class DropdownGroup {
-        private final int layerId;
-        private int textCount;
+        private int groupKey = -1;
         private int minX = Integer.MAX_VALUE;
         private int minY = Integer.MAX_VALUE;
         private int maxX = Integer.MIN_VALUE;
         private int maxY = Integer.MIN_VALUE;
-
-        private DropdownGroup(int layerId) {
-            this.layerId = layerId;
-        }
+        private final List<LayoutEntry> entries = new ArrayList<>();
 
         private void include(LayoutEntry entry) {
-            textCount++;
+            entries.add(entry);
             minX = Math.min(minX, entry.x);
             minY = Math.min(minY, entry.y);
             maxX = Math.max(
@@ -551,6 +612,19 @@ public final class GraphicsOptionsUiInjector {
                 maxY,
                 entry.y + Math.max(1, entry.component.height)
             );
+        }
+
+        private void finishKey() {
+            LayoutEntry top = null;
+            for (LayoutEntry entry : entries) {
+                if (top == null
+                    || entry.y < top.y
+                    || entry.y == top.y
+                        && entry.x < top.x) {
+                    top = entry;
+                }
+            }
+            groupKey = top == null ? -1 : top.component.id;
         }
 
         private int distanceToClick() {
