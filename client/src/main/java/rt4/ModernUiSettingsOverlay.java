@@ -187,21 +187,15 @@ public final class ModernUiSettingsOverlay {
         int selectorW = selectorWidth();
         int selectorH = selectorHeight();
 
-        // Standard UI continues to draw the injected copy through the original
-        // renderer. Modern mode covers only our injected copy with pack art.
+        // Standard UI is now rendered entirely by the same native RT4
+        // sprite pieces as the surrounding Graphics Options dropdowns.
+        // Only Modern mode covers that cache-defined control with pack art.
         if (ModernUiManager.isEnabled()) {
             drawModernClosedSelector(
                 selectorX,
                 selectorY,
                 selectorW,
                 selectorH
-            );
-        } else {
-            drawNativeClosedSelector(
-                selectorX - 3,
-                selectorY - 2,
-                selectorW + 6,
-                selectorH + 4
             );
         }
 
@@ -341,34 +335,6 @@ public final class ModernUiSettingsOverlay {
         );
     }
 
-    private static void drawNativeClosedSelector(int x, int y, int width, int height) {
-        fill(x, y, width, height, 0xA99568);
-        outline(x, y, width, height, 0x29251C);
-        hline(x + 1, y + 1, Math.max(1, width - 2), 0xC7B07B);
-        hline(x + 1, y + height - 2, Math.max(1, width - 2), 0x6F5B3B);
-        vline(x + 1, y + 1, Math.max(1, height - 2), 0xC7B07B);
-        vline(x + width - 2, y + 1, Math.max(1, height - 2), 0x6F5B3B);
-
-        int splitX = x + Math.max(1, width - 17);
-        vline(splitX, y + 2, Math.max(1, height - 4), 0x6F5B3B);
-        int cx = x + width - 9;
-        int ay = y + Math.max(4, (height - 4) / 2);
-        hline(cx - 3, ay, 7, 0x2E2114);
-        hline(cx - 2, ay + 1, 5, 0x2E2114);
-        hline(cx - 1, ay + 2, 3, 0x2E2114);
-        hline(cx, ay + 3, 1, 0x2E2114);
-
-        if (Fonts.p12Full != null) {
-            Fonts.p12Full.renderCenter(
-                JagString.parse("No"),
-                x + Math.max(1, width - 17) / 2,
-                y + Math.min(height - 4, 14),
-                TEXT,
-                -1
-            );
-        }
-    }
-
     private static void drawNativePopup(int x, int y, int width, int height) {
         fill(x, y, width, height, 0x9B8458);
         outline(x, y, width, height, 0x29251C);
@@ -449,11 +415,5 @@ public final class ModernUiSettingsOverlay {
         }
     }
 
-    private static void vline(int x, int y, int height, int color) {
-        if (GlRenderer.enabled) {
-            GlRaster.drawVerticalLine(x, y, height, color);
-        } else {
-            SoftwareRaster.drawVerticalLine(x, y, height, color);
-        }
-    }
+
 }
