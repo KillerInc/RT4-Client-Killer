@@ -378,6 +378,139 @@ public final class GraphicsOptionsUiInjector {
         return nativeDropdownOpen;
     }
 
+    /**
+     * Copies the live text styling from the real Anti-aliasing dropdown value
+     * onto the cache-defined Modern UI value. Jagex does not store the visible
+     * value as a normal static text component: CS2 creates/configures a type-4
+     * child at runtime. Reusing that live style keeps our value pixel-matched
+     * with the surrounding native dropdowns without borrowing AA behavior.
+     */
+    public static void syncModernSelectorValueStyle() {
+        int interfaceId = activeGraphicsOptionsInterfaceId;
+        if (InterfaceList.components == null
+            || interfaceId < 0
+            || interfaceId >= InterfaceList.components.length) {
+            return;
+        }
+
+        Component[] components = InterfaceList.components[interfaceId];
+        if (components == null || !isGraphicsOptionsActive(components)) {
+            return;
+        }
+
+        Component modernValue = null;
+        for (Component component : components) {
+            if (component != null
+                && component.clientCode == CLIENT_CODE_VALUE_TEXT) {
+                modernValue = component;
+                break;
+            }
+        }
+        if (modernValue == null) {
+            return;
+        }
+
+        List<LayoutEntry> entries = new ArrayList<>();
+        collectVisibleLayout(components, -1, 0, 0, entries);
+
+        LayoutEntry antiLabel = findText(entries, "anti-alias");
+        if (antiLabel == null) {
+            return;
+        }
+
+        int aaCenterX =
+            antiLabel.x + Math.max(1, antiLabel.component.width) / 2;
+        int aaLabelY = antiLabel.y;
+        LayoutEntry template = null;
+
+        for (LayoutEntry entry : entries) {
+            Component component = entry.component;
+            if (component == antiLabel.component
+                || component == modernValue
+                || component.type != 4
+                || component.clientCode != 0
+                || component.text == null
+                || component.text.length() == 0) {
+                continue;
+            }
+
+            int centerX =
+                entry.x + Math.max(1, component.width) / 2;
+            int dx = Math.abs(centerX - aaCenterX);
+            int dy = entry.y - aaLabelY;
+
+            if (dx <= 72 && dy >= 5 && dy <= 44) {
+                if (template == null
+                    || Math.abs(entry.y - (aaLabelY + 18))
+                        < Math.abs(template.y - (aaLabelY + 18))) {
+                    template = entry;
+                }
+            }
+        }
+
+        if (template == null) {
+            return;
+        }
+
+        Component source = template.component;
+        boolean changed = false;
+
+        if (modernValue.font != source.font) {
+            modernValue.font = source.font;
+            changed = true;
+        }
+        if (modernValue.color != source.color) {
+            modernValue.color = source.color;
+            changed = true;
+        }
+        if (modernValue.activeColor != source.activeColor) {
+            modernValue.activeColor = source.activeColor;
+            changed = true;
+        }
+        if (modernValue.overColor != source.overColor) {
+            modernValue.overColor = source.overColor;
+            changed = true;
+        }
+        if (modernValue.activeOverColor != source.activeOverColor) {
+            modernValue.activeOverColor = source.activeOverColor;
+            changed = true;
+        }
+        if (modernValue.shadowed != source.shadowed) {
+            modernValue.shadowed = source.shadowed;
+            changed = true;
+        }
+        if (modernValue.halign != source.halign) {
+            modernValue.halign = source.halign;
+            changed = true;
+        }
+        if (modernValue.valign != source.valign) {
+            modernValue.valign = source.valign;
+            changed = true;
+        }
+        if (modernValue.vpadding != source.vpadding) {
+            modernValue.vpadding = source.vpadding;
+            changed = true;
+        }
+        if (modernValue.alpha != source.alpha) {
+            modernValue.alpha = source.alpha;
+            changed = true;
+        }
+
+        if (changed) {
+            InterfaceList.redraw(modernValue);
+            DisplayDebug.log(
+                "MODERN_UI selector adopted native dropdown text style"
+                    + " sourceId=" + source.id
+                    + " created=" + source.createdComponentId
+                    + " font=" + source.font
+                    + " color=" + source.color
+                    + " align=" + source.halign + "," + source.valign
+                    + " padding=" + source.vpadding
+                    + " shadowed=" + source.shadowed
+            );
+        }
+    }
+
     public static boolean shouldSuppressNativeDropdownComponent(
         Component component
     ) {
