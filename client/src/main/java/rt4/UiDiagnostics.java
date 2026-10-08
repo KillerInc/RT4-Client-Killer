@@ -138,7 +138,7 @@ public final class UiDiagnostics {
             "UI_CLICK graphicsOptions interface=" + interfaceId
                 + " button=" + Mouse.clickButton
                 + " click=" + Mouse.clickX + "," + Mouse.clickY
-                + " mouse=" + Mouse.x + "," + Mouse.y
+                + " mouse=" + Mouse.lastMouseX + "," + Mouse.lastMouseY
                 + " displayMode=" + DisplayDebug.modeName(DisplayMode.getWindowMode())
                 + " renderer=" + (GlRenderer.enabled ? "GL" : "SOFTWARE")
                 + " modernUi=" + ModernUiManager.isEnabled()
