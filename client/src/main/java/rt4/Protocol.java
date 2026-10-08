@@ -3489,6 +3489,10 @@ public class Protocol {
 		ptr.type = type;
 		ptr.interfaceId = interfaceId;
 		InterfaceList.openInterfaces.put(ptr, parentComponentId);
+		GraphicsOptionsUiInjector.onSubInterfaceOpened(
+			parentComponentId,
+			ptr
+		);
 		InterfaceList.resetAnimations(interfaceId);
 		@Pc(28) Component parent = InterfaceList.getComponent(parentComponentId);
 		if (parent != null) {
