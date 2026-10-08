@@ -5,8 +5,12 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Adds the Modern UI selector to the actual Graphics Options component tree.
@@ -28,6 +32,9 @@ public final class GraphicsOptionsUiInjector {
     private static final int STYLE_DELTA_Y = 30;
 
     private static int activeGraphicsOptionsInterfaceId = -1;
+    private static final Set<Integer> previousVisibleDropdownGroups =
+        new HashSet<>();
+    private static int lastVisibleDropdownGroup = -1;
 
     private GraphicsOptionsUiInjector() {
     }
@@ -272,114 +279,286 @@ public final class GraphicsOptionsUiInjector {
     }
 
     /**
-     * Graphics Options dropdowns are child interfaces, not hidden containers
-     * in the page itself. When RuneScape opens one child popup, close any
-     * previous child popup attached to the same Graphics Options interface.
+     * Normalizes the real cache-driven Graphics Options dropdowns.
+     *
+     * The popup rows are not one hidden container and they are not separate
+     * child interfaces. The cache toggles several text/sprite pieces under a
+     * shared overlayer. We therefore identify visible popup groups from their
+     * actual rendered component geometry and hide the stale popup rows when a
+     * different dropdown opens.
      */
-    public static void onSubInterfaceOpened(
-        int parentComponentId,
-        ComponentPointer opened
-    ) {
-        if (opened == null) {
-            return;
-        }
-
-        int parentInterfaceId = parentComponentId >>> 16;
-        if (parentInterfaceId != activeGraphicsOptionsInterfaceId) {
-            return;
-        }
-
+    public static void normalizeNativeDropdowns() {
+        int interfaceId = activeGraphicsOptionsInterfaceId;
         if (InterfaceList.components == null
-            || parentInterfaceId < 0
-            || parentInterfaceId >= InterfaceList.components.length
-            || InterfaceList.components[parentInterfaceId] == null
-            || !isGraphicsOptionsActive(
-                InterfaceList.components[parentInterfaceId]
-            )) {
+            || interfaceId < 0
+            || interfaceId >= InterfaceList.components.length) {
+            previousVisibleDropdownGroups.clear();
+            lastVisibleDropdownGroup = -1;
             return;
         }
 
-        List<ComponentPointer> stale = new ArrayList<>();
-        HashTableIterator iter =
-            new HashTableIterator(InterfaceList.openInterfaces);
+        Component[] components = InterfaceList.components[interfaceId];
+        if (components == null || !isGraphicsOptionsActive(components)) {
+            previousVisibleDropdownGroups.clear();
+            lastVisibleDropdownGroup = -1;
+            return;
+        }
 
-        for (ComponentPointer ptr =
-                 (ComponentPointer) iter.first();
-             ptr != null;
-             ptr = (ComponentPointer) iter.next()) {
-            if (ptr == opened) {
+        List<LayoutEntry> entries = new ArrayList<>();
+        collectVisibleLayout(components, -1, 0, 0, entries);
+
+        Map<Integer, DropdownGroup> groups =
+            findVisibleDropdownGroups(entries);
+
+        if (groups.isEmpty()) {
+            previousVisibleDropdownGroups.clear();
+            lastVisibleDropdownGroup = -1;
+            return;
+        }
+
+        int keep = -1;
+
+        // Prefer the group that became visible this tick.
+        for (DropdownGroup group : groups.values()) {
+            if (!previousVisibleDropdownGroups.contains(group.layerId)) {
+                if (keep == -1
+                    || group.distanceToClick()
+                        < groups.get(keep).distanceToClick()) {
+                    keep = group.layerId;
+                }
+            }
+        }
+
+        // Otherwise retain the group that was already authoritative.
+        if (keep == -1 && groups.containsKey(lastVisibleDropdownGroup)) {
+            keep = lastVisibleDropdownGroup;
+        }
+
+        // Final fallback: the popup closest to the user's last click.
+        if (keep == -1) {
+            for (DropdownGroup group : groups.values()) {
+                if (keep == -1
+                    || group.distanceToClick()
+                        < groups.get(keep).distanceToClick()) {
+                    keep = group.layerId;
+                }
+            }
+        }
+
+        if (groups.size() > 1 && keep != -1) {
+            for (DropdownGroup group : groups.values()) {
+                if (group.layerId == keep) {
+                    continue;
+                }
+                closeDropdownGroup(entries, group);
+            }
+        }
+
+        previousVisibleDropdownGroups.clear();
+        if (keep != -1) {
+            previousVisibleDropdownGroups.add(keep);
+            lastVisibleDropdownGroup = keep;
+        } else {
+            lastVisibleDropdownGroup = -1;
+        }
+    }
+
+    public static boolean isNativeDropdownOpen() {
+        int interfaceId = activeGraphicsOptionsInterfaceId;
+        if (InterfaceList.components == null
+            || interfaceId < 0
+            || interfaceId >= InterfaceList.components.length) {
+            return false;
+        }
+
+        Component[] components = InterfaceList.components[interfaceId];
+        if (components == null || !isGraphicsOptionsActive(components)) {
+            return false;
+        }
+
+        List<LayoutEntry> entries = new ArrayList<>();
+        collectVisibleLayout(components, -1, 0, 0, entries);
+        return !findVisibleDropdownGroups(entries).isEmpty();
+    }
+
+    private static Map<Integer, DropdownGroup> findVisibleDropdownGroups(
+        List<LayoutEntry> entries
+    ) {
+        Map<Integer, DropdownGroup> groups = new HashMap<>();
+
+        for (LayoutEntry entry : entries) {
+            Component component = entry.component;
+            if (component == null
+                || component.type != 4
+                || component.overlayer == -1
+                || component.clientCode >= CLIENT_CODE_SELECTOR_HIT
+                    && component.clientCode <= CLIENT_CODE_LABEL_TEXT
+                || component.text == null
+                || component.text.length() == 0
+                || component.width > 220
+                || component.height > 36) {
                 continue;
             }
 
-            int otherParentComponentId = (int) ptr.key;
-            if ((otherParentComponentId >>> 16)
-                == activeGraphicsOptionsInterfaceId) {
-                stale.add(ptr);
+            String text =
+                normalizeDropdownText(component.text.toString());
+
+            if (text.isEmpty() || isGraphicsOptionsPageLabel(text)) {
+                continue;
+            }
+
+            DropdownGroup group = groups.get(component.overlayer);
+            if (group == null) {
+                group = new DropdownGroup(component.overlayer);
+                groups.put(component.overlayer, group);
+            }
+            group.include(entry);
+        }
+
+        Set<Integer> rejected = new HashSet<>();
+        for (DropdownGroup group : groups.values()) {
+            // A dropdown popup is a compact vertical stack. This excludes the
+            // normal settings grid, whose values span several columns.
+            if (group.textCount < 2
+                || group.maxX - group.minX > 180
+                || group.maxY - group.minY < 10
+                || group.maxY - group.minY > 360) {
+                rejected.add(group.layerId);
             }
         }
 
-        for (ComponentPointer ptr : stale) {
-            DisplayDebug.log(
-                "GRAPHICS_OPTIONS closing previous dropdown child"
-                    + " parent=" + ptr.key
-                    + " interface=" + ptr.interfaceId
-                    + " for new parent=" + parentComponentId
-                    + " interface=" + opened.interfaceId
-            );
-            InterfaceList.closeInterface(true, ptr);
+        for (Integer layerId : rejected) {
+            groups.remove(layerId);
         }
+
+        return groups;
     }
 
-    /**
-     * Exact popup state used by the Modern UI selector. A native Graphics
-     * Options dropdown is open whenever a child interface is attached to a
-     * component belonging to the active Graphics Options page.
-     */
-    public static boolean isNativeDropdownOpen() {
-        if (activeGraphicsOptionsInterfaceId < 0) {
-            return false;
-        }
-
-        HashTableIterator iter =
-            new HashTableIterator(InterfaceList.openInterfaces);
-
-        for (ComponentPointer ptr =
-                 (ComponentPointer) iter.first();
-             ptr != null;
-             ptr = (ComponentPointer) iter.next()) {
-            int parentComponentId = (int) ptr.key;
-            if ((parentComponentId >>> 16)
-                == activeGraphicsOptionsInterfaceId) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    public static boolean isGraphicsOptionsDropdownInterface(
-        int interfaceId
+    private static void closeDropdownGroup(
+        List<LayoutEntry> entries,
+        DropdownGroup group
     ) {
-        if (activeGraphicsOptionsInterfaceId < 0) {
-            return false;
-        }
+        // Keep the closed selector row itself (the topmost value/sprites) and
+        // hide only the popup rows below it. This works even when the cache
+        // uses one shared overlayer for the closed control and its popup.
+        int closeBelowY = group.minY + 7;
+        int closed = 0;
 
-        HashTableIterator iter =
-            new HashTableIterator(InterfaceList.openInterfaces);
+        for (LayoutEntry entry : entries) {
+            Component component = entry.component;
+            if (component == null
+                || component.overlayer != group.layerId
+                || entry.y <= closeBelowY) {
+                continue;
+            }
 
-        for (ComponentPointer ptr =
-                 (ComponentPointer) iter.first();
-             ptr != null;
-             ptr = (ComponentPointer) iter.next()) {
-            int parentComponentId = (int) ptr.key;
-            if ((parentComponentId >>> 16)
-                    == activeGraphicsOptionsInterfaceId
-                && ptr.interfaceId == interfaceId) {
-                return true;
+            if (!component.hidden) {
+                component.hidden = true;
+                InterfaceList.redraw(component);
+                closed++;
             }
         }
 
-        return false;
+        if (closed > 0) {
+            DisplayDebug.log(
+                "GRAPHICS_OPTIONS closed stale dropdown layer="
+                    + group.layerId
+                    + " rows=" + closed
+            );
+        }
+    }
+
+    private static boolean isGraphicsOptionsPageLabel(String text) {
+        return text.equals("graphics options")
+            || text.equals("display modes")
+            || text.equals("advanced options")
+            || text.equals("brightness")
+            || text.equals("visible levels")
+            || text.equals("remove roofs")
+            || text.equals("ground decoration")
+            || text.equals("texture detail")
+            || text.equals("idle animations")
+            || text.equals("flickering effects")
+            || text.equals("ground textures")
+            || text.equals("character shadows")
+            || text.equals("scenery shadows")
+            || text.equals("lighting detail")
+            || text.equals("water detail")
+            || text.equals("fog")
+            || text.equals("anti-aliasing")
+            || text.equals("modern ui")
+            || text.equals("style editor")
+            || text.equals("main menu")
+            || text.equals("standard detail")
+            || text.equals("(small)")
+            || text.equals("(fullscreen)")
+            || text.startsWith("high detail");
+    }
+
+    private static String normalizeDropdownText(String text) {
+        if (text == null) {
+            return "";
+        }
+
+        StringBuilder out = new StringBuilder(text.length());
+        boolean insideTag = false;
+        for (int i = 0; i < text.length(); i++) {
+            char ch = text.charAt(i);
+            if (ch == '<') {
+                insideTag = true;
+                continue;
+            }
+            if (ch == '>' && insideTag) {
+                insideTag = false;
+                continue;
+            }
+            if (!insideTag) {
+                out.append(
+                    ch == '\n' || ch == '\r' || ch == '\t'
+                        ? ' '
+                        : ch
+                );
+            }
+        }
+
+        return out.toString()
+            .trim()
+            .toLowerCase(Locale.ROOT)
+            .replaceAll("\\s+", " ");
+    }
+
+    private static final class DropdownGroup {
+        private final int layerId;
+        private int textCount;
+        private int minX = Integer.MAX_VALUE;
+        private int minY = Integer.MAX_VALUE;
+        private int maxX = Integer.MIN_VALUE;
+        private int maxY = Integer.MIN_VALUE;
+
+        private DropdownGroup(int layerId) {
+            this.layerId = layerId;
+        }
+
+        private void include(LayoutEntry entry) {
+            textCount++;
+            minX = Math.min(minX, entry.x);
+            minY = Math.min(minY, entry.y);
+            maxX = Math.max(
+                maxX,
+                entry.x + Math.max(1, entry.component.width)
+            );
+            maxY = Math.max(
+                maxY,
+                entry.y + Math.max(1, entry.component.height)
+            );
+        }
+
+        private int distanceToClick() {
+            int cx = (minX + maxX) / 2;
+            int cy = minY;
+            return Math.abs(Mouse.clickX - cx)
+                + Math.abs(Mouse.clickY - cy);
+        }
     }
 
     public static boolean isGraphicsOptionsActive(Component[] components) {
