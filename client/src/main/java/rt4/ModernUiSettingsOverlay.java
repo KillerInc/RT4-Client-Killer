@@ -85,13 +85,10 @@ public final class ModernUiSettingsOverlay {
             dropdownOpen = false;
             return;
         }
-        if (GraphicsOptionsUiInjector.isNativeDropdownOpen()) {
-            // A vanilla popup owns the foreground until it closes. This keeps
-            // the injected Modern UI selector from accepting clicks through it.
-            dropdownOpen = false;
-            return;
-        }
         if (!graphicsOptionsSeen || !selectorSeen || Mouse.clickButton != 1) {
+            if (GraphicsOptionsUiInjector.isNativeDropdownOpen()) {
+                dropdownOpen = false;
+            }
             return;
         }
 
@@ -104,6 +101,21 @@ public final class ModernUiSettingsOverlay {
 
         int mx = Mouse.clickX;
         int my = Mouse.clickY;
+
+        // The Modern selector is allowed to take ownership when explicitly
+        // clicked. Close any vanilla popup first so our popup never stacks on
+        // top of a base-game dropdown.
+        if (contains(mx, my, selectorX, selectorY, selectorW, selectorH)
+            && GraphicsOptionsUiInjector.isNativeDropdownOpen()) {
+            GraphicsOptionsUiInjector.closeAllNativeDropdowns();
+            dropdownOpen = true;
+            return;
+        }
+
+        if (GraphicsOptionsUiInjector.isNativeDropdownOpen()) {
+            dropdownOpen = false;
+            return;
+        }
 
         if (dropdownOpen) {
             if (contains(mx, my, popupX, popupY, popupW, rowH)) {
