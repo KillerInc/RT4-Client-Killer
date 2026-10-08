@@ -56,6 +56,10 @@ jobs:
           cp client/build/distributions/KillerModernUI-Modder-Template.uipack KillerModernUI-Modder-Template.uipack
           sha256sum KillerModernUI-Modder-Template.uipack | awk '{print $1}' > KillerModernUI-Modder-Template.uipack.sha256
 
+          test -d cache-overrides/cache
+          (cd cache-overrides && zip -r "$GITHUB_WORKSPACE/killer-overrides.zip" cache)
+          sha256sum killer-overrides.zip | awk '{print $1}' > killer-overrides.zip.sha256
+
       - uses: actions/upload-artifact@v5
         with:
           name: osrs-client-killer
@@ -69,6 +73,8 @@ jobs:
             KillerModernUI.uipack.sha256
             KillerModernUI-Modder-Template.uipack
             KillerModernUI-Modder-Template.uipack.sha256
+            killer-overrides.zip
+            killer-overrides.zip.sha256
 
       - name: Publish rolling preview
         shell: bash
@@ -92,7 +98,7 @@ jobs:
             gh release create "$tag" --target "$GITHUB_SHA" --title "OSRS Client Killer Edition - Modern Client Preview" --notes "$notes" --prerelease
           fi
 
-          gh release upload "$tag" osrs-client-killer.jar osrs-client-killer.jar.sha256 KillerModernUI.uipack KillerModernUI.uipack.sha256 KillerModernUI-Modder-Template.uipack KillerModernUI-Modder-Template.uipack.sha256 --clobber
+          gh release upload "$tag" osrs-client-killer.jar osrs-client-killer.jar.sha256 killer-overrides.zip killer-overrides.zip.sha256 KillerModernUI.uipack KillerModernUI.uipack.sha256 KillerModernUI-Modder-Template.uipack KillerModernUI-Modder-Template.uipack.sha256 --clobber
 
       - name: Publish Beta 2
         shell: bash
@@ -116,4 +122,4 @@ jobs:
             gh release create "$tag" --target "$GITHUB_SHA" --title "BETA - OSRS Client Killer Edition - Beta 2" --notes "$notes"
           fi
 
-          gh release upload "$tag" 2009scape.jar 2009scape.jar.sha256 2009scape_beta2.zip KillerModernUI.uipack KillerModernUI.uipack.sha256 KillerModernUI-Modder-Template.uipack KillerModernUI-Modder-Template.uipack.sha256 --clobber
+          gh release upload "$tag" 2009scape.jar 2009scape.jar.sha256 2009scape_beta2.zip killer-overrides.zip killer-overrides.zip.sha256 KillerModernUI.uipack KillerModernUI.uipack.sha256 KillerModernUI-Modder-Template.uipack KillerModernUI-Modder-Template.uipack.sha256 --clobber
