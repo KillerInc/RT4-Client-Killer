@@ -1153,6 +1153,7 @@ public class Cs1ScriptRunner {
 			renderComponent(0, deferredDragRenderY, deferredDragRenderX, deferredDragComponents, GameShell.canvasWidth, -1412584499, 0, GameShell.canvasHeight, dragParentComponent.rectangle);
 			deferredDragComponents = null;
 		}
+		ModernUiSettingsOverlay.render();
 		ModernUiReloadOverlay.render();
 		ModernUiStyleEditorOverlay.render();
 	}
