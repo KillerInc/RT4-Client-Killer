@@ -1159,10 +1159,13 @@ public final class client extends GameShell {
 			InterfaceList.keyChars[InterfaceList.keyQueueSize] = Keyboard.keyChar;
 		}
 		Protocol.sceneDelta++;
+		ModernUiSettingsOverlay.beginFrame();
 		if (InterfaceList.topLevelInterface != -1) {
 			InterfaceList.processSubInterface(0, 0, 0, GameShell.canvasWidth, InterfaceList.topLevelInterface, 0, GameShell.canvasHeight);
 			UiDiagnostics.logGraphicsOptionsClick();
 		}
+		ModernUiSettingsOverlay.afterInterfaceScripts();
+		ModernUiSettingsOverlay.processInput();
 		InterfaceList.transmitTimer++;
 		if (GlRenderer.enabled) {
 			nextNpc:
