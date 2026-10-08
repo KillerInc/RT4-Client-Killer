@@ -34,11 +34,12 @@ public final class ModernUiSettingsOverlay {
         selectorY = Integer.MAX_VALUE;
         selectorRight = Integer.MIN_VALUE;
         selectorBottom = Integer.MIN_VALUE;
+
+        GraphicsOptionsUiInjector.normalizeNativeDropdowns();
     }
 
     public static void afterInterfaceScripts() {
-        // Native dropdown exclusivity is enforced directly from the base-game
-        // CS2 setHidden path in GraphicsOptionsUiInjector.
+        GraphicsOptionsUiInjector.normalizeNativeDropdowns();
     }
 
     public static void observeComponent(Component component, int x, int y) {
