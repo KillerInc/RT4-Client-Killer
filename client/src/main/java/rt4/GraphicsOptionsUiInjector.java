@@ -320,11 +320,11 @@ public final class GraphicsOptionsUiInjector {
 
         // Prefer the group that became visible this tick.
         for (DropdownGroup group : groups.values()) {
-            if (!previousVisibleDropdownGroups.contains(group.layerId)) {
+            if (!previousVisibleDropdownGroups.contains(group.groupKey)) {
                 if (keep == -1
                     || group.distanceToClick()
                         < groups.get(keep).distanceToClick()) {
-                    keep = group.layerId;
+                    keep = group.groupKey;
                 }
             }
         }
@@ -340,14 +340,14 @@ public final class GraphicsOptionsUiInjector {
                 if (keep == -1
                     || group.distanceToClick()
                         < groups.get(keep).distanceToClick()) {
-                    keep = group.layerId;
+                    keep = group.groupKey;
                 }
             }
         }
 
         if (groups.size() > 1 && keep != -1) {
             for (DropdownGroup group : groups.values()) {
-                if (group.layerId == keep) {
+                if (group.groupKey == keep) {
                     continue;
                 }
                 closeDropdownGroup(entries, group);
