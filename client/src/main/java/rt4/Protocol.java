@@ -1731,6 +1731,10 @@ public class Protocol {
 			if (src != null) {
 				src.unlink();
 				InterfaceList.openInterfaces.put(src, target);
+				GraphicsOptionsUiInjector.onSubInterfaceOpened(
+					target,
+					src
+				);
 			}
 			@Pc(3490) Component component = InterfaceList.getComponent(source);
 			if (component != null) {
