@@ -205,6 +205,12 @@ public final class ModernUiRenderer {
             if (component.if3 && InterfaceList.isHidden(component)) {
                 continue;
             }
+            if (graphicsOptionsDepth > 0
+                && GraphicsOptionsUiInjector.shouldSuppressHiddenComponent(
+                    component
+                )) {
+                continue;
+            }
             if (component.type == 0
                 && !component.if3
                 && InterfaceList.isHidden(component)
