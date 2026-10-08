@@ -415,7 +415,7 @@ public final class client extends GameShell {
 		if (prefetchAll) {
 			js5Providers[archive].prefetchAll();
 		}
-		return new Js5(js5Providers[archive], discardPacked, discardUnpacked);
+		return new Js5(js5Providers[archive], discardPacked, discardUnpacked, archive);
 	}
 
 	@OriginalMember(owner = "client!je", name = "h", descriptor = "(I)V")
@@ -1161,7 +1161,7 @@ public final class client extends GameShell {
 		Protocol.sceneDelta++;
 		if (InterfaceList.topLevelInterface != -1) {
 			InterfaceList.processSubInterface(0, 0, 0, GameShell.canvasWidth, InterfaceList.topLevelInterface, 0, GameShell.canvasHeight);
-			ModernUiSettingsOverlay.processInput();
+			UiDiagnostics.logGraphicsOptionsClick();
 		}
 		InterfaceList.transmitTimer++;
 		if (GlRenderer.enabled) {
@@ -1240,7 +1240,6 @@ public final class client extends GameShell {
 											if (loop % 1500 == 0) {
 												topBannerRefresh();
 											}
-											ModernUiSettingsOverlay.afterInterfaceScripts();
 											return;
 										}
 										prioritySource = priorityRequest.source;

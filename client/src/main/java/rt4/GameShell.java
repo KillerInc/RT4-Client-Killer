@@ -469,7 +469,12 @@ public abstract class GameShell extends Applet implements Runnable, FocusListene
 			focus = focusIn;
 		}
                 setWindowTitle();
-		this.mainLoop();
+		long diagnosticStart = System.nanoTime();
+		try {
+			this.mainLoop();
+		} finally {
+			ClientPerformanceDiagnostics.recordLogic(System.nanoTime() - diagnosticStart);
+		}
 	}
 
 	public static GraphicsDevice getCurrentDevice() {
@@ -518,7 +523,12 @@ public abstract class GameShell extends Applet implements Runnable, FocusListene
 				canvas.setLocation(leftMargin, topMargin);
 			}
 		}
-		this.mainRedraw();
+		long diagnosticStart = System.nanoTime();
+		try {
+			this.mainRedraw();
+		} finally {
+			ClientPerformanceDiagnostics.recordRender(System.nanoTime() - diagnosticStart);
+		}
 	}
 
 	@OriginalMember(owner = "client!rc", name = "f", descriptor = "(I)V")
@@ -648,6 +658,7 @@ public abstract class GameShell extends Applet implements Runnable, FocusListene
 				}
 			}
 		} catch (@Pc(198) Exception ex) {
+			DisplayDebug.log("CLIENT_CRASH main loop exception", ex);
 			TracingException.report(null, ex);
 			this.error("crash");
 		}

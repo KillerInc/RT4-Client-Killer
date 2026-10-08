@@ -205,12 +205,6 @@ public final class ModernUiRenderer {
             if (component.if3 && InterfaceList.isHidden(component)) {
                 continue;
             }
-            if (graphicsOptionsDepth > 0
-                && GraphicsOptionsUiInjector.shouldSuppressHiddenComponent(
-                    component
-                )) {
-                continue;
-            }
             if (component.type == 0
                 && !component.if3
                 && InterfaceList.isHidden(component)
@@ -238,7 +232,6 @@ public final class ModernUiRenderer {
 
             component.rectangleLoop = client.loop;
             component.rectangle = rectangle;
-            ModernUiSettingsOverlay.observeComponent(component, x, y);
 
             int effectiveClipLeft = clipLeft;
             int effectiveClipTop = clipTop;

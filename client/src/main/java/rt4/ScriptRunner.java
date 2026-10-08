@@ -2423,6 +2423,7 @@ public final class ScriptRunner {
 									ssp--;
 									str1 = stringStack[ssp];
 									if (!str1.strEquals(component.text)) {
+										UiDiagnostics.onTextChange(component, component.text, str1);
 										component.text = str1;
 										InterfaceList.redraw(component);
 									}
@@ -5917,6 +5918,7 @@ public final class ScriptRunner {
 								isp--;
 								boolValue = intStack[isp] == 1;
 								if (boolValue != component.hidden) {
+									UiDiagnostics.onHiddenChange(component, component.hidden, boolValue);
 									component.hidden = boolValue;
 									InterfaceList.redraw(component);
 								}

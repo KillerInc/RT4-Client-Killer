@@ -25,6 +25,8 @@ public final class Js5 {
 	@OriginalMember(owner = "client!ve", name = "i", descriptor = "Lclient!v;")
 	private final Js5ResourceProvider provider;
 
+	private final int archiveId;
+
 	@OriginalMember(owner = "client!ve", name = "c", descriptor = "Z")
 	private final boolean discardPacked;
 
@@ -33,9 +35,14 @@ public final class Js5 {
 
 	@OriginalMember(owner = "client!ve", name = "<init>", descriptor = "(Lclient!v;ZZ)V")
 	public Js5(@OriginalArg(0) Js5ResourceProvider provider, @OriginalArg(1) boolean discardPacked, @OriginalArg(2) boolean discardUnpacked) {
+		this(provider, discardPacked, discardUnpacked, -1);
+	}
+
+	public Js5(Js5ResourceProvider provider, boolean discardPacked, boolean discardUnpacked, int archiveId) {
 		this.provider = provider;
 		this.discardPacked = discardPacked;
 		this.discardUnpacked = discardUnpacked;
+		this.archiveId = archiveId;
 	}
 
 	@OriginalMember(owner = "client!ve", name = "a", descriptor = "(B)Z")
@@ -181,6 +188,10 @@ public final class Js5 {
 
 	@OriginalMember(owner = "client!ve", name = "a", descriptor = "(I[III)[B")
 	public final byte[] fetchFile(@OriginalArg(0) int group, @OriginalArg(1) int[] key, @OriginalArg(3) int file) {
+		byte[] override = CacheOverrideManager.read(this.archiveId, group, file);
+		if (override != null) {
+			return override;
+		}
 		if (!this.isFileValid(group, file)) {
 			return null;
 		}
@@ -224,6 +235,9 @@ public final class Js5 {
 
 	@OriginalMember(owner = "client!ve", name = "a", descriptor = "(BII)Z")
 	public final boolean isFileReady(@OriginalArg(1) int file, @OriginalArg(2) int group) {
+		if (CacheOverrideManager.hasFile(this.archiveId, group, file)) {
+			return true;
+		}
 		if (!this.isFileValid(group, file)) {
 			return false;
 		} else if (this.unpacked[group] != null && this.unpacked[group][file] != null) {
@@ -436,7 +450,8 @@ public final class Js5 {
 	private boolean isFileValid(@OriginalArg(0) int group, @OriginalArg(2) int file) {
 		if (!this.isIndexReady()) {
 			return false;
-		} else if (group >= 0 && file >= 0 && this.index.groupCapacities.length > group && this.index.groupCapacities[group] > file) {
+		} else if (group >= 0 && file >= 0 && this.index.groupCapacities.length > group
+			&& (this.index.groupCapacities[group] > file || CacheOverrideManager.hasFile(this.archiveId, group, file))) {
 			return true;
 		} else if (RAISE_EXCEPTIONS) {
 			throw new IllegalArgumentException(group + "," + file);
@@ -447,6 +462,10 @@ public final class Js5 {
 
 	@OriginalMember(owner = "client!ve", name = "b", descriptor = "(III)[B")
 	public final byte[] fetchFileNoDiscard(@OriginalArg(0) int file, @OriginalArg(1) int group) {
+		byte[] override = CacheOverrideManager.read(this.archiveId, group, file);
+		if (override != null) {
+			return override;
+		}
 		if (!this.isFileValid(group, file)) {
 			return null;
 		}
@@ -481,7 +500,8 @@ public final class Js5 {
 
 	@OriginalMember(owner = "client!ve", name = "a", descriptor = "(IB)I")
 	public final int getGroupCapacity(@OriginalArg(0) int group) {
-		return this.isGroupValid(group) ? this.index.groupCapacities[group] : 0;
+		int baseCapacity = this.isGroupValid(group) ? this.index.groupCapacities[group] : 0;
+		return CacheOverrideManager.getGroupCapacity(this.archiveId, group, baseCapacity);
 	}
 
 	@OriginalMember(owner = "client!ve", name = "f", descriptor = "(II)Z")

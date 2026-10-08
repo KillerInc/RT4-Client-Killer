@@ -159,14 +159,20 @@ public class InterfaceList {
 			return true;
 		}
 
+		long diagnosticStart = System.nanoTime();
 		if (interfaceProvider.isGroupReady(interfaceId)) {
 			@Pc(25) int fileCount = interfaceProvider.getGroupCapacity(interfaceId);
 			if (fileCount == 0) {
 				interfaceLoaded[interfaceId] = true;
+				UiDiagnostics.onInterfaceLoaded(interfaceId, null, System.nanoTime() - diagnosticStart);
 				return true;
 			}
-			if (components[interfaceId] == null) {
-				components[interfaceId] = new Component[fileCount];
+			if (components[interfaceId] == null || components[interfaceId].length < fileCount) {
+				Component[] expanded = new Component[fileCount];
+				if (components[interfaceId] != null) {
+					System.arraycopy(components[interfaceId], 0, expanded, 0, components[interfaceId].length);
+				}
+				components[interfaceId] = expanded;
 			}
 			for (@Pc(46) int i = 0; i < fileCount; i++) {
 				if (components[interfaceId][i] == null) {
@@ -174,15 +180,21 @@ public class InterfaceList {
 					if (data != null) {
 						@Pc(74) Component component = components[interfaceId][i] = new Component();
 						component.id = i + (interfaceId << 16);
-						if (data[0] == -1) {
-							component.decodeIf3(new Buffer(data));
-						} else {
-							component.decodeIf1(new Buffer(data));
+						try {
+							if (data[0] == -1) {
+								component.decodeIf3(new Buffer(data));
+							} else {
+								component.decodeIf1(new Buffer(data));
+							}
+						} catch (RuntimeException ex) {
+							UiDiagnostics.onComponentDecodeFailure(interfaceId, i, data, ex);
+							throw ex;
 						}
 					}
 				}
 			}
 			interfaceLoaded[interfaceId] = true;
+			UiDiagnostics.onInterfaceLoaded(interfaceId, components[interfaceId], System.nanoTime() - diagnosticStart);
 			return true;
 		} else {
 			return false;
@@ -632,9 +644,6 @@ public class InterfaceList {
 		}
 		for (@Pc(1) int i = 0; i < children.length; i++) {
 			@Pc(9) Component component = children[i];
-			if (GraphicsOptionsUiInjector.shouldSuppressHiddenComponent(component)) {
-				continue;
-			}
 			if (component != null && component.overlayer == overlayerId && (!component.if3 || component.type == 0 || component.hasEventHandlers || getServerActiveProperties(component).events != 0 || component == Cs1ScriptRunner.dragParentComponent || component.clientCode == 1338) && (!component.if3 || !isHidden(component))) {
 				@Pc(50) int absX = component.x + parentX;
 				@Pc(55) int absY = component.y + parentY;

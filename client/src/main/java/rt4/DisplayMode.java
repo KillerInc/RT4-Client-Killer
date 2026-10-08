@@ -300,13 +300,6 @@ public final class DisplayMode {
 		boolean modernSupportChanged =
 			(currentMode >= 2) != (actualMode >= 2);
 
-		if (LoginManager.loginScreenId >= 0
-			&& InterfaceList.components != null
-			&& LoginManager.loginScreenId < InterfaceList.components.length
-			&& InterfaceList.components[LoginManager.loginScreenId] != null) {
-			GraphicsOptionsUiInjector.inject(LoginManager.loginScreenId);
-		}
-
 		if (modernSupportChanged) {
 			ModernUiManager.requestReload(
 				actualMode >= 2

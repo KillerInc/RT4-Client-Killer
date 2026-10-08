@@ -376,7 +376,6 @@ public class Cs1ScriptRunner {
 						drawRight = temp1 >= clipRight ? clipRight : temp1;
 					}
 					if (!component.if3 || drawRight > drawLeft && drawTop < drawBottom) {
-						ModernUiSettingsOverlay.observeComponent(component, componentX, componentY);
 						@Pc(468) int temp3;
 						@Pc(503) int memory;
 						@Pc(514) int color;
@@ -1122,35 +1121,38 @@ public class Cs1ScriptRunner {
 
 	@OriginalMember(owner = "client!ag", name = "a", descriptor = "(IIIIIIIII)V")
 	public static void renderInterface(@OriginalArg(1) int interfaceId, @OriginalArg(2) int clipLeft, @OriginalArg(3) int clipRight, @OriginalArg(4) int parentX, @OriginalArg(5) int rectangle, @OriginalArg(6) int clipBottom, @OriginalArg(7) int clipTop, @OriginalArg(8) int parentY) {
-		if (InterfaceList.load(interfaceId)) {
-			GraphicsOptionsUiInjector.inject(interfaceId);
-		}
-		if (ModernUiManager.isEnabled()) {
-			ModernUiRenderer.renderInterface(interfaceId, clipLeft, clipRight, parentX, rectangle, clipBottom, clipTop, parentY);
-			return;
-		}
-		if (InterfaceList.load(interfaceId)) {
-			renderComponent(clipLeft, parentY, parentX, InterfaceList.components[interfaceId], clipRight, -1, clipTop, clipBottom, rectangle);
-		} else if (rectangle == -1) {
-			for (@Pc(27) int i = 0; i < 100; i++) {
-				InterfaceList.rectangleDirty[i] = true;
+		long diagnosticStart = System.nanoTime();
+		try {
+			boolean loaded = InterfaceList.load(interfaceId);
+			if (ModernUiManager.isEnabled()) {
+				if (loaded) {
+					ModernUiRenderer.renderInterface(interfaceId, clipLeft, clipRight, parentX, rectangle, clipBottom, clipTop, parentY);
+				}
+				return;
 			}
-		} else {
-			InterfaceList.rectangleDirty[rectangle] = true;
+			if (loaded) {
+				renderComponent(clipLeft, parentY, parentX, InterfaceList.components[interfaceId], clipRight, -1, clipTop, clipBottom, rectangle);
+			} else if (rectangle == -1) {
+				for (@Pc(27) int i = 0; i < 100; i++) {
+					InterfaceList.rectangleDirty[i] = true;
+				}
+			} else {
+				InterfaceList.rectangleDirty[rectangle] = true;
+			}
+		} finally {
+			ClientPerformanceDiagnostics.recordInterfaceRender(interfaceId, System.nanoTime() - diagnosticStart);
 		}
 	}
 
 	@OriginalMember(owner = "client!al", name = "a", descriptor = "(Z)V")
 	public static void renderTopLevelInterface() {
 		ModernUiManager.processPendingReload();
-		ModernUiSettingsOverlay.beginFrame();
 		deferredDragComponents = null;
 		renderInterface(InterfaceList.topLevelInterface, 0, GameShell.canvasWidth, 0, -1, GameShell.canvasHeight, 0, 0);
 		if (deferredDragComponents != null) {
 			renderComponent(0, deferredDragRenderY, deferredDragRenderX, deferredDragComponents, GameShell.canvasWidth, -1412584499, 0, GameShell.canvasHeight, dragParentComponent.rectangle);
 			deferredDragComponents = null;
 		}
-		ModernUiSettingsOverlay.render();
 		ModernUiReloadOverlay.render();
 		ModernUiStyleEditorOverlay.render();
 	}
@@ -1214,19 +1216,6 @@ public class Cs1ScriptRunner {
 	@OriginalMember(owner = "client!aa", name = "a", descriptor = "(BLclient!be;)V")
 	public static void applyClientCode(@OriginalArg(1) Component component) {
 		@Pc(16) int clientCode = component.clientCode;
-
-		if (clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_VALUE_TEXT) {
-			component.text = JagString.parse(ModernUiManager.isEnabled() ? "Yes" : "No");
-			component.activeText = component.text;
-			return;
-		}
-		if (clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_STYLE_TEXT) {
-			component.text = JagString.parse("Style Editor");
-			component.activeText = component.text;
-			component.color = ModernUiManager.isEnabled() ? 0x3B2B1B : 0x6D6658;
-			component.activeColor = component.color;
-			return;
-		}
 
 		if (clientCode == 324) {
 			if (cachedDefaultSpriteId == -1) {

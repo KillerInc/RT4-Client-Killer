@@ -14,6 +14,7 @@ public final class DisplayDebug {
     private static final Object LOCK = new Object();
     private static final SimpleDateFormat FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
     private static boolean headerWritten;
+    private static boolean uncaughtHandlerInstalled;
 
     private DisplayDebug() {}
 
@@ -27,8 +28,7 @@ public final class DisplayDebug {
         File logs = new File(base, "logs");
         if (!logs.exists()) logs.mkdirs();
         return new File[] {
-            new File(base, "display-debug.log"),
-            new File(logs, "display-debug.log")
+            new File(logs, "killer-client.log")
         };
     }
 
@@ -36,7 +36,7 @@ public final class DisplayDebug {
         if (headerWritten) return;
         headerWritten = true;
         out.println("============================================================");
-        out.println("OSRS Client Killer Edition - Display/HD diagnostic session");
+        out.println("OSRS Client Killer Edition - unified diagnostic session");
         out.println("Started: " + FORMAT.format(new Date()));
         out.println("java.version=" + System.getProperty("java.version"));
         out.println("java.vendor=" + System.getProperty("java.vendor"));
@@ -78,9 +78,19 @@ public final class DisplayDebug {
 
     public static void startup() {
         File base = getBaseDirectory();
+        if (!uncaughtHandlerInstalled) {
+            uncaughtHandlerInstalled = true;
+            Thread.setDefaultUncaughtExceptionHandler((thread, throwable) ->
+                log("UNCAUGHT_EXCEPTION thread=" + thread.getName(), throwable)
+            );
+        }
+
+        File logFile = getLogFiles()[0];
         log("CLIENT STARTUP DIAGNOSTIC ACTIVE; base=" + base.getAbsolutePath()
             + ", user.dir=" + System.getProperty("user.dir")
-            + ", class=" + DisplayDebug.class.getProtectionDomain().getCodeSource().getLocation());
+            + ", class=" + DisplayDebug.class.getProtectionDomain().getCodeSource().getLocation()
+            + ", unifiedLog=" + logFile.getAbsolutePath());
+        CacheOverrideManager.startup();
     }
 
     public static String canvasInfo(Canvas canvas) {
