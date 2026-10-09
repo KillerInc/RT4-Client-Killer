@@ -303,7 +303,7 @@ public final class GraphicsOptionsUiInjector {
         suppressedNativeDropdownComponents.clear();
         nativeDropdownOpen = false;
 
-        int interfaceId = activeGraphicsOptionsInterfaceId;
+        int interfaceId = resolveGraphicsOptionsInterfaceId();
         if (InterfaceList.components == null
             || interfaceId < 0
             || interfaceId >= InterfaceList.components.length) {
@@ -385,6 +385,39 @@ public final class GraphicsOptionsUiInjector {
         return nativeDropdownOpen;
     }
 
+    private static int resolveGraphicsOptionsInterfaceId() {
+        if (InterfaceList.components == null) {
+            activeGraphicsOptionsInterfaceId = -1;
+            return -1;
+        }
+
+        int interfaceId = activeGraphicsOptionsInterfaceId;
+        if (interfaceId >= 0
+            && interfaceId < InterfaceList.components.length
+            && isGraphicsOptionsActive(InterfaceList.components[interfaceId])) {
+            return interfaceId;
+        }
+
+        // Cache-defined Modern UI controls no longer require the old Java
+        // injection pass, so inject() may never run. Recover the active
+        // Graphics Options interface directly from the current top-level
+        // interface instead of leaving activeGraphicsOptionsInterfaceId at -1.
+        interfaceId = InterfaceList.topLevelInterface;
+        if (interfaceId >= 0
+            && interfaceId < InterfaceList.components.length
+            && isGraphicsOptionsActive(InterfaceList.components[interfaceId])) {
+            activeGraphicsOptionsInterfaceId = interfaceId;
+            DisplayDebug.log(
+                "MODERN_UI resolved active Graphics Options interface="
+                    + interfaceId + " from topLevelInterface"
+            );
+            return interfaceId;
+        }
+
+        activeGraphicsOptionsInterfaceId = -1;
+        return -1;
+    }
+
     /**
      * Mirrors the complete runtime-created CLOSED value visuals from a native
      * two-choice dropdown (Fog) into the cache-defined Modern UI value
@@ -394,7 +427,7 @@ public final class GraphicsOptionsUiInjector {
      * pixel-identical instead of merely using the same outer 1400/1401 frame.
      */
     public static void syncModernSelectorNativeVisuals() {
-        int interfaceId = activeGraphicsOptionsInterfaceId;
+        int interfaceId = resolveGraphicsOptionsInterfaceId();
         if (InterfaceList.components == null
             || interfaceId < 0
             || interfaceId >= InterfaceList.components.length) {
@@ -794,7 +827,7 @@ public final class GraphicsOptionsUiInjector {
     }
 
     public static void closeAllNativeDropdowns() {
-        int interfaceId = activeGraphicsOptionsInterfaceId;
+        int interfaceId = resolveGraphicsOptionsInterfaceId();
         if (InterfaceList.components == null
             || interfaceId < 0
             || interfaceId >= InterfaceList.components.length) {
