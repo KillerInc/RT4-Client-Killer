@@ -212,12 +212,12 @@ public final class ModernUiSettingsOverlay {
 
         if (ModernUiManager.isEnabled()) {
             drawModernPopup(popupX, popupY, popupW, popupH);
-            drawModernChoice("No", popupX, popupY, popupW, rowH, false);
-            drawModernChoice("Yes", popupX, popupY + rowH, popupW, rowH, true);
+            drawModernChoice("Off", popupX, popupY, popupW, rowH, false);
+            drawModernChoice("On", popupX, popupY + rowH, popupW, rowH, true);
         } else {
             drawNativePopup(popupX, popupY, popupW, popupH);
-            drawNativeChoice("No", popupX, popupY, popupW, rowH, true);
-            drawNativeChoice("Yes", popupX, popupY + rowH, popupW, rowH, false);
+            drawNativeChoice("Off", popupX, popupY, popupW, rowH, true);
+            drawNativeChoice("On", popupX, popupY + rowH, popupW, rowH, false);
         }
     }
 
@@ -276,7 +276,7 @@ public final class ModernUiSettingsOverlay {
         }
 
         ModernTrueTypeFont.draw(
-            "Yes",
+            "On",
             x + 5,
             y + Math.min(height - 3, 14),
             0xE8DDC4,
