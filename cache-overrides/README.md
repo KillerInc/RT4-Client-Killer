@@ -34,6 +34,6 @@ Current Graphics Options override:
 
 The selector uses the same native sprite IDs and geometry pattern as the
 revision-530 Graphics Options dropdowns. Killer client behavior only owns the
-new selector's two-state popup and maps No/Yes to the existing Modern UI
+new selector's two-state popup and maps Off/On to the existing Modern UI
 preference. Standard mode therefore remains cache-rendered while Modern mode
 replaces those tagged selector pieces with the scalable UI-pack control.
