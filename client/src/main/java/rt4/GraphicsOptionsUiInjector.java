@@ -27,6 +27,8 @@ public final class GraphicsOptionsUiInjector {
     public static final int CLIENT_CODE_STYLE_TEXT = 1904;
     public static final int CLIENT_CODE_SELECTOR_PIECE = 1905;
     public static final int CLIENT_CODE_LABEL_TEXT = 1906;
+    public static final int CLIENT_CODE_POPUP_HIT = 1907;
+    public static final int CLIENT_CODE_POPUP_BODY = 1908;
 
     private static final int COLUMN_DELTA_X = 130;
     private static final int STYLE_DELTA_Y = 30;
@@ -38,6 +40,11 @@ public final class GraphicsOptionsUiInjector {
         new HashSet<>();
     private static int lastVisibleDropdownGroup = -1;
     private static boolean nativeDropdownOpen;
+
+    private static Component nativeClosedVisualSource;
+    private static Component nativeClosedVisualTarget;
+    private static boolean nativeClosedVisualEnabled;
+    private static int nativeClosedVisualCount = -1;
 
     private GraphicsOptionsUiInjector() {
     }
@@ -379,13 +386,14 @@ public final class GraphicsOptionsUiInjector {
     }
 
     /**
-     * Copies the live text styling from the real Anti-aliasing dropdown value
-     * onto the cache-defined Modern UI value. Jagex does not store the visible
-     * value as a normal static text component: CS2 creates/configures a type-4
-     * child at runtime. Reusing that live style keeps our value pixel-matched
-     * with the surrounding native dropdowns without borrowing AA behavior.
+     * Mirrors the complete runtime-created CLOSED value visuals from a native
+     * two-choice dropdown (Fog) into the cache-defined Modern UI value
+     * container. The stock cache does not render its value from a static text
+     * component: CS2 creates the value/arrow/decorative children at runtime.
+     * Copying that live child tree is what makes the new selector truly
+     * pixel-identical instead of merely using the same outer 1400/1401 frame.
      */
-    public static void syncModernSelectorValueStyle() {
+    public static void syncModernSelectorNativeVisuals() {
         int interfaceId = activeGraphicsOptionsInterfaceId;
         if (InterfaceList.components == null
             || interfaceId < 0
@@ -398,117 +406,133 @@ public final class GraphicsOptionsUiInjector {
             return;
         }
 
-        Component modernValue = null;
+        Component target = null;
         for (Component component : components) {
             if (component != null
-                && component.clientCode == CLIENT_CODE_VALUE_TEXT) {
-                modernValue = component;
+                && component.clientCode == CLIENT_CODE_SELECTOR_HIT) {
+                target = component;
                 break;
             }
         }
-        if (modernValue == null) {
+        if (target == null) {
             return;
         }
 
         List<LayoutEntry> entries = new ArrayList<>();
         collectVisibleLayout(components, -1, 0, 0, entries);
-
-        LayoutEntry antiLabel = findText(entries, "anti-alias");
-        if (antiLabel == null) {
+        LayoutEntry fogLabel = findText(entries, "fog");
+        if (fogLabel == null) {
             return;
         }
 
-        int aaCenterX =
-            antiLabel.x + Math.max(1, antiLabel.component.width) / 2;
-        int aaLabelY = antiLabel.y;
-        LayoutEntry template = null;
-
-        for (LayoutEntry entry : entries) {
-            Component component = entry.component;
-            if (component == antiLabel.component
-                || component == modernValue
-                || component.type != 4
-                || component.clientCode != 0
-                || component.text == null
-                || component.text.length() == 0) {
+        int fogParentId = fogLabel.component.overlayer;
+        Component source = null;
+        for (Component component : components) {
+            if (component == null
+                || component.overlayer != fogParentId
+                || component.type != 0
+                || component.hidden) {
                 continue;
             }
 
-            int centerX =
-                entry.x + Math.max(1, component.width) / 2;
-            int dx = Math.abs(centerX - aaCenterX);
-            int dy = entry.y - aaLabelY;
-
-            if (dx <= 72 && dy >= 5 && dy <= 44) {
-                if (template == null
-                    || Math.abs(entry.y - (aaLabelY + 18))
-                        < Math.abs(template.y - (aaLabelY + 18))) {
-                    template = entry;
-                }
+            // Fog's closed value container is the native baseY=22,
+            // baseHeight=16 child. Its CS2-created children include everything
+            // visually missing from our previous static approximation.
+            if (component.baseY == 22
+                && component.baseHeight == 16
+                && component.dynamicWidthValue == 1) {
+                source = component;
+                break;
             }
         }
 
-        if (template == null) {
+        if (source == null
+            || source.createdComponents == null
+            || source.createdComponents.length == 0) {
             return;
         }
 
-        Component source = template.component;
-        boolean changed = false;
-
-        if (modernValue.font != source.font) {
-            modernValue.font = source.font;
-            changed = true;
-        }
-        if (modernValue.color != source.color) {
-            modernValue.color = source.color;
-            changed = true;
-        }
-        if (modernValue.activeColor != source.activeColor) {
-            modernValue.activeColor = source.activeColor;
-            changed = true;
-        }
-        if (modernValue.overColor != source.overColor) {
-            modernValue.overColor = source.overColor;
-            changed = true;
-        }
-        if (modernValue.activeOverColor != source.activeOverColor) {
-            modernValue.activeOverColor = source.activeOverColor;
-            changed = true;
-        }
-        if (modernValue.shadowed != source.shadowed) {
-            modernValue.shadowed = source.shadowed;
-            changed = true;
-        }
-        if (modernValue.halign != source.halign) {
-            modernValue.halign = source.halign;
-            changed = true;
-        }
-        if (modernValue.valign != source.valign) {
-            modernValue.valign = source.valign;
-            changed = true;
-        }
-        if (modernValue.vpadding != source.vpadding) {
-            modernValue.vpadding = source.vpadding;
-            changed = true;
-        }
-        if (modernValue.alpha != source.alpha) {
-            modernValue.alpha = source.alpha;
-            changed = true;
+        boolean enabled = ModernUiManager.isEnabled();
+        if (source == nativeClosedVisualSource
+            && target == nativeClosedVisualTarget
+            && enabled == nativeClosedVisualEnabled
+            && source.createdComponents.length == nativeClosedVisualCount
+            && target.createdComponents != null) {
+            return;
         }
 
-        if (changed) {
-            InterfaceList.redraw(modernValue);
-            DisplayDebug.log(
-                "MODERN_UI selector adopted native dropdown text style"
-                    + " sourceId=" + source.id
-                    + " created=" + source.createdComponentId
-                    + " font=" + source.font
-                    + " color=" + source.color
-                    + " align=" + source.halign + "," + source.valign
-                    + " padding=" + source.vpadding
-                    + " shadowed=" + source.shadowed
-            );
+        String value = enabled ? "Yes" : "No";
+        target.createdComponents =
+            cloneCreatedVisualTree(source.createdComponents, target.id, value);
+
+        nativeClosedVisualSource = source;
+        nativeClosedVisualTarget = target;
+        nativeClosedVisualEnabled = enabled;
+        nativeClosedVisualCount = source.createdComponents.length;
+        InterfaceList.redraw(target);
+
+        StringBuilder detail = new StringBuilder(256);
+        detail.append("MODERN_UI selector adopted native runtime visuals")
+            .append(" source=").append(source.id)
+            .append(" target=").append(target.id)
+            .append(" children=").append(source.createdComponents.length)
+            .append(" value=").append(value);
+
+        for (Component child : target.createdComponents) {
+            if (child == null) {
+                continue;
+            }
+            detail.append(" | type=").append(child.type)
+                .append(" created=").append(child.createdComponentId)
+                .append(" base=").append(child.baseX).append(',').append(child.baseY)
+                .append(" size=").append(child.baseWidth).append('x').append(child.baseHeight)
+                .append(" sprite=").append(child.spriteId)
+                .append(" font=").append(child.font);
+            if (child.text != null && child.text.length() > 0) {
+                detail.append(" text='").append(child.text.toString()).append(''');
+            }
         }
+        DisplayDebug.log(detail.toString());
+    }
+
+    private static Component[] cloneCreatedVisualTree(
+        Component[] source,
+        int targetParentId,
+        String valueText
+    ) {
+        Component[] copies = new Component[source.length];
+
+        for (int i = 0; i < source.length; i++) {
+            Component original = source[i];
+            if (original == null) {
+                continue;
+            }
+
+            Component[] nested = original.createdComponents;
+            Component copy = cloneComponent(original);
+            copy.createdComponents = null;
+            prepareClone(copy);
+
+            // Dynamically-created IF3 children identify their owner through
+            // both id and overlayer. Retarget those links to our cache-defined
+            // closed-value container while preserving createdComponentId.
+            copy.id = targetParentId;
+            copy.overlayer = targetParentId;
+
+            if (copy.type == 4) {
+                copy.text = JagString.parse(valueText);
+                copy.activeText = copy.text;
+            }
+
+            if (nested != null && nested.length > 0) {
+                copy.createdComponents =
+                    cloneCreatedVisualTree(nested, copy.id, valueText);
+            }
+
+            copies[i] = copy;
+        }
+
+        return copies;
     }
 
     public static boolean shouldSuppressNativeDropdownComponent(
@@ -1047,7 +1071,9 @@ public final class GraphicsOptionsUiInjector {
             || code == CLIENT_CODE_VALUE_TEXT
             || code == CLIENT_CODE_STYLE_TEXT
             || code == CLIENT_CODE_SELECTOR_PIECE
-            || code == CLIENT_CODE_LABEL_TEXT;
+            || code == CLIENT_CODE_LABEL_TEXT
+            || code == CLIENT_CODE_POPUP_HIT
+            || code == CLIENT_CODE_POPUP_BODY;
     }
 
     private static boolean alreadyInjected(Component[] components) {
