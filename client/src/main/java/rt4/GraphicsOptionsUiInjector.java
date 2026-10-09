@@ -222,7 +222,7 @@ public final class GraphicsOptionsUiInjector {
             valueText.y
         );
         value.clientCode = CLIENT_CODE_VALUE_TEXT;
-        value.text = JagString.parse(ModernUiManager.isEnabled() ? "Yes" : "No");
+        value.text = JagString.parse(ModernUiManager.isEnabled() ? "On" : "Off");
         value.activeText = value.text;
         added.add(value);
 
@@ -474,7 +474,7 @@ public final class GraphicsOptionsUiInjector {
             return;
         }
 
-        String value = "No";
+        String value = "Off";
         target.createdComponents =
             cloneCreatedVisualTree(source.createdComponents, target.id, value);
 
