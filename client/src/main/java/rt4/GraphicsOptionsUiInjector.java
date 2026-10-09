@@ -461,13 +461,26 @@ public final class GraphicsOptionsUiInjector {
             return;
         }
 
-        String value = enabled ? "Yes" : "No";
+        // The Modern renderer owns the enabled appearance entirely.
+        // Keep these vanilla runtime children only while Standard UI is active
+        // so they cannot leak through the scalable renderer.
+        if (enabled) {
+            target.createdComponents = null;
+            nativeClosedVisualSource = source;
+            nativeClosedVisualTarget = target;
+            nativeClosedVisualEnabled = true;
+            nativeClosedVisualCount = source.createdComponents.length;
+            InterfaceList.redraw(target);
+            return;
+        }
+
+        String value = "No";
         target.createdComponents =
             cloneCreatedVisualTree(source.createdComponents, target.id, value);
 
         nativeClosedVisualSource = source;
         nativeClosedVisualTarget = target;
-        nativeClosedVisualEnabled = enabled;
+        nativeClosedVisualEnabled = false;
         nativeClosedVisualCount = source.createdComponents.length;
         InterfaceList.redraw(target);
 
