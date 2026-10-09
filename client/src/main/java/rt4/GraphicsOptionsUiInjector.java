@@ -489,7 +489,7 @@ public final class GraphicsOptionsUiInjector {
                 .append(" sprite=").append(child.spriteId)
                 .append(" font=").append(child.font);
             if (child.text != null && child.text.length() > 0) {
-                detail.append(" text='").append(child.text.toString()).append(''');
+                detail.append(" text='").append(child.text.toString()).append('\'');
             }
         }
         DisplayDebug.log(detail.toString());
