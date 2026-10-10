@@ -1183,7 +1183,6 @@ public class Cs1ScriptRunner {
 		ModernUiSettingsOverlay.render();
 		ModernUiReloadOverlay.render();
 		ModernUiStyleEditorOverlay.render();
-		ModernUiCacheProgressOverlay.render();
 	}
 
 	@OriginalMember(owner = "client!mj", name = "a", descriptor = "(IILclient!be;IB)V")
