@@ -8,11 +8,13 @@ package rt4;
  */
 public final class ModernLoginScreenLayout {
     public static final int PANEL_WIDTH = 420;
-    public static final int PANEL_HEIGHT = 360;
+    public static final int PANEL_HEIGHT =
+        ModernUiMetrics.AUDIO_PANEL_HEIGHT;
     public static final int PANEL_VERTICAL_BIAS = 65;
 
-    public static final int INPUT_WIDTH = 260;
-    public static final int INPUT_HEIGHT = 34;
+    // Exact 116:20 source aspect ratio of controls/button.svg at 2x.
+    public static final int INPUT_WIDTH = 232;
+    public static final int INPUT_HEIGHT = 40;
     public static final int BUTTON_WIDTH = 168;
     public static final int BUTTON_HEIGHT = 30;
 
