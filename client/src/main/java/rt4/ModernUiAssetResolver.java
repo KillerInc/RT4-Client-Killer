@@ -316,12 +316,12 @@ public final class ModernUiAssetResolver {
         // Native Graphics dropdowns keep their runtime/CS2 hit geometry.
         // The stock rows are normally 15px; precache the long resolution
         // menu sizes as well so opening it never causes a rasterization hitch.
-        for (int rows = 2; rows <= 20; rows++) {
+        for (int rows = 2; rows <= 32; rows++) {
             addWarmupSpec(
                 plan,
                 "controls/popup",
                 ModernUiMetrics.CONTROL_WIDTH,
-                15 * rows
+                ModernUiMetrics.NATIVE_DROPDOWN_POPUP_ROW_HEIGHT * rows
             );
         }
         addWarmupSpec(
