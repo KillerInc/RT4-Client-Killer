@@ -413,9 +413,13 @@ public final class GraphicsOptionsUiInjector {
                 targetPopupBody = component;
             } else if (component.clientCode == CLIENT_CODE_SELECTOR_PIECE
                 && component.type == 5
-                && component.spriteId == 1401) {
-                // Vanilla keeps sprite 1401 and vertically flips it while
-                // the dropdown list is open, turning the arrow upward.
+                && component.spriteId == 1400
+                && component.hFlip
+                && component.yMode == 2) {
+                // The visible arrow is in the RIGHT 1400 cap, not the 1401
+                // stretch/body. Vanilla mirrors this cap horizontally for the
+                // right edge, then vertically flips that same sprite while
+                // the dropdown is open.
                 targetArrow = component;
             }
         }
@@ -592,9 +596,9 @@ public final class GraphicsOptionsUiInjector {
         setHidden(nativePopupHitTarget, !open);
         setHidden(nativePopupBodyTarget, !open);
 
-        // Vanilla CS2 uses CC_SETVFLIP on the 1401 body/arrow sprite when a
-        // Graphics Options dropdown opens. Do the same for our cache-defined
-        // selector instead of swapping or redrawing the arrow ourselves.
+        // Vanilla CS2 uses CC_SETVFLIP on the mirrored RIGHT 1400 cap when a
+        // Graphics Options dropdown opens. That cap contains the visible
+        // chevron; the 1401 component is only the stretching center/body.
         if (nativeArrowTarget != null && nativeArrowTarget.vFlip != open) {
             boolean old = nativeArrowTarget.vFlip;
             nativeArrowTarget.vFlip = open;
