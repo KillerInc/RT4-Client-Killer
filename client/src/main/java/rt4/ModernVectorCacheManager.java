@@ -39,6 +39,7 @@ public final class ModernVectorCacheManager {
     private static final int MAX_VIEWPORT_CACHES = 3;
     private static final long VIEWPORT_SETTLE_MS = 900L;
     private static final long FAILURE_RETRY_MS = 2500L;
+    private static final long PROGRESS_COMPLETE_HOLD_MS = 900L;
 
     private static final Object STATE_LOCK = new Object();
 
@@ -61,6 +62,8 @@ public final class ModernVectorCacheManager {
         new ConcurrentHashMap<>();
     private static final Set<String> declinedViewports =
         Collections.synchronizedSet(new HashSet<String>());
+    private static final Set<String> progressRequests =
+        Collections.synchronizedSet(new HashSet<String>());
 
     private static volatile boolean started;
     private static volatile boolean firstViewportSeen;
@@ -70,6 +73,12 @@ public final class ModernVectorCacheManager {
     private static volatile String persistentViewport = "";
     private static volatile long viewportSerial;
     private static volatile boolean promptVisible;
+
+    private static volatile String progressViewport = "";
+    private static volatile int progressTotal;
+    private static volatile int progressCompleted;
+    private static volatile boolean progressActive;
+    private static volatile long progressCompletedAt;
 
     private ModernVectorCacheManager() {
     }
@@ -130,6 +139,7 @@ public final class ModernVectorCacheManager {
         currentViewportWidth = width;
         currentViewportHeight = height;
         persistentViewport = "";
+        resetProgressTracking(key);
         readyImages.clear();
         failedUntil.clear();
 
@@ -230,6 +240,14 @@ public final class ModernVectorCacheManager {
             return null;
         }
 
+        boolean persistentRequest =
+            !viewport.isEmpty()
+                && viewport.equals(persistentViewport)
+                && viewport.equals(currentViewport);
+        if (persistentRequest) {
+            registerProgressRequest(viewport, requestKey);
+        }
+
         final byte[] svgCopy = svgBytes.clone();
         WORKER.execute(new Runnable() {
             @Override
@@ -264,6 +282,9 @@ public final class ModernVectorCacheManager {
 
                     boolean rasterized = false;
                     if (image == null) {
+                        if (persistent) {
+                            beginProgressIfNeeded(viewport);
+                        }
                         image = ModernSvgRasterizer.rasterize(
                             svgCopy,
                             width,
@@ -314,11 +335,120 @@ public final class ModernVectorCacheManager {
                     );
                 } finally {
                     inFlight.remove(requestKey);
+                    completeProgressRequest(viewport, requestKey);
                 }
             }
         });
 
         return null;
+    }
+
+    public static boolean isBuildProgressVisible() {
+        if (!progressActive) {
+            return false;
+        }
+
+        int total = progressTotal;
+        int completed = progressCompleted;
+        if (total > 0 && completed >= total) {
+            long completedAt = progressCompletedAt;
+            if (completedAt > 0L
+                && System.currentTimeMillis() - completedAt
+                    > PROGRESS_COMPLETE_HOLD_MS) {
+                progressActive = false;
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static int getBuildProgressPercent() {
+        int total = progressTotal;
+        if (total <= 0) {
+            return 0;
+        }
+        int completed = progressCompleted;
+        int percent = completed * 100 / total;
+        if (percent < 0) {
+            return 0;
+        }
+        return Math.min(100, percent);
+    }
+
+    public static String getBuildProgressViewport() {
+        return progressViewport;
+    }
+
+    private static void resetProgressTracking(String viewport) {
+        synchronized (STATE_LOCK) {
+            progressViewport = viewport == null ? "" : viewport;
+            progressRequests.clear();
+            progressTotal = 0;
+            progressCompleted = 0;
+            progressActive = false;
+            progressCompletedAt = 0L;
+        }
+    }
+
+    private static void registerProgressRequest(
+        String viewport,
+        String requestKey
+    ) {
+        synchronized (STATE_LOCK) {
+            if (!viewport.equals(progressViewport)) {
+                resetProgressTracking(viewport);
+            }
+            if (progressRequests.add(requestKey)) {
+                progressTotal++;
+                if (progressCompleted < progressTotal) {
+                    progressCompletedAt = 0L;
+                }
+            }
+        }
+    }
+
+    private static void beginProgressIfNeeded(String viewport) {
+        synchronized (STATE_LOCK) {
+            if (!viewport.equals(progressViewport)) {
+                resetProgressTracking(viewport);
+            }
+            if (progressActive) {
+                return;
+            }
+            progressActive = true;
+            progressCompletedAt = 0L;
+            DisplayDebug.log(
+                "VECTOR_CACHE build-progress start viewport=" + viewport
+                    + " completed=" + progressCompleted
+                    + " total=" + progressTotal
+            );
+        }
+    }
+
+    private static void completeProgressRequest(
+        String viewport,
+        String requestKey
+    ) {
+        synchronized (STATE_LOCK) {
+            if (!viewport.equals(progressViewport)
+                || !progressRequests.contains(requestKey)) {
+                return;
+            }
+
+            progressRequests.remove(requestKey);
+            progressCompleted++;
+            if (progressCompleted >= progressTotal) {
+                progressCompletedAt = System.currentTimeMillis();
+                if (progressActive) {
+                    DisplayDebug.log(
+                        "VECTOR_CACHE build-progress complete viewport="
+                            + viewport
+                            + " completed=" + progressCompleted
+                            + " total=" + progressTotal
+                    );
+                }
+            }
+        }
     }
 
     private static void scheduleViewportEvaluation(
