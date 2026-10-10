@@ -21,7 +21,7 @@ public final class ModernAudioOptionsUi {
     }
 
     public static boolean isAudioOptionsActive(Component[] components) {
-        Layout layout = analyze(components, 0, 0);
+        Layout layout = analyze(components, 0, 0, false);
         return layout != null;
     }
 
@@ -31,7 +31,7 @@ public final class ModernAudioOptionsUi {
         int parentX,
         int parentY
     ) {
-        Layout layout = analyze(components, parentX, parentY);
+        Layout layout = analyze(components, parentX, parentY, true);
         if (layout == null) {
             return;
         }
@@ -247,7 +247,8 @@ public final class ModernAudioOptionsUi {
     private static Layout analyze(
         Component[] components,
         int parentX,
-        int parentY
+        int parentY,
+        boolean registerHitboxes
     ) {
         List<TextEntry> texts = new ArrayList<>();
         List<ImageEntry> images = new ArrayList<>();
@@ -374,15 +375,17 @@ public final class ModernAudioOptionsUi {
             mainMenuButton
         );
 
-        rememberHitboxes(
-            layout,
-            images,
-            musicRow,
-            effectsRow,
-            areaRow,
-            monoHit,
-            stereoHit
-        );
+        if (registerHitboxes) {
+            rememberHitboxes(
+                layout,
+                images,
+                musicRow,
+                effectsRow,
+                areaRow,
+                monoHit,
+                stereoHit
+            );
+        }
         return layout;
     }
 
