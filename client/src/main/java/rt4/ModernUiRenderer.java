@@ -748,7 +748,7 @@ public final class ModernUiRenderer {
             safeColor(color),
             component.halign,
             component.valign,
-            12.0F,
+            ModernUiMetrics.FONT_LABEL,
             component.shadowed
         );
     }
@@ -1136,7 +1136,7 @@ public final class ModernUiRenderer {
                                 object.name.toString(),
                                 tx,
                                 ty,
-                                11.0F
+                                ModernUiMetrics.FONT_CONTROL
                             );
                         } else {
                             ModernTrueTypeFont.draw(
@@ -1145,7 +1145,7 @@ public final class ModernUiRenderer {
                                 tx,
                                 ty + 11,
                                 safeColor(component.color),
-                                11.0F,
+                                ModernUiMetrics.FONT_CONTROL,
                                 component.shadowed
                             );
                         }
@@ -1402,7 +1402,7 @@ public final class ModernUiRenderer {
                     + mainMenuLayout.logo.height
                     + 22,
                 0xE4D2A2,
-                33.0F,
+                ModernUiMetrics.FONT_MAIN_MENU_EDITION,
                 true
             );
         }
@@ -1615,7 +1615,7 @@ public final class ModernUiRenderer {
         if (subtitle) {
             fontAsset = ModernUiFontRegistry.PLAIN_11;
             size = ModernUiMetrics.FONT_MAIN_MENU_SUBTITLE;
-            color = 0x5A351C;
+            color = ModernUiMetrics.TEXT_PARCHMENT;
         } else if (detail) {
             fontAsset = ModernUiFontRegistry.PLAIN_11;
             size = ModernUiMetrics.FONT_MAIN_MENU_DETAIL;
@@ -1627,7 +1627,7 @@ public final class ModernUiRenderer {
             size = normalized.startsWith("world ")
                 ? ModernUiMetrics.FONT_CONTROL
                 : ModernUiMetrics.FONT_MAIN_MENU_BUTTON;
-            color = 0xF1D68A;
+            color = ModernUiMetrics.TEXT_GOLD;
         } else {
             fontAsset = ModernUiFontRegistry.PLAIN_12;
             size = ModernUiMetrics.FONT_LABEL;
