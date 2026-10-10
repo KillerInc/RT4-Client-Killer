@@ -183,7 +183,9 @@ public final class ModernVectorCacheManager {
         }
 
         final long serial = ++viewportSerial;
-        scheduleViewportEvaluation(key, width, height, true, serial, 0L);
+        // If the viewport changed while Standard UI was active, enabling
+        // Modern UI should still honor the viewport-change confirmation rule.
+        scheduleViewportEvaluation(key, width, height, false, serial, 0L);
     }
 
     /**
