@@ -655,113 +655,46 @@ public class InterfaceList {
 				@Pc(50) int absX = component.x + parentX;
 				@Pc(55) int absY = component.y + parentY;
 
-				boolean modernInput =
-					ModernUiInputRouter.has(component);
-				boolean modernAudioHitbox =
-					!modernInput
-						&& ModernAudioOptionsUi.hasHitboxOverride(component);
-
-				// Compatibility fallback for controls that have not yet been
-				// migrated to the declarative Modern input router. Once a
-				// component is bound, its vanilla position is left untouched.
-				if (!modernInput
-					&& ModernUiRenderer.usesMainMenuContentBounds(component)) {
-					absX = ModernUiRenderer.adjustMainMenuComponentX(
-						component,
-						absX
-					);
-					absY = ModernUiRenderer.adjustMainMenuComponentY(
-						component,
-						absY
-					);
-				}
-				if (modernAudioHitbox) {
-					absX = ModernAudioOptionsUi.adjustHitboxX(
-						component,
-						absX
-					);
-					absY = ModernAudioOptionsUi.adjustHitboxY(
-						component,
-						absY
-					);
-				}
-
-				int interactionWidth = modernAudioHitbox
-					? ModernAudioOptionsUi.hitboxWidth(
-						component,
-						component.width
-					)
-					: component.width;
-				int interactionHeight = modernAudioHitbox
-					? ModernAudioOptionsUi.hitboxHeight(
-						component,
-						component.height
-					)
-					: component.height;
-
 				ModernUiSettingsOverlay.observeComponent(component, absX, absY);
+
 				@Pc(61) int left;
 				@Pc(63) int top;
 				@Pc(65) int right;
 				@Pc(67) int bottom;
 
-				int effectiveClipLeft = clipLeft;
-				int effectiveClipTop = clipTop;
-				int effectiveClipRight = clipRight;
-				int effectiveClipBottom = clipBottom;
-
-				if (!modernInput
-					&& ModernUiRenderer.usesMainMenuContentBounds(component)) {
-					effectiveClipLeft =
-						ModernUiRenderer.getMainMenuContentLeft(clipLeft);
-					effectiveClipTop =
-						ModernUiRenderer.getMainMenuContentTop(clipTop);
-					effectiveClipRight =
-						ModernUiRenderer.getMainMenuContentRight(clipRight);
-					effectiveClipBottom =
-						ModernUiRenderer.getMainMenuContentBottom(clipBottom);
-				} else if (modernAudioHitbox) {
-					effectiveClipLeft =
-						ModernAudioOptionsUi.panelLeft(clipLeft);
-					effectiveClipTop =
-						ModernAudioOptionsUi.panelTop(clipTop);
-					effectiveClipRight =
-						ModernAudioOptionsUi.panelRight(clipRight);
-					effectiveClipBottom =
-						ModernAudioOptionsUi.panelBottom(clipBottom);
-				}
-
 				if (component.type == 2) {
-					left = effectiveClipLeft;
-					top = effectiveClipTop;
-					right = effectiveClipRight;
-					bottom = effectiveClipBottom;
+					left = clipLeft;
+					top = clipTop;
+					right = clipRight;
+					bottom = clipBottom;
 				} else {
-					@Pc(73) int compRight = absX + interactionWidth;
-					@Pc(78) int compBottom = absY + interactionHeight;
+					@Pc(73) int compRight =
+						absX + component.width;
+					@Pc(78) int compBottom =
+						absY + component.height;
 					if (component.type == 9) {
 						compRight++;
 						compBottom++;
 					}
-					left = absX > effectiveClipLeft ? absX : effectiveClipLeft;
-					top = absY > effectiveClipTop ? absY : effectiveClipTop;
-					right = compRight < effectiveClipRight
+					left = absX > clipLeft ? absX : clipLeft;
+					top = absY > clipTop ? absY : clipTop;
+					right = compRight < clipRight
 						? compRight
-						: effectiveClipRight;
-					bottom = compBottom < effectiveClipBottom
+						: clipRight;
+					bottom = compBottom < clipBottom
 						? compBottom
-						: effectiveClipBottom;
+						: clipBottom;
 				}
 
-				// Child traversal always uses the untouched component geometry.
-				// Modern hitboxes are event rectangles only; they never move a
-				// parent or alter where its descendants are laid out.
+				// Child traversal always uses original RT4 layout. The Modern
+				// input router changes only this component's mouse rectangle,
+				// never the coordinates or clipping inherited by descendants.
 				int childLeft = left;
 				int childTop = top;
 				int childRight = right;
 				int childBottom = bottom;
 
-				if (modernInput) {
+				if (ModernUiInputRouter.has(component)) {
 					ModernUiRect bounds =
 						ModernUiInputRouter.bounds(component);
 					ModernUiRect modernClip =
