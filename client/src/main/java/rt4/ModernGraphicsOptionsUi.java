@@ -455,7 +455,7 @@ public final class ModernGraphicsOptionsUi {
         }
 
         int rowHeight =
-            ModernUiMetrics.NATIVE_DROPDOWN_POPUP_ROW_HEIGHT;
+            ModernUiMetrics.DROPDOWN_POPUP_ROW_HEIGHT;
         int popupY = control.y + control.height - 1;
         int popupHeight = options.size() * rowHeight;
 
@@ -501,85 +501,31 @@ public final class ModernGraphicsOptionsUi {
             return;
         }
 
-        // Native Graphics dropdowns still own their CS2/input components.
-        // Use their actual runtime row spacing rather than forcing the
-        // Modern selector's 18px rows onto them. That difference was small
-        // with two choices but accumulated badly in long resolution lists.
-        List<Rect> rows = nativePopupRows(entries, control);
-        if (rows.isEmpty()) {
-            return;
-        }
+        int rowHeight =
+            ModernUiMetrics.DROPDOWN_POPUP_ROW_HEIGHT;
+        int popupY = control.y + control.height - 1;
 
-        int popupY = rows.get(0).y;
-        Rect lastRow = rows.get(rows.size() - 1);
-        int popupHeight =
-            lastRow.y + lastRow.height - popupY;
-
-        drawPopupSurfaceExact(
+        drawPopupSurface(
             control.x,
             popupY,
             control.width,
-            popupHeight,
-            rows
+            entries.size()
         );
 
-        for (int i = 0; i < entries.size() && i < rows.size(); i++) {
+        for (int i = 0; i < entries.size(); i++) {
+            Rect row = new Rect(
+                control.x,
+                popupY + i * rowHeight,
+                control.width,
+                rowHeight
+            );
             String text = entries.get(i).text;
             drawPopupRow(
-                rows.get(i),
+                row,
                 text,
                 normalize(text).equals(normalize(selected))
             );
         }
-    }
-
-    private static List<Rect> nativePopupRows(
-        List<TextEntry> entries,
-        Rect control
-    ) {
-        List<Rect> rows = new ArrayList<>();
-        if (entries == null || entries.isEmpty()) {
-            return rows;
-        }
-
-        int firstY = entries.get(0).y;
-        int popupY = control.y + control.height - 1;
-        int fallbackHeight = 15;
-
-        for (int i = 0; i < entries.size(); i++) {
-            TextEntry entry = entries.get(i);
-            int rowHeight = fallbackHeight;
-
-            for (int j = i + 1; j < entries.size(); j++) {
-                int delta = entries.get(j).y - entry.y;
-                if (delta > 0) {
-                    // Keep native geometry authoritative but protect against
-                    // decorative/runtime text with extreme spacing.
-                    rowHeight = Math.max(13, Math.min(22, delta));
-                    break;
-                }
-            }
-
-            if (i > 0 && rowHeight == fallbackHeight) {
-                int previousDelta = entry.y - entries.get(i - 1).y;
-                if (previousDelta > 0) {
-                    rowHeight = Math.max(
-                        13,
-                        Math.min(22, previousDelta)
-                    );
-                }
-            }
-
-            rows.add(
-                new Rect(
-                    control.x,
-                    popupY + Math.max(0, entry.y - firstY),
-                    control.width,
-                    rowHeight
-                )
-            );
-        }
-        return rows;
     }
 
     private static void drawPopupSurface(
@@ -1070,10 +1016,10 @@ public final class ModernGraphicsOptionsUi {
                     popupY
                         + row
                             * ModernUiMetrics
-                                .NATIVE_DROPDOWN_POPUP_ROW_HEIGHT,
+                                .DROPDOWN_POPUP_ROW_HEIGHT,
                     control.width,
                     ModernUiMetrics
-                        .NATIVE_DROPDOWN_POPUP_ROW_HEIGHT
+                        .DROPDOWN_POPUP_ROW_HEIGHT
                 ),
                 clip
             );
