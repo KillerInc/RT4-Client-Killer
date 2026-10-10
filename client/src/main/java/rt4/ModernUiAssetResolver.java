@@ -275,6 +275,12 @@ public final class ModernUiAssetResolver {
         );
         addWarmupSpec(
             plan,
+            "controls/button",
+            ModernUiMetrics.CONTROL_WIDTH,
+            ModernUiMetrics.NAV_BUTTON_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
             "controls/button-active",
             ModernUiMetrics.DISPLAY_BUTTON_WIDTH,
             ModernUiMetrics.DISPLAY_BUTTON_HEIGHT
@@ -298,12 +304,30 @@ public final class ModernUiAssetResolver {
         addWarmupSpec(plan, "controls/dropdown", 128, 22);
         addWarmupSpec(plan, "controls/dropdown-disabled", 116, 20);
 
-        addWarmupSpec(plan, "controls/popup", 128, 40);
-        addWarmupSpec(plan, "controls/popup", 116, 40);
-        addWarmupSpec(plan, "controls/choice-hover", 124, 18);
-        addWarmupSpec(plan, "controls/choice-hover", 112, 18);
-        addWarmupSpec(plan, "controls/choice-selected", 124, 18);
-        addWarmupSpec(plan, "controls/choice-selected", 112, 18);
+        addWarmupSpec(
+            plan,
+            "controls/popup",
+            ModernUiMetrics.CONTROL_WIDTH,
+            ModernUiMetrics.DROPDOWN_POPUP_ROW_HEIGHT * 2
+        );
+        addWarmupSpec(
+            plan,
+            "controls/popup",
+            ModernUiMetrics.CONTROL_WIDTH,
+            ModernUiMetrics.DROPDOWN_POPUP_ROW_HEIGHT * 3
+        );
+        addWarmupSpec(
+            plan,
+            "controls/choice-hover",
+            ModernUiMetrics.CONTROL_WIDTH - 4,
+            ModernUiMetrics.DROPDOWN_POPUP_ROW_HEIGHT - 2
+        );
+        addWarmupSpec(
+            plan,
+            "controls/choice-selected",
+            ModernUiMetrics.CONTROL_WIDTH - 4,
+            ModernUiMetrics.DROPDOWN_POPUP_ROW_HEIGHT - 2
+        );
         addWarmupSpec(
             plan,
             "controls/slider-track",
