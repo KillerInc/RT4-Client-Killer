@@ -65,6 +65,8 @@ public final class ClientPerformanceDiagnostics {
                 + " mode=" + DisplayDebug.modeName(mode)
                 + " renderer=" + (GlRenderer.enabled ? "GL" : "SOFTWARE")
         );
+
+        ModernVectorCacheManager.onViewportChanged(width, height);
     }
 
     public static synchronized void recordLogic(long nanos) {
