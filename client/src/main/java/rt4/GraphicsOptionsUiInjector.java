@@ -1236,6 +1236,86 @@ public final class GraphicsOptionsUiInjector {
     }
 
     public static void closeAllNativeDropdowns() {
+        closeNativeDropdownsExceptParent(-1, "explicit-close");
+    }
+
+    public static void autoCloseNativeDropdownsForClick(int clickX, int clickY) {
+        int interfaceId = resolveGraphicsOptionsInterfaceId();
+        if (InterfaceList.components == null
+            || interfaceId < 0
+            || interfaceId >= InterfaceList.components.length) {
+            nativeDropdownOpen = false;
+            return;
+        }
+
+        Component[] components = InterfaceList.components[interfaceId];
+        if (components == null || !isGraphicsOptionsActive(components)) {
+            nativeDropdownOpen = false;
+            return;
+        }
+
+        List<LayoutEntry> entries = new ArrayList<>();
+        collectVisibleLayout(components, -1, 0, 0, entries);
+
+        boolean foundOpen = false;
+        boolean insideOpenPopup = false;
+        int clickedSelectorParent = -1;
+
+        for (LayoutEntry entry : entries) {
+            Component component = entry.component;
+            if (component == null) {
+                continue;
+            }
+
+            if (isNativeDropdownPopupContainer(components, component)
+                && !component.hidden) {
+                foundOpen = true;
+                if (containsPoint(
+                    clickX,
+                    clickY,
+                    entry.x,
+                    entry.y,
+                    component.width,
+                    component.height
+                )) {
+                    insideOpenPopup = true;
+                }
+            }
+
+            if (isNativeDropdownClosedContainer(components, component)
+                && containsPoint(
+                    clickX,
+                    clickY,
+                    entry.x,
+                    entry.y,
+                    component.width,
+                    component.height
+                )) {
+                clickedSelectorParent = component.overlayer;
+            }
+        }
+
+        if (!foundOpen) {
+            nativeDropdownOpen = false;
+            return;
+        }
+
+        if (clickedSelectorParent != -1) {
+            closeNativeDropdownsExceptParent(
+                clickedSelectorParent,
+                "selector-switch"
+            );
+        } else if (insideOpenPopup) {
+            closeNativeDropdownsExceptParent(-1, "option-click");
+        } else {
+            closeNativeDropdownsExceptParent(-1, "outside-click");
+        }
+    }
+
+    private static void closeNativeDropdownsExceptParent(
+        int keepParent,
+        String reason
+    ) {
         int interfaceId = resolveGraphicsOptionsInterfaceId();
         if (InterfaceList.components == null
             || interfaceId < 0
@@ -1251,27 +1331,149 @@ public final class GraphicsOptionsUiInjector {
         }
 
         int closed = 0;
+        Set<Integer> closedParents = new HashSet<>();
+
         for (Component component : components) {
-            if (!isNativeDropdownPopupContainer(components, component)) {
+            if (!isNativeDropdownPopupContainer(components, component)
+                || component.overlayer == keepParent
+                || component.hidden) {
                 continue;
             }
 
-            if (!component.hidden) {
-                component.hidden = true;
-                InterfaceList.redraw(component);
-                closed++;
+            component.hidden = true;
+            InterfaceList.redraw(component);
+            closed++;
+            closedParents.add(component.overlayer);
+        }
+
+        for (Integer parentId : closedParents) {
+            Component selector =
+                findNativeDropdownClosedContainer(components, parentId);
+            Component arrow =
+                selector == null
+                    ? null
+                    : findSpriteComponent(selector.createdComponents, 1248);
+            if (arrow != null && arrow.vFlip) {
+                boolean old = arrow.vFlip;
+                arrow.vFlip = false;
+                InterfaceList.redraw(selector);
+                UiDiagnostics.onVFlipChange(arrow, old, false);
             }
         }
 
         suppressedNativeDropdownComponents.clear();
         previousVisibleDropdownGroups.clear();
         lastVisibleDropdownGroup = -1;
-        nativeDropdownOpen = false;
 
-        DisplayDebug.log(
-            "GRAPHICS_OPTIONS closed native dropdown containers=" + closed
-                + " without touching runtime-created option glyphs"
-        );
+        nativeDropdownOpen = false;
+        for (Component component : components) {
+            if (isNativeDropdownPopupContainer(components, component)
+                && !component.hidden) {
+                nativeDropdownOpen = true;
+                break;
+            }
+        }
+
+        if (closed > 0) {
+            DisplayDebug.log(
+                "GRAPHICS_OPTIONS auto-close native dropdown reason="
+                    + reason
+                    + " closedContainers=" + closed
+                    + " closedGroups=" + closedParents.size()
+                    + " keepParent=" + keepParent
+            );
+        }
+    }
+
+    private static Component findNativeDropdownClosedContainer(
+        Component[] components,
+        int parentId
+    ) {
+        if (components == null || parentId == -1) {
+            return null;
+        }
+
+        for (Component component : components) {
+            if (component != null
+                && component.overlayer == parentId
+                && isNativeDropdownClosedContainer(components, component)) {
+                return component;
+            }
+        }
+        return null;
+    }
+
+    private static boolean isNativeDropdownClosedContainer(
+        Component[] components,
+        Component component
+    ) {
+        if (component == null
+            || component.clientCode != 0
+            || component.type != 0
+            || component.dynamicWidthValue != 1
+            || component.baseWidth != 18
+            || component.baseHeight != 16
+            || component.baseX != 0
+            || component.xMode != 0
+            || component.yMode != 1
+            || component.overlayer == -1) {
+            return false;
+        }
+
+        boolean hasPopupHit = false;
+        boolean hasPopupBody = false;
+        int caps = 0;
+        int bodies = 0;
+        boolean hasLabel = false;
+
+        for (Component sibling : components) {
+            if (sibling == null || sibling.overlayer != component.overlayer) {
+                continue;
+            }
+
+            if (sibling.type == 4 && sibling.baseY == 0) {
+                hasLabel = true;
+            } else if (sibling.type == 5
+                && sibling.baseY == component.baseY - 2) {
+                if (sibling.spriteId == 1400) {
+                    caps++;
+                } else if (sibling.spriteId == 1401) {
+                    bodies++;
+                }
+            } else if (sibling.type == 0
+                && sibling.dynamicWidthValue == 1
+                && sibling.baseY == component.baseY + 15
+                && sibling.baseWidth == 18
+                && sibling.baseHeight >= 30) {
+                hasPopupHit = true;
+            } else if (sibling.type == 0
+                && sibling.dynamicWidthValue == 1
+                && sibling.baseY == component.baseY + 16
+                && sibling.baseWidth == 20
+                && sibling.baseHeight >= 30) {
+                hasPopupBody = true;
+            }
+        }
+
+        return hasLabel
+            && caps >= 2
+            && bodies >= 1
+            && hasPopupHit
+            && hasPopupBody;
+    }
+
+    private static boolean containsPoint(
+        int px,
+        int py,
+        int x,
+        int y,
+        int width,
+        int height
+    ) {
+        return px >= x
+            && py >= y
+            && px < x + Math.max(1, width)
+            && py < y + Math.max(1, height);
     }
 
     private static boolean isNativeDropdownPopupContainer(
@@ -1284,40 +1486,26 @@ public final class GraphicsOptionsUiInjector {
             || component.dynamicWidthValue != 1
             || component.baseX != 0
             || component.xMode != 0
-            || component.yMode != 1) {
+            || component.yMode != 1
+            || component.overlayer == -1) {
             return false;
         }
 
-        boolean popupGeometry =
-            component.baseY == 37 && component.baseWidth == 18
-                || component.baseY == 38 && component.baseWidth == 20;
-        if (!popupGeometry || component.overlayer == -1) {
+        Component closed =
+            findNativeDropdownClosedContainer(
+                components,
+                component.overlayer
+            );
+        if (closed == null) {
             return false;
         }
 
-        int leftCaps = 0;
-        int bodies = 0;
-        boolean hasLabel = false;
-
-        for (Component sibling : components) {
-            if (sibling == null || sibling.overlayer != component.overlayer) {
-                continue;
-            }
-
-            if (sibling.type == 4
-                && sibling.baseY == 0
-                && sibling.baseHeight == 15) {
-                hasLabel = true;
-            } else if (sibling.type == 5 && sibling.baseY == 20) {
-                if (sibling.spriteId == 1400) {
-                    leftCaps++;
-                } else if (sibling.spriteId == 1401) {
-                    bodies++;
-                }
-            }
-        }
-
-        return hasLabel && leftCaps >= 2 && bodies >= 1;
+        return component.baseY == closed.baseY + 15
+                && component.baseWidth == 18
+                && component.baseHeight >= 30
+            || component.baseY == closed.baseY + 16
+                && component.baseWidth == 20
+                && component.baseHeight >= 30;
     }
 
     public static boolean shouldSuppressHiddenComponent(
