@@ -92,18 +92,8 @@ public final class ModernMainMenuLayout {
             )
         );
 
-        int logoWidth = Math.min(
-            620,
-            Math.max(400, canvasWidth * 54 / 100)
-        );
-        logoWidth = Math.min(
-            logoWidth,
-            Math.max(240, canvasWidth - 40)
-        );
-        int logoHeight = Math.max(
-            90,
-            logoWidth * 500 / 1445
-        );
+        int logoWidth = logoWidthForCanvas(canvasWidth);
+        int logoHeight = logoHeightForWidth(logoWidth);
         int logoBottom = scroll.y - 24;
 
         ModernUiRect logo = new ModernUiRect(
@@ -120,6 +110,24 @@ public final class ModernMainMenuLayout {
             logo,
             content.y + 190,
             content.y + 322
+        );
+    }
+
+    public static int logoWidthForCanvas(int canvasWidth) {
+        int width = Math.min(
+            620,
+            Math.max(400, canvasWidth * 54 / 100)
+        );
+        return Math.min(
+            width,
+            Math.max(240, canvasWidth - 40)
+        );
+    }
+
+    public static int logoHeightForWidth(int logoWidth) {
+        return Math.max(
+            90,
+            logoWidth * 500 / 1445
         );
     }
 
