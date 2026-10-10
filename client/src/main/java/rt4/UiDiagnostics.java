@@ -103,6 +103,25 @@ public final class UiDiagnostics {
         );
     }
 
+    public static void onVFlipChange(
+        Component component,
+        boolean oldValue,
+        boolean newValue
+    ) {
+        if (!isGraphicsOptionsComponent(component) || oldValue == newValue) {
+            return;
+        }
+        DisplayDebug.log(
+            "UI_STATE setVFlip id=" + component.id
+                + " child=" + (component.id & 0xFFFF)
+                + " type=" + component.type
+                + " parent=" + component.overlayer
+                + " sprite=" + component.spriteId
+                + " old=" + oldValue
+                + " new=" + newValue
+        );
+    }
+
     public static void onTextChange(Component component, JagString oldValue, JagString newValue) {
         if (!isGraphicsOptionsComponent(component)) {
             return;

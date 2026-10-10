@@ -2466,7 +2466,13 @@ public final class ScriptRunner {
 								}
 								if (opcode == Cs2Opcodes.setVFlip) {
 									isp--;
+									boolean oldVFlip = component.vFlip;
 									component.vFlip = intStack[isp] == 1;
+									UiDiagnostics.onVFlipChange(
+										component,
+										oldVFlip,
+										component.vFlip
+									);
 									InterfaceList.redraw(component);
 									continue;
 								}

@@ -49,6 +49,7 @@ public final class GraphicsOptionsUiInjector {
 
     private static Component nativePopupHitTarget;
     private static Component nativePopupBodyTarget;
+    private static Component nativeArrowTarget;
     private static Component nativePopupVisualSource;
     private static int nativePopupVisualCount = -1;
     private static int nativePopupVisualWidth = -1;
@@ -397,6 +398,7 @@ public final class GraphicsOptionsUiInjector {
         Component targetClosed = null;
         Component targetPopupHit = null;
         Component targetPopupBody = null;
+        Component targetArrow = null;
 
         for (Component component : components) {
             if (component == null) {
@@ -409,6 +411,12 @@ public final class GraphicsOptionsUiInjector {
                 targetPopupHit = component;
             } else if (component.clientCode == CLIENT_CODE_POPUP_BODY) {
                 targetPopupBody = component;
+            } else if (component.clientCode == CLIENT_CODE_SELECTOR_PIECE
+                && component.type == 5
+                && component.spriteId == 1401) {
+                // Vanilla keeps sprite 1401 and vertically flips it while
+                // the dropdown list is open, turning the arrow upward.
+                targetArrow = component;
             }
         }
 
@@ -420,6 +428,7 @@ public final class GraphicsOptionsUiInjector {
 
         nativePopupHitTarget = targetPopupHit;
         nativePopupBodyTarget = targetPopupBody;
+        nativeArrowTarget = targetArrow;
 
         List<LayoutEntry> entries = new ArrayList<>();
         collectVisibleLayout(components, -1, 0, 0, entries);
@@ -574,12 +583,24 @@ public final class GraphicsOptionsUiInjector {
     }
 
     public static void setModernNativeDropdownOpen(boolean open) {
-        if (nativePopupHitTarget == null || nativePopupBodyTarget == null) {
+        if (nativePopupHitTarget == null
+            || nativePopupBodyTarget == null
+            || nativeArrowTarget == null) {
             syncModernSelectorNativeVisuals();
         }
 
         setHidden(nativePopupHitTarget, !open);
         setHidden(nativePopupBodyTarget, !open);
+
+        // Vanilla CS2 uses CC_SETVFLIP on the 1401 body/arrow sprite when a
+        // Graphics Options dropdown opens. Do the same for our cache-defined
+        // selector instead of swapping or redrawing the arrow ourselves.
+        if (nativeArrowTarget != null && nativeArrowTarget.vFlip != open) {
+            boolean old = nativeArrowTarget.vFlip;
+            nativeArrowTarget.vFlip = open;
+            InterfaceList.redraw(nativeArrowTarget);
+            UiDiagnostics.onVFlipChange(nativeArrowTarget, old, open);
+        }
 
         if (!open) {
             setModernNativeDropdownHover(-1);
