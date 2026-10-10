@@ -14,7 +14,6 @@ import java.util.Set;
  * visual is used by this class.
  */
 public final class ModernGraphicsOptionsUi {
-    private static boolean hitboxesLogged;
     private static final int RESOLUTION_VALUE_CHILD = 283;
     private static final int RESOLUTION_POPUP_BODY_CHILD = 285;
 
@@ -43,7 +42,6 @@ public final class ModernGraphicsOptionsUi {
 
     public static void render(Component[] components) {
         Layout layout = layout();
-        registerCanonicalHitboxes(components, layout);
 
         drawAsset(
             "graphics-options/panel",
@@ -191,666 +189,6 @@ public final class ModernGraphicsOptionsUi {
         return layout().styleEditor().height;
     }
 
-    private static Rect displayModeButton(
-        Layout layout,
-        int index
-    ) {
-        int center =
-            layout.centerX - 225 + Math.max(0, Math.min(3, index)) * 150;
-        int buttonY =
-            layout.panelY
-                + ModernUiMetrics.DISPLAY_BUTTON_Y_OFFSET
-                + 36;
-        return new Rect(
-            ModernUiMetrics.centeredX(
-                center,
-                ModernUiMetrics.DISPLAY_BUTTON_WIDTH
-            ),
-            buttonY,
-            ModernUiMetrics.DISPLAY_BUTTON_WIDTH,
-            ModernUiMetrics.DISPLAY_BUTTON_HEIGHT
-        );
-    }
-
-    private static Rect resolutionControl(Layout layout) {
-        int fullscreenCenter = layout.centerX + 225;
-        return new Rect(
-            ModernUiMetrics.centeredX(
-                fullscreenCenter,
-                ModernUiMetrics.CONTROL_WIDTH
-            ),
-            layout.panelY + 128,
-            ModernUiMetrics.CONTROL_WIDTH,
-            ModernUiMetrics.CONTROL_HEIGHT
-        );
-    }
-
-    private static void registerCanonicalHitboxes(
-        Component[] components,
-        Layout layout
-    ) {
-        if (components == null) {
-            return;
-        }
-
-        List<ComponentEntry> entries = new ArrayList<>();
-        collectComponentEntries(
-            components,
-            -1,
-            0,
-            0,
-            entries
-        );
-
-        int clipLeft = Math.max(0, layout.panelX);
-        int clipTop = Math.max(0, layout.panelY);
-        int clipRight = Math.min(
-            GameShell.canvasWidth,
-            layout.panelX + layout.panelWidth
-        );
-        int clipBottom = Math.min(
-            GameShell.canvasHeight,
-            layout.panelY + layout.panelHeight
-        );
-
-        int registered = 0;
-
-        // Every advanced dropdown is bound directly to the Rect used to draw
-        // it. The old cache component remains only the CS2 action backend.
-        for (ControlSpec spec : CONTROLS) {
-            if (spec.closedChild < 0) {
-                continue;
-            }
-
-            ComponentEntry value =
-                findEntryByChild(entries, spec.closedChild);
-            ComponentEntry closed =
-                value == null
-                    ? null
-                    : findEntryById(
-                        entries,
-                        value.component.overlayer
-                    );
-            if (closed == null) {
-                closed = value;
-            }
-
-            Rect control = layout.control(spec.column, spec.row);
-            if (closed != null) {
-                registerEntry(
-                    closed,
-                    control,
-                    clipLeft,
-                    clipTop,
-                    clipRight,
-                    clipBottom
-                );
-                registered++;
-            }
-
-            if (spec.popupBodyChild >= 0) {
-                registered += registerPopupHitboxes(
-                    components,
-                    entries,
-                    spec.popupBodyChild,
-                    control,
-                    clipLeft,
-                    clipTop,
-                    clipRight,
-                    clipBottom
-                );
-            }
-        }
-
-        Rect resolution = resolutionControl(layout);
-        ComponentEntry resolutionValue =
-            findEntryByChild(entries, RESOLUTION_VALUE_CHILD);
-        ComponentEntry resolutionClosed =
-            resolutionValue == null
-                ? null
-                : findEntryById(
-                    entries,
-                    resolutionValue.component.overlayer
-                );
-        if (resolutionClosed == null) {
-            resolutionClosed = resolutionValue;
-        }
-        if (resolutionClosed != null) {
-            registerEntry(
-                resolutionClosed,
-                resolution,
-                clipLeft,
-                clipTop,
-                clipRight,
-                clipBottom
-            );
-            registered++;
-        }
-        registered += registerPopupHitboxes(
-            components,
-            entries,
-            RESOLUTION_POPUP_BODY_CHILD,
-            resolution,
-            clipLeft,
-            clipTop,
-            clipRight,
-            clipBottom
-        );
-
-        // The injected Modern selector and Style Editor are already processed
-        // by ModernUiSettingsOverlay using these same Rects. Register their
-        // component backends too so no stale native region remains active.
-        for (ComponentEntry entry : entries) {
-            if (entry.component.clientCode
-                == GraphicsOptionsUiInjector.CLIENT_CODE_SELECTOR_HIT) {
-                registerEntry(
-                    entry,
-                    layout.control(4, 2),
-                    clipLeft,
-                    clipTop,
-                    clipRight,
-                    clipBottom
-                );
-                registered++;
-            } else if (entry.component.clientCode
-                == GraphicsOptionsUiInjector.CLIENT_CODE_STYLE_TEXT) {
-                registerEntry(
-                    entry,
-                    layout.styleEditor(),
-                    clipLeft,
-                    clipTop,
-                    clipRight,
-                    clipBottom
-                );
-                registered++;
-            }
-        }
-
-        registered += registerDisplayModeHitboxes(
-            entries,
-            layout,
-            clipLeft,
-            clipTop,
-            clipRight,
-            clipBottom
-        );
-
-        registered += registerBrightnessHitbox(
-            entries,
-            layout,
-            clipLeft,
-            clipTop,
-            clipRight,
-            clipBottom
-        );
-
-        ComponentEntry mainMenuLabel =
-            findTextEntry(entries, "main menu");
-        ComponentEntry mainMenuTarget =
-            nearestInteractiveEntry(
-                entries,
-                mainMenuLabel,
-                180,
-                70
-            );
-        if (mainMenuTarget != null) {
-            registerEntry(
-                mainMenuTarget,
-                layout.mainMenu(),
-                clipLeft,
-                clipTop,
-                clipRight,
-                clipBottom
-            );
-            registered++;
-        }
-
-        if (!hitboxesLogged) {
-            hitboxesLogged = true;
-            DisplayDebug.log(
-                "MODERN_UI Graphics Options canonical hitboxes active"
-                    + " controls=" + registered
-            );
-        }
-    }
-
-    private static int registerPopupHitboxes(
-        Component[] components,
-        List<ComponentEntry> entries,
-        int popupBodyChild,
-        Rect control,
-        int clipLeft,
-        int clipTop,
-        int clipRight,
-        int clipBottom
-    ) {
-        Component body = directChild(components, popupBodyChild);
-        if (body == null || InterfaceList.isHidden(body)) {
-            return 0;
-        }
-
-        List<TextEntry> popupEntries =
-            popupTextEntries(components, popupBodyChild);
-        if (popupEntries.isEmpty()) {
-            return 0;
-        }
-
-        int popupHeight =
-            popupEntries.size()
-                * ModernUiMetrics.DROPDOWN_POPUP_ROW_HEIGHT;
-        Rect popup = new Rect(
-            control.x,
-            control.y + control.height - 1,
-            control.width,
-            popupHeight
-        );
-
-        int count = 0;
-        ComponentEntry bodyEntry =
-            findEntryByChild(entries, popupBodyChild);
-        if (bodyEntry != null) {
-            registerEntry(
-                bodyEntry,
-                popup,
-                clipLeft,
-                clipTop,
-                clipRight,
-                clipBottom
-            );
-            count++;
-        }
-
-        ComponentEntry hitEntry =
-            findEntryByChild(entries, popupBodyChild - 1);
-        if (hitEntry != null) {
-            registerEntry(
-                hitEntry,
-                popup,
-                clipLeft,
-                clipTop,
-                clipRight,
-                clipBottom
-            );
-            count++;
-        }
-        return count;
-    }
-
-    private static int registerDisplayModeHitboxes(
-        List<ComponentEntry> entries,
-        Layout layout,
-        int clipLeft,
-        int clipTop,
-        int clipRight,
-        int clipBottom
-    ) {
-        ComponentEntry displayLabel =
-            findTextEntry(entries, "display modes");
-        ComponentEntry advancedLabel =
-            findTextEntry(entries, "advanced options");
-        if (displayLabel == null || advancedLabel == null) {
-            return 0;
-        }
-
-        int bandTop = displayLabel.y + 12;
-        int bandBottom = advancedLabel.y - 4;
-        List<ComponentEntry> candidates = new ArrayList<>();
-
-        for (ComponentEntry entry : entries) {
-            Component component = entry.component;
-            if (!isInteractive(component)) {
-                continue;
-            }
-
-            int width = Math.max(1, component.width);
-            int height = Math.max(1, component.height);
-            int centerY = entry.y + height / 2;
-            if (centerY < bandTop || centerY >= bandBottom
-                || width < 20 || width > 190
-                || height < 12 || height > 80) {
-                continue;
-            }
-
-            int child = component.id & 0xFFFF;
-            if (child == RESOLUTION_VALUE_CHILD
-                || child == RESOLUTION_POPUP_BODY_CHILD
-                || child == RESOLUTION_POPUP_BODY_CHILD - 1) {
-                continue;
-            }
-
-            candidates.add(entry);
-        }
-
-        candidates.sort(
-            Comparator.comparingInt(
-                entry -> entry.x + Math.max(1, entry.component.width) / 2
-            )
-        );
-
-        List<ComponentEntry> selected = new ArrayList<>();
-        for (ComponentEntry candidate : candidates) {
-            int center =
-                candidate.x + Math.max(1, candidate.component.width) / 2;
-            if (selected.isEmpty()) {
-                selected.add(candidate);
-                continue;
-            }
-
-            ComponentEntry previous = selected.get(selected.size() - 1);
-            int previousCenter =
-                previous.x + Math.max(1, previous.component.width) / 2;
-            if (Math.abs(center - previousCenter) <= 24) {
-                int area =
-                    Math.max(1, candidate.component.width)
-                        * Math.max(1, candidate.component.height);
-                int previousArea =
-                    Math.max(1, previous.component.width)
-                        * Math.max(1, previous.component.height);
-                if (area > previousArea) {
-                    selected.set(selected.size() - 1, candidate);
-                }
-            } else {
-                selected.add(candidate);
-            }
-        }
-
-        if (selected.size() > 4) {
-            // Choose the four candidates closest to the Modern display-mode
-            // centers, preserving left-to-right order.
-            List<ComponentEntry> matched = new ArrayList<>();
-            Set<ComponentEntry> used = new HashSet<>();
-            for (int i = 0; i < 4; i++) {
-                Rect target = displayModeButton(layout, i);
-                int targetCenter = target.x + target.width / 2;
-                ComponentEntry best = null;
-                int bestDistance = Integer.MAX_VALUE;
-                for (ComponentEntry candidate : selected) {
-                    if (used.contains(candidate)) {
-                        continue;
-                    }
-                    int center =
-                        candidate.x
-                            + Math.max(1, candidate.component.width) / 2;
-                    int distance = Math.abs(center - targetCenter);
-                    if (distance < bestDistance) {
-                        bestDistance = distance;
-                        best = candidate;
-                    }
-                }
-                if (best != null) {
-                    used.add(best);
-                    matched.add(best);
-                }
-            }
-            matched.sort(
-                Comparator.comparingInt(
-                    entry -> entry.x
-                        + Math.max(1, entry.component.width) / 2
-                )
-            );
-            selected = matched;
-        }
-
-        if (selected.size() < 4) {
-            return 0;
-        }
-
-        int count = 0;
-        selected.sort(
-            Comparator.comparingInt(
-                entry -> entry.x + Math.max(1, entry.component.width) / 2
-            )
-        );
-        for (int i = 0; i < 4; i++) {
-            registerEntry(
-                selected.get(i),
-                displayModeButton(layout, i),
-                clipLeft,
-                clipTop,
-                clipRight,
-                clipBottom
-            );
-            count++;
-        }
-        return count;
-    }
-
-    private static int registerBrightnessHitbox(
-        List<ComponentEntry> entries,
-        Layout layout,
-        int clipLeft,
-        int clipTop,
-        int clipRight,
-        int clipBottom
-    ) {
-        ComponentEntry label = findTextEntry(entries, "brightness");
-        if (label == null) {
-            return 0;
-        }
-
-        int labelCenter =
-            label.x + Math.max(1, label.component.width) / 2;
-        ComponentEntry best = null;
-        int bestScore = Integer.MAX_VALUE;
-        for (ComponentEntry entry : entries) {
-            if (!isInteractive(entry.component)) {
-                continue;
-            }
-            int width = Math.max(1, entry.component.width);
-            int height = Math.max(1, entry.component.height);
-            if (width > 220 || height > 70) {
-                continue;
-            }
-            int centerX = entry.x + width / 2;
-            int centerY = entry.y + height / 2;
-            int dy = centerY - (label.y + 28);
-            if (dy < -12 || dy > 38) {
-                continue;
-            }
-            int dx = Math.abs(centerX - labelCenter);
-            if (dx > 100) {
-                continue;
-            }
-            int score = dx * 2 + Math.abs(dy);
-            if (score < bestScore) {
-                bestScore = score;
-                best = entry;
-            }
-        }
-
-        if (best == null) {
-            return 0;
-        }
-
-        registerEntry(
-            best,
-            layout.control(0, 0),
-            clipLeft,
-            clipTop,
-            clipRight,
-            clipBottom
-        );
-        return 1;
-    }
-
-    private static void registerEntry(
-        ComponentEntry source,
-        Rect target,
-        int clipLeft,
-        int clipTop,
-        int clipRight,
-        int clipBottom
-    ) {
-        if (source == null || target == null) {
-            return;
-        }
-        ModernUiHitboxRegistry.registerAbsolute(
-            source.component,
-            source.x,
-            source.y,
-            target.x,
-            target.y,
-            target.width,
-            target.height,
-            clipLeft,
-            clipTop,
-            clipRight,
-            clipBottom
-        );
-    }
-
-    private static boolean isInteractive(Component component) {
-        if (component == null) {
-            return false;
-        }
-        return component.hasEventHandlers
-            || component.clientCode != 0
-            || InterfaceList.getServerActiveProperties(component).events != 0;
-    }
-
-    private static ComponentEntry findEntryByChild(
-        List<ComponentEntry> entries,
-        int childId
-    ) {
-        for (ComponentEntry entry : entries) {
-            if ((entry.component.id & 0xFFFF) == childId) {
-                return entry;
-            }
-        }
-        return null;
-    }
-
-    private static ComponentEntry findEntryById(
-        List<ComponentEntry> entries,
-        int id
-    ) {
-        if (id == -1) {
-            return null;
-        }
-        for (ComponentEntry entry : entries) {
-            if (entry.component.id == id) {
-                return entry;
-            }
-        }
-        return null;
-    }
-
-    private static ComponentEntry findTextEntry(
-        List<ComponentEntry> entries,
-        String wanted
-    ) {
-        String target = normalize(wanted);
-        for (ComponentEntry entry : entries) {
-            Component component = entry.component;
-            if (component.type != 4
-                || component.text == null
-                || component.text.length() == 0) {
-                continue;
-            }
-            if (normalize(component.text.toString()).equals(target)) {
-                return entry;
-            }
-        }
-        return null;
-    }
-
-    private static ComponentEntry nearestInteractiveEntry(
-        List<ComponentEntry> entries,
-        ComponentEntry anchor,
-        int maxDx,
-        int maxDy
-    ) {
-        if (anchor == null) {
-            return null;
-        }
-        if (isInteractive(anchor.component)) {
-            return anchor;
-        }
-
-        int anchorX =
-            anchor.x + Math.max(1, anchor.component.width) / 2;
-        int anchorY =
-            anchor.y + Math.max(1, anchor.component.height) / 2;
-        ComponentEntry best = null;
-        int bestScore = Integer.MAX_VALUE;
-
-        for (ComponentEntry entry : entries) {
-            if (!isInteractive(entry.component)) {
-                continue;
-            }
-            int width = Math.max(1, entry.component.width);
-            int height = Math.max(1, entry.component.height);
-            if (width > 260 || height > 100) {
-                continue;
-            }
-            int centerX = entry.x + width / 2;
-            int centerY = entry.y + height / 2;
-            int dx = Math.abs(centerX - anchorX);
-            int dy = Math.abs(centerY - anchorY);
-            if (dx > maxDx || dy > maxDy) {
-                continue;
-            }
-            int score = dx + dy * 2;
-            if (score < bestScore) {
-                bestScore = score;
-                best = entry;
-            }
-        }
-        return best;
-    }
-
-    private static void collectComponentEntries(
-        Component[] components,
-        int layer,
-        int parentX,
-        int parentY,
-        List<ComponentEntry> out
-    ) {
-        if (components == null) {
-            return;
-        }
-
-        for (Component component : components) {
-            if (component == null || component.overlayer != layer) {
-                continue;
-            }
-            if (component.if3 && InterfaceList.isHidden(component)) {
-                continue;
-            }
-            if (component.type == 0
-                && !component.if3
-                && InterfaceList.isHidden(component)
-                && InterfaceList.hoveredComponent != component) {
-                continue;
-            }
-
-            int x = parentX + component.x;
-            int y = parentY + component.y;
-            out.add(new ComponentEntry(component, x, y));
-
-            if (component.type == 0) {
-                int childX = x - component.scrollX;
-                int childY = y - component.scrollY;
-                collectComponentEntries(
-                    components,
-                    component.id,
-                    childX,
-                    childY,
-                    out
-                );
-                if (component.createdComponents != null) {
-                    collectComponentEntries(
-                        component.createdComponents,
-                        component.id,
-                        childX,
-                        childY,
-                        out
-                    );
-                }
-            }
-        }
-    }
-
     private static void renderDisplayModes(
         Layout layout,
         Component[] components
@@ -870,9 +208,21 @@ public final class ModernGraphicsOptionsUi {
         };
 
         int active = DisplayMode.getWindowMode();
+        int buttonY =
+            layout.panelY
+                + ModernUiMetrics.DISPLAY_BUTTON_Y_OFFSET
+                + 36;
 
         for (int i = 0; i < centers.length; i++) {
-            Rect button = displayModeButton(layout, i);
+            Rect button = new Rect(
+                ModernUiMetrics.centeredX(
+                    centers[i],
+                    ModernUiMetrics.DISPLAY_BUTTON_WIDTH
+                ),
+                buttonY,
+                ModernUiMetrics.DISPLAY_BUTTON_WIDTH,
+                ModernUiMetrics.DISPLAY_BUTTON_HEIGHT
+            );
             drawButton(button, active == i);
             drawCenteredText(
                 labels[i],
@@ -896,7 +246,15 @@ public final class ModernGraphicsOptionsUi {
             );
         }
 
-        Rect resolution = resolutionControl(layout);
+        Rect resolution = new Rect(
+            ModernUiMetrics.centeredX(
+                centers[3],
+                ModernUiMetrics.CONTROL_WIDTH
+            ),
+            layout.panelY + 128,
+            ModernUiMetrics.CONTROL_WIDTH,
+            ModernUiMetrics.CONTROL_HEIGHT
+        );
         String resolutionValue = valueFor(
             components,
             RESOLUTION_VALUE_CHILD,
@@ -910,7 +268,16 @@ public final class ModernGraphicsOptionsUi {
         Layout layout
     ) {
         if (isPopupOpen(components, RESOLUTION_POPUP_BODY_CHILD)) {
-            Rect resolution = resolutionControl(layout);
+            int fullscreenCenter = layout.centerX + 225;
+            Rect resolution = new Rect(
+                ModernUiMetrics.centeredX(
+                    fullscreenCenter,
+                    ModernUiMetrics.CONTROL_WIDTH
+                ),
+                layout.panelY + 128,
+                ModernUiMetrics.CONTROL_WIDTH,
+                ModernUiMetrics.CONTROL_HEIGHT
+            );
             drawPopupFromComponent(
                 components,
                 RESOLUTION_POPUP_BODY_CHILD,
@@ -1581,18 +948,6 @@ public final class ModernGraphicsOptionsUi {
             this.row = row;
             this.closedChild = closedChild;
             this.popupBodyChild = popupBodyChild;
-        }
-    }
-
-    private static final class ComponentEntry {
-        private final Component component;
-        private final int x;
-        private final int y;
-
-        private ComponentEntry(Component component, int x, int y) {
-            this.component = component;
-            this.x = x;
-            this.y = y;
         }
     }
 
