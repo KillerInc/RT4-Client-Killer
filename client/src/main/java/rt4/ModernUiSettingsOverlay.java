@@ -115,7 +115,9 @@ public final class ModernUiSettingsOverlay {
         int popupW =
             modernStyle ? selectorW : Math.max(1, selectorW - 20);
         int rowH =
-            modernStyle ? Math.max(18, selectorH) : 15;
+            modernStyle
+                ? Math.max(ModernUiMetrics.CONTROL_HEIGHT, selectorH)
+                : 15;
 
         if (!modernStyle) {
             GraphicsOptionsUiInjector.setModernNativeClosedHover(
@@ -285,7 +287,10 @@ public final class ModernUiSettingsOverlay {
         int popupX = selectorX;
         int popupY = selectorBottom;
         int popupW = selectorW;
-        int rowH = Math.max(18, selectorH);
+        int rowH = Math.max(
+            ModernUiMetrics.CONTROL_HEIGHT,
+            selectorH
+        );
         int popupH = rowH * 2;
 
         drawModernPopup(popupX, popupY, popupW, popupH);
@@ -332,9 +337,18 @@ public final class ModernUiSettingsOverlay {
             );
         }
 
-        ModernUiImage arrow = ModernUiAssetResolver.get("icons/dropdown", 9, 6);
-        int arrowX = x + width - 15;
-        int arrowY = y + Math.max(4, (height - 6) / 2);
+        ModernUiImage arrow = ModernUiAssetResolver.get(
+            "icons/dropdown",
+            ModernUiMetrics.DROPDOWN_ARROW_WIDTH,
+            ModernUiMetrics.DROPDOWN_ARROW_HEIGHT
+        );
+        int arrowX =
+            x + width - ModernUiMetrics.DROPDOWN_ARROW_WIDTH - 6;
+        int arrowY =
+            y + Math.max(
+                4,
+                (height - ModernUiMetrics.DROPDOWN_ARROW_HEIGHT) / 2
+            );
         if (arrow != null) {
             arrow.render(arrowX, arrowY);
         } else {
@@ -342,17 +356,27 @@ public final class ModernUiSettingsOverlay {
                 "asset:icons/dropdown",
                 arrowX,
                 arrowY,
-                9,
-                6
+                ModernUiMetrics.DROPDOWN_ARROW_WIDTH,
+                ModernUiMetrics.DROPDOWN_ARROW_HEIGHT
             );
         }
 
-        ModernTrueTypeFont.draw(
+        ModernTrueTypeFont.drawInBox(
+            ModernUiFontRegistry.PLAIN_11,
             "On",
-            x + 5,
-            y + Math.min(height - 3, 14),
-            0xE8DDC4,
-            11.0F,
+            x + ModernUiMetrics.CONTROL_TEXT_PAD_X,
+            y,
+            Math.max(
+                1,
+                width
+                    - ModernUiMetrics.CONTROL_ARROW_RESERVED
+                    - ModernUiMetrics.CONTROL_TEXT_PAD_X
+            ),
+            height,
+            ModernUiMetrics.TEXT_PRIMARY,
+            0,
+            1,
+            ModernUiMetrics.FONT_CONTROL,
             false
         );
     }
@@ -398,12 +422,19 @@ public final class ModernUiSettingsOverlay {
             }
         }
 
-        ModernTrueTypeFont.drawCentered(
+        ModernTrueTypeFont.drawInBox(
+            ModernUiFontRegistry.PLAIN_12,
             text,
-            x + width / 2,
-            y + Math.min(height - 3, 15),
-            selected ? 0xFFF4D1 : 0xE8DDC4,
-            12.0F,
+            x,
+            y,
+            width,
+            height,
+            selected
+                ? ModernUiMetrics.TEXT_ACCENT
+                : ModernUiMetrics.TEXT_PRIMARY,
+            1,
+            1,
+            ModernUiMetrics.FONT_LABEL,
             false
         );
     }
