@@ -68,7 +68,7 @@ public final class ModernUiMetrics {
     public static final int MAIN_MENU_BUTTON_HEIGHT = 28;
 
     public static final int AUDIO_PANEL_WIDTH = 420;
-    public static final int AUDIO_PANEL_HEIGHT = 350;
+    public static final int AUDIO_PANEL_HEIGHT = 374;
     public static final int AUDIO_PANEL_INSET = 22;
 
     public static final int AUDIO_SLIDER_WIDTH = 156;
