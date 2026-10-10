@@ -49,7 +49,6 @@ public final class GraphicsOptionsUiInjector {
 
     private static Component nativePopupHitTarget;
     private static Component nativePopupBodyTarget;
-    private static Component nativeArrowTarget;
     private static Component nativePopupVisualSource;
     private static int nativePopupVisualCount = -1;
     private static int nativePopupVisualWidth = -1;
@@ -398,7 +397,6 @@ public final class GraphicsOptionsUiInjector {
         Component targetClosed = null;
         Component targetPopupHit = null;
         Component targetPopupBody = null;
-        Component targetArrow = null;
 
         for (Component component : components) {
             if (component == null) {
@@ -411,16 +409,6 @@ public final class GraphicsOptionsUiInjector {
                 targetPopupHit = component;
             } else if (component.clientCode == CLIENT_CODE_POPUP_BODY) {
                 targetPopupBody = component;
-            } else if (component.clientCode == CLIENT_CODE_SELECTOR_PIECE
-                && component.type == 5
-                && component.spriteId == 1400
-                && component.hFlip
-                && component.yMode == 2) {
-                // The visible arrow is in the RIGHT 1400 cap, not the 1401
-                // stretch/body. Vanilla mirrors this cap horizontally for the
-                // right edge, then vertically flips that same sprite while
-                // the dropdown is open.
-                targetArrow = component;
             }
         }
 
@@ -432,7 +420,6 @@ public final class GraphicsOptionsUiInjector {
 
         nativePopupHitTarget = targetPopupHit;
         nativePopupBodyTarget = targetPopupBody;
-        nativeArrowTarget = targetArrow;
 
         List<LayoutEntry> entries = new ArrayList<>();
         collectVisibleLayout(components, -1, 0, 0, entries);
@@ -587,28 +574,62 @@ public final class GraphicsOptionsUiInjector {
     }
 
     public static void setModernNativeDropdownOpen(boolean open) {
-        if (nativePopupHitTarget == null
-            || nativePopupBodyTarget == null
-            || nativeArrowTarget == null) {
+        if (nativePopupHitTarget == null || nativePopupBodyTarget == null) {
             syncModernSelectorNativeVisuals();
         }
 
         setHidden(nativePopupHitTarget, !open);
         setHidden(nativePopupBodyTarget, !open);
 
-        // Vanilla CS2 uses CC_SETVFLIP on the mirrored RIGHT 1400 cap when a
-        // Graphics Options dropdown opens. That cap contains the visible
-        // chevron; the 1401 component is only the stretching center/body.
-        if (nativeArrowTarget != null && nativeArrowTarget.vFlip != open) {
-            boolean old = nativeArrowTarget.vFlip;
-            nativeArrowTarget.vFlip = open;
-            InterfaceList.redraw(nativeArrowTarget);
-            UiDiagnostics.onVFlipChange(nativeArrowTarget, old, open);
+        // The diagnostic trace shows what vanilla actually flips: not any of
+        // the 1400/1401 frame pieces, but the runtime-created 16x16 sprite
+        // 1248 inside the CLOSED value container. Fog, AA, Ground Decoration,
+        // etc. all use CC_SETVFLIP on that created child when opening/closing.
+        Component runtimeArrow =
+            nativeClosedVisualTarget == null
+                ? null
+                : findSpriteComponent(
+                    nativeClosedVisualTarget.createdComponents,
+                    1248
+                );
+
+        if (runtimeArrow != null && runtimeArrow.vFlip != open) {
+            boolean old = runtimeArrow.vFlip;
+            runtimeArrow.vFlip = open;
+            InterfaceList.redraw(nativeClosedVisualTarget);
+            UiDiagnostics.onVFlipChange(runtimeArrow, old, open);
         }
 
         if (!open) {
             setModernNativeDropdownHover(-1);
         }
+    }
+
+    private static Component findSpriteComponent(
+        Component[] components,
+        int spriteId
+    ) {
+        if (components == null) {
+            return null;
+        }
+
+        for (Component component : components) {
+            if (component == null) {
+                continue;
+            }
+
+            if (component.type == 5 && component.spriteId == spriteId) {
+                return component;
+            }
+
+            Component nested =
+                findSpriteComponent(component.createdComponents, spriteId);
+            if (nested != null) {
+                return nested;
+            }
+        }
+
+        return null;
     }
 
     public static void setModernNativeClosedHover(boolean hovered) {

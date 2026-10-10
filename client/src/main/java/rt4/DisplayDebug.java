@@ -78,6 +78,23 @@ public final class DisplayDebug {
 
     public static void startup() {
         File base = getBaseDirectory();
+
+        // Each client process owns one diagnostic session. Start with a clean
+        // log instead of appending every historical launch forever.
+        synchronized (LOCK) {
+            headerWritten = false;
+            for (File file : getLogFiles()) {
+                try (FileWriter ignored = new FileWriter(file, false)) {
+                    // Opening with append=false truncates the previous session.
+                } catch (Throwable ex) {
+                    System.err.println(
+                        "[DisplayDebug] Failed clearing "
+                            + file.getAbsolutePath() + ": " + ex
+                    );
+                }
+            }
+        }
+
         if (!uncaughtHandlerInstalled) {
             uncaughtHandlerInstalled = true;
             Thread.setDefaultUncaughtExceptionHandler((thread, throwable) ->
