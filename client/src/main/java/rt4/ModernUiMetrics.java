@@ -23,28 +23,32 @@ public final class ModernUiMetrics {
     public static final float FONT_SECTION = 13.0F;
     public static final float FONT_LABEL = 12.0F;
     public static final float FONT_CONTROL = 11.0F;
+    public static final float FONT_DROPDOWN = 13.0F;
     public static final float FONT_BUTTON = 13.0F;
     public static final float FONT_MAIN_MENU_BUTTON = 13.0F;
     public static final float FONT_MAIN_MENU_SUBTITLE = 13.0F;
     public static final float FONT_MAIN_MENU_DETAIL = 12.0F;
     public static final float FONT_MAIN_MENU_EDITION = 33.0F;
 
-    public static final int GRAPHICS_PANEL_WIDTH = 690;
-    public static final int GRAPHICS_PANEL_HEIGHT = 385;
-    public static final int GRAPHICS_PANEL_INSET = 18;
+    public static final int GRAPHICS_PANEL_WIDTH = 730;
+    public static final int GRAPHICS_PANEL_HEIGHT = 420;
+    public static final int GRAPHICS_PANEL_INSET = 22;
+    public static final int GRAPHICS_PANEL_Y_OFFSET = 38;
+    public static final int GRAPHICS_TOP_DIVIDER_Y_OFFSET = 114;
+    public static final int GRAPHICS_BOTTOM_DIVIDER_Y_OFFSET = 318;
 
-    public static final int DISPLAY_BUTTON_WIDTH = 96;
-    public static final int DISPLAY_BUTTON_HEIGHT = 28;
+    public static final int DISPLAY_BUTTON_WIDTH = 104;
+    public static final int DISPLAY_BUTTON_HEIGHT = 30;
     public static final int DISPLAY_BUTTON_Y_OFFSET = 22;
 
-    public static final int CONTROL_WIDTH = 112;
-    public static final int CONTROL_HEIGHT = 22;
+    public static final int CONTROL_WIDTH = 116;
+    public static final int CONTROL_HEIGHT = 24;
     public static final int CONTROL_TEXT_PAD_X = 6;
     public static final int CONTROL_ARROW_RESERVED = 20;
 
-    public static final int NAV_BUTTON_WIDTH = 156;
-    public static final int NAV_BUTTON_HEIGHT = 28;
-    public static final int NAV_BUTTON_Y_OFFSET = 318;
+    public static final int NAV_BUTTON_WIDTH = 168;
+    public static final int NAV_BUTTON_HEIGHT = 30;
+    public static final int NAV_BUTTON_Y_OFFSET = 330;
 
     public static final int SLIDER_HEIGHT = 20;
     public static final int SLIDER_KNOB_WIDTH = 13;
