@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -498,11 +497,16 @@ public final class ModernUiAssetResolver {
         }
 
         String text = new String(bytes, StandardCharsets.UTF_8);
-        int tagEnd = text.indexOf('>');
+        String lower = text.toLowerCase(Locale.ROOT);
+        int svgStart = lower.indexOf("<svg");
+        if (svgStart < 0) {
+            return null;
+        }
+        int tagEnd = text.indexOf('>', svgStart);
         if (tagEnd < 0) {
             return null;
         }
-        String root = text.substring(0, tagEnd + 1);
+        String root = text.substring(svgStart, tagEnd + 1);
 
         Double width = parseSvgNumberAttribute(root, "width");
         Double height = parseSvgNumberAttribute(root, "height");
