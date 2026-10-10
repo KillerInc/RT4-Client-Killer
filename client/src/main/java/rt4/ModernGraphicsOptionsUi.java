@@ -53,11 +53,12 @@ public final class ModernGraphicsOptionsUi {
         }
 
         ModernGraphicsOptionsLayout layout = layout();
-        ModernUiRect clip = new ModernUiRect(
-            layout.panelX,
-            layout.panelY,
-            layout.panelWidth,
-            layout.panelHeight
+        ModernUiRect clip = layout.panel();
+        ModernUiRect popupClip = new ModernUiRect(
+            0,
+            0,
+            GameShell.canvasWidth,
+            GameShell.canvasHeight
         );
 
         // Closed dropdowns: bind only the action container. The vanilla
@@ -93,7 +94,7 @@ public final class ModernGraphicsOptionsUi {
                     components,
                     spec.popupBodyChild,
                     layout.control(spec.column, spec.row),
-                    clip
+                    popupClip
                 );
             }
         }
@@ -122,7 +123,7 @@ public final class ModernGraphicsOptionsUi {
             bindResolutionPopupRows(
                 components,
                 layout.resolution(),
-                clip
+                popupClip
             );
         }
 
