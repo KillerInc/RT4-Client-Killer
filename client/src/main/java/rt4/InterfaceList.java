@@ -651,20 +651,7 @@ public class InterfaceList {
 			if (component != null && component.overlayer == overlayerId && (!component.if3 || component.type == 0 || component.hasEventHandlers || getServerActiveProperties(component).events != 0 || component == Cs1ScriptRunner.dragParentComponent || component.clientCode == 1338) && (!component.if3 || !isHidden(component))) {
 				@Pc(50) int absX = component.x + parentX;
 				@Pc(55) int absY = component.y + parentY;
-				boolean modernHitbox =
-					ModernUiHitboxRegistry.has(component);
-				if (modernHitbox) {
-					absX = ModernUiHitboxRegistry.adjustX(
-						component,
-						absX
-					);
-					absY = ModernUiHitboxRegistry.adjustY(
-						component,
-						absY
-					);
-				} else if (ModernUiRenderer.usesMainMenuContentBounds(component)) {
-					// First-frame fallback while the Modern main-menu renderer
-					// is establishing its canonical geometry.
+				if (ModernUiRenderer.usesMainMenuContentBounds(component)) {
 					absX = ModernUiRenderer.adjustMainMenuComponentX(
 						component,
 						absX
@@ -674,14 +661,26 @@ public class InterfaceList {
 						absY
 					);
 				}
-				int interactionWidth = modernHitbox
-					? ModernUiHitboxRegistry.width(
+				boolean modernAudioHitbox =
+					ModernAudioOptionsUi.hasHitboxOverride(component);
+				if (modernAudioHitbox) {
+					absX = ModernAudioOptionsUi.adjustHitboxX(
+						component,
+						absX
+					);
+					absY = ModernAudioOptionsUi.adjustHitboxY(
+						component,
+						absY
+					);
+				}
+				int interactionWidth = modernAudioHitbox
+					? ModernAudioOptionsUi.hitboxWidth(
 						component,
 						component.width
 					)
 					: component.width;
-				int interactionHeight = modernHitbox
-					? ModernUiHitboxRegistry.height(
+				int interactionHeight = modernAudioHitbox
+					? ModernAudioOptionsUi.hitboxHeight(
 						component,
 						component.height
 					)
@@ -695,28 +694,7 @@ public class InterfaceList {
 				int effectiveClipTop = clipTop;
 				int effectiveClipRight = clipRight;
 				int effectiveClipBottom = clipBottom;
-				if (modernHitbox) {
-					effectiveClipLeft =
-						ModernUiHitboxRegistry.clipLeft(
-							component,
-							clipLeft
-						);
-					effectiveClipTop =
-						ModernUiHitboxRegistry.clipTop(
-							component,
-							clipTop
-						);
-					effectiveClipRight =
-						ModernUiHitboxRegistry.clipRight(
-							component,
-							clipRight
-						);
-					effectiveClipBottom =
-						ModernUiHitboxRegistry.clipBottom(
-							component,
-							clipBottom
-						);
-				} else if (ModernUiRenderer.usesMainMenuContentBounds(component)) {
+				if (ModernUiRenderer.usesMainMenuContentBounds(component)) {
 					effectiveClipLeft =
 						ModernUiRenderer.getMainMenuContentLeft(clipLeft);
 					effectiveClipTop =
@@ -725,6 +703,15 @@ public class InterfaceList {
 						ModernUiRenderer.getMainMenuContentRight(clipRight);
 					effectiveClipBottom =
 						ModernUiRenderer.getMainMenuContentBottom(clipBottom);
+				} else if (modernAudioHitbox) {
+					effectiveClipLeft =
+						ModernAudioOptionsUi.panelLeft(clipLeft);
+					effectiveClipTop =
+						ModernAudioOptionsUi.panelTop(clipTop);
+					effectiveClipRight =
+						ModernAudioOptionsUi.panelRight(clipRight);
+					effectiveClipBottom =
+						ModernAudioOptionsUi.panelBottom(clipBottom);
 				}
 				if (component.type == 2) {
 					left = effectiveClipLeft;
