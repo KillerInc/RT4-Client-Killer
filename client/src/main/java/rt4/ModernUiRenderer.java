@@ -2072,7 +2072,6 @@ public final class ModernUiRenderer {
         private Component standardChoiceComponent;
         private Component highChoiceComponent;
         private UiRect musicSlider;
-        private int musicSliderInputDeltaY;
 
         private int bodyComponentId = -1;
         private int logoComponentId = -1;
@@ -2485,7 +2484,6 @@ public final class ModernUiRenderer {
                     modernLayout == null
                         ? contentBounds.y + 322
                         : modernLayout.musicSliderTop;
-                musicSliderInputDeltaY = targetTop - musicSlider.y;
                 musicSlider = new UiRect(
                     musicSlider.x,
                     targetTop,
