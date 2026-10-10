@@ -1169,6 +1169,7 @@ public final class client extends GameShell {
 			InterfaceList.processSubInterface(0, 0, 0, GameShell.canvasWidth, InterfaceList.topLevelInterface, 0, GameShell.canvasHeight);
 			UiDiagnostics.logGraphicsOptionsClick();
 		}
+		ModernLoginScreenUi.processInput();
 		ModernUiSettingsOverlay.afterInterfaceScripts();
 		ModernUiSettingsOverlay.processInput();
 		InterfaceList.transmitTimer++;
