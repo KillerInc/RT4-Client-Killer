@@ -291,13 +291,13 @@ public final class GraphicsOptionsUiInjector {
     }
 
     /**
-     * Normalizes the real cache-driven Graphics Options dropdowns.
+     * Observes native Graphics Options dropdown state without modifying it.
      *
-     * The popup rows are not one hidden container and they are not separate
-     * child interfaces. The cache toggles several text/sprite pieces under a
-     * shared overlayer. We therefore identify visible popup groups from their
-     * actual rendered component geometry and hide the stale popup rows when a
-     * different dropdown opens.
+     * Vanilla CS2 owns the popup containers and their runtime-created text.
+     * Earlier Killer code tried to normalize those runtime rows and could
+     * permanently hide the glyph children when Modern UI took focus. This
+     * method is intentionally read-only: it only reports whether any native
+     * popup container is currently visible.
      */
     public static void normalizeNativeDropdowns() {
         suppressedNativeDropdownComponents.clear();
@@ -307,77 +307,20 @@ public final class GraphicsOptionsUiInjector {
         if (InterfaceList.components == null
             || interfaceId < 0
             || interfaceId >= InterfaceList.components.length) {
-            previousVisibleDropdownGroups.clear();
-            lastVisibleDropdownGroup = -1;
             return;
         }
 
         Component[] components = InterfaceList.components[interfaceId];
         if (components == null || !isGraphicsOptionsActive(components)) {
-            previousVisibleDropdownGroups.clear();
-            lastVisibleDropdownGroup = -1;
             return;
         }
 
-        List<LayoutEntry> entries = new ArrayList<>();
-        collectVisibleLayout(components, -1, 0, 0, entries);
-
-        Map<Integer, DropdownGroup> groups =
-            findVisibleDropdownGroups(entries);
-
-        if (groups.isEmpty()) {
-            previousVisibleDropdownGroups.clear();
-            lastVisibleDropdownGroup = -1;
-            return;
-        }
-
-        int keep = -1;
-
-        // Prefer the group that became visible this tick.
-        for (DropdownGroup group : groups.values()) {
-            if (!previousVisibleDropdownGroups.contains(group.groupKey)) {
-                if (keep == -1
-                    || group.distanceToClick()
-                        < groups.get(keep).distanceToClick()) {
-                    keep = group.groupKey;
-                }
+        for (Component component : components) {
+            if (isNativeDropdownPopupContainer(components, component)
+                && !component.hidden) {
+                nativeDropdownOpen = true;
+                return;
             }
-        }
-
-        // Otherwise retain the group that was already authoritative.
-        if (keep == -1 && groups.containsKey(lastVisibleDropdownGroup)) {
-            keep = lastVisibleDropdownGroup;
-        }
-
-        // Final fallback: the popup closest to the user's last click.
-        if (keep == -1) {
-            for (DropdownGroup group : groups.values()) {
-                if (keep == -1
-                    || group.distanceToClick()
-                        < groups.get(keep).distanceToClick()) {
-                    keep = group.groupKey;
-                }
-            }
-        }
-
-        // Exactly one native popup is allowed to own the foreground. Stale
-        // popup state may still exist in the cache scripts, but every visual
-        // and hit-test component belonging to those stale popups is suppressed.
-        if (keep != -1) {
-            nativeDropdownOpen = true;
-            for (DropdownGroup group : groups.values()) {
-                if (group.groupKey != keep) {
-                    suppressDropdownGroup(entries, group, false);
-                }
-            }
-        }
-
-        previousVisibleDropdownGroups.clear();
-        if (keep != -1) {
-            previousVisibleDropdownGroups.add(keep);
-            lastVisibleDropdownGroup = keep;
-        } else {
-            lastVisibleDropdownGroup = -1;
         }
     }
 
@@ -841,19 +784,74 @@ public final class GraphicsOptionsUiInjector {
             return;
         }
 
-        List<LayoutEntry> entries = new ArrayList<>();
-        collectVisibleLayout(components, -1, 0, 0, entries);
-        Map<Integer, DropdownGroup> groups =
-            findVisibleDropdownGroups(entries);
+        int closed = 0;
+        for (Component component : components) {
+            if (!isNativeDropdownPopupContainer(components, component)) {
+                continue;
+            }
 
-        suppressedNativeDropdownComponents.clear();
-        for (DropdownGroup group : groups.values()) {
-            suppressDropdownGroup(entries, group, true);
+            if (!component.hidden) {
+                component.hidden = true;
+                InterfaceList.redraw(component);
+                closed++;
+            }
         }
 
+        suppressedNativeDropdownComponents.clear();
         previousVisibleDropdownGroups.clear();
         lastVisibleDropdownGroup = -1;
         nativeDropdownOpen = false;
+
+        DisplayDebug.log(
+            "GRAPHICS_OPTIONS closed native dropdown containers=" + closed
+                + " without touching runtime-created option glyphs"
+        );
+    }
+
+    private static boolean isNativeDropdownPopupContainer(
+        Component[] components,
+        Component component
+    ) {
+        if (component == null
+            || component.clientCode != 0
+            || component.type != 0
+            || component.dynamicWidthValue != 1
+            || component.baseX != 0
+            || component.xMode != 0
+            || component.yMode != 1) {
+            return false;
+        }
+
+        boolean popupGeometry =
+            component.baseY == 37 && component.baseWidth == 18
+                || component.baseY == 38 && component.baseWidth == 20;
+        if (!popupGeometry || component.overlayer == -1) {
+            return false;
+        }
+
+        int leftCaps = 0;
+        int bodies = 0;
+        boolean hasLabel = false;
+
+        for (Component sibling : components) {
+            if (sibling == null || sibling.overlayer != component.overlayer) {
+                continue;
+            }
+
+            if (sibling.type == 4
+                && sibling.baseY == 0
+                && sibling.baseHeight == 15) {
+                hasLabel = true;
+            } else if (sibling.type == 5 && sibling.baseY == 20) {
+                if (sibling.spriteId == 1400) {
+                    leftCaps++;
+                } else if (sibling.spriteId == 1401) {
+                    bodies++;
+                }
+            }
+        }
+
+        return hasLabel && leftCaps >= 2 && bodies >= 1;
     }
 
     public static boolean shouldSuppressHiddenComponent(
