@@ -68,7 +68,7 @@ public final class ModernAudioOptionsUi {
         int choiceDividerY = Math.min(
             layout.monoLabel.rect.y,
             layout.stereoLabel.rect.y
-        ) - 4;
+        ) + 4;
         drawAsset(
             "audio-options/divider",
             layout.panel.x + ModernUiMetrics.AUDIO_PANEL_INSET,
@@ -116,18 +116,18 @@ public final class ModernAudioOptionsUi {
             layout.monoLabel,
             layout.monoToggle,
             !Preferences.stereo,
-            12
+            24
         );
         drawChoice(
             layout.stereoLabel,
             layout.stereoToggle,
             Preferences.stereo,
-            12
+            24
         );
 
         Rect mainMenuVisual = new Rect(
             layout.mainMenuButton.x,
-            layout.mainMenuButton.y + 12,
+            layout.mainMenuButton.y + 24,
             layout.mainMenuButton.width,
             layout.mainMenuButton.height
         );
