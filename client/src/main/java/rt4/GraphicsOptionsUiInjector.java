@@ -1254,44 +1254,70 @@ public final class GraphicsOptionsUiInjector {
             return;
         }
 
-        List<LayoutEntry> entries = new ArrayList<>();
-        collectVisibleLayout(components, -1, 0, 0, entries);
-
         boolean foundOpen = false;
-        boolean insideOpenPopup = false;
-        int clickedSelectorParent = -1;
-
-        for (LayoutEntry entry : entries) {
-            Component component = entry.component;
-            if (component == null) {
-                continue;
-            }
-
+        for (Component component : components) {
             if (isNativeDropdownPopupContainer(components, component)
                 && !component.hidden) {
                 foundOpen = true;
-                if (containsPoint(
+                break;
+            }
+        }
+
+        boolean insideOpenPopup;
+        int clickedSelectorParent;
+
+        if (ModernUiManager.isEnabled()) {
+            // Modern UI owns all interaction geometry. Native dropdown
+            // containers are only open/closed state and CS2 action backends.
+            insideOpenPopup =
+                ModernGraphicsOptionsUi.isInsideOpenDropdown(
+                    components,
                     clickX,
-                    clickY,
-                    entry.x,
-                    entry.y,
-                    component.width,
-                    component.height
-                )) {
+                    clickY
+                );
+            clickedSelectorParent =
+                ModernGraphicsOptionsUi.closedDropdownParentAt(
+                    components,
+                    clickX,
+                    clickY
+                );
+        } else {
+            List<LayoutEntry> entries = new ArrayList<>();
+            collectVisibleLayout(components, -1, 0, 0, entries);
+
+            insideOpenPopup = false;
+            clickedSelectorParent = -1;
+
+            for (LayoutEntry entry : entries) {
+                Component component = entry.component;
+                if (component == null) {
+                    continue;
+                }
+
+                if (isNativeDropdownPopupContainer(components, component)
+                    && !component.hidden
+                    && containsPoint(
+                        clickX,
+                        clickY,
+                        entry.x,
+                        entry.y,
+                        component.width,
+                        component.height
+                    )) {
                     insideOpenPopup = true;
                 }
-            }
 
-            if (isNativeDropdownClosedContainer(components, component)
-                && containsPoint(
-                    clickX,
-                    clickY,
-                    entry.x,
-                    entry.y,
-                    component.width,
-                    component.height
-                )) {
-                clickedSelectorParent = component.overlayer;
+                if (isNativeDropdownClosedContainer(components, component)
+                    && containsPoint(
+                        clickX,
+                        clickY,
+                        entry.x,
+                        entry.y,
+                        component.width,
+                        component.height
+                    )) {
+                    clickedSelectorParent = component.overlayer;
+                }
             }
         }
 
