@@ -67,6 +67,20 @@ public final class ModernUiMetrics {
     public static final int MAIN_MENU_BUTTON_WIDTH = 160;
     public static final int MAIN_MENU_BUTTON_HEIGHT = 28;
 
+    public static final int AUDIO_PANEL_WIDTH = 420;
+    public static final int AUDIO_PANEL_HEIGHT = 330;
+    public static final int AUDIO_PANEL_INSET = 28;
+
+    public static final int AUDIO_SLIDER_WIDTH = 156;
+    public static final int AUDIO_SLIDER_CONTAINER_HEIGHT = 24;
+    public static final int AUDIO_SLIDER_HEIGHT = 20;
+    public static final int AUDIO_SLIDER_KNOB_WIDTH = 15;
+    public static final int AUDIO_SLIDER_KNOB_HEIGHT = 20;
+
+    public static final int AUDIO_TOGGLE_SIZE = 32;
+    public static final int AUDIO_BUTTON_WIDTH = 168;
+    public static final int AUDIO_BUTTON_HEIGHT = 30;
+
     private ModernUiMetrics() {
     }
 
