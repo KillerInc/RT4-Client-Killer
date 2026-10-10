@@ -143,10 +143,14 @@ public final class ModernMainMenuLayout {
             620,
             Math.max(400, canvasWidth * 54 / 100)
         );
-        return Math.min(
+        width = Math.min(
             width,
             Math.max(240, canvasWidth - 40)
         );
+
+        // Main-menu RuneScape logo is intentionally 25% smaller than the
+        // previous Modern baseline while preserving its aspect ratio.
+        return Math.max(1, width * 3 / 4);
     }
 
     public static int logoHeightForWidth(int logoWidth) {
