@@ -1,8 +1,9 @@
 package rt4;
 
 /**
- * Killer Edition behavior layer for the Modern UI controls added to Graphics
- * Options. Vanilla interface processing remains authoritative and untouched.
+ * Killer Edition behavior layer for the extra Modern UI controls in Graphics
+ * Options. Modern layout rectangles are authoritative for interaction while
+ * RT4 Components remain the action/state backend.
  */
 public final class ModernUiSettingsOverlay {
     private static boolean graphicsOptionsSeen;
