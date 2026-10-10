@@ -78,7 +78,19 @@ public final class ModernUiAssetResolver {
 
             BufferedImage image;
             if (resolved.name.toLowerCase(Locale.ROOT).endsWith(".svg")) {
-                image = ModernSvgRasterizer.rasterize(resolved.bytes, width, height);
+                // SVG disk lookup, rasterization and persistence are handled
+                // entirely by the dedicated vector-cache worker. A miss is
+                // allowed to return null for a frame while the worker builds
+                // the correctly-sized raster in the background.
+                image = ModernVectorCacheManager.getOrQueue(
+                    path,
+                    width,
+                    height,
+                    resolved.bytes
+                );
+                if (image == null) {
+                    return null;
+                }
             } else {
                 image = ImageIO.read(new ByteArrayInputStream(resolved.bytes));
                 if (image == null) {
