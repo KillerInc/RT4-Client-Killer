@@ -1,25 +1,53 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="420" height="330" viewBox="0 0 420 330">
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="340" viewBox="0 0 320 340">
   <defs>
-    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#3b3022" stop-opacity=".98"/>
-      <stop offset=".48" stop-color="#2d241a" stop-opacity=".97"/>
-      <stop offset="1" stop-color="#211a13" stop-opacity=".99"/>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ead7a5"/>
+      <stop offset=".46" stop-color="#d9be7e"/>
+      <stop offset="1" stop-color="#cba962"/>
     </linearGradient>
-    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#d1b574"/>
-      <stop offset=".45" stop-color="#806743"/>
-      <stop offset="1" stop-color="#e0c787"/>
+    <linearGradient id="roll" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f2dfa9"/>
+      <stop offset=".42" stop-color="#d3b26d"/>
+      <stop offset=".72" stop-color="#aa8146"/>
+      <stop offset="1" stop-color="#7b562e"/>
+    </linearGradient>
+    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5c3824"/>
+      <stop offset=".25" stop-color="#c69258"/>
+      <stop offset=".5" stop-color="#f0c583"/>
+      <stop offset=".75" stop-color="#9e673d"/>
+      <stop offset="1" stop-color="#4b2d1e"/>
     </linearGradient>
     <filter id="shadow" x="-12%" y="-12%" width="124%" height="124%">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="3.2"/>
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
       <feOffset dy="2"/>
-      <feComponentTransfer><feFuncA type="linear" slope=".58"/></feComponentTransfer>
+      <feComponentTransfer><feFuncA type="linear" slope=".5"/></feComponentTransfer>
       <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
-  <rect x="3" y="3" width="414" height="324" rx="13" fill="url(#panel)" stroke="#17120e" stroke-width="6" filter="url(#shadow)"/>
-  <rect x="7" y="7" width="406" height="316" rx="10" fill="none" stroke="url(#rim)" stroke-width="2"/>
-  <rect x="11" y="11" width="398" height="308" rx="8" fill="none" stroke="#59482f" stroke-width="1"/>
-  <path d="M18 18 H402" stroke="#ead092" stroke-opacity=".23"/>
-  <path d="M18 312 H402" stroke="#17120e" stroke-opacity=".8"/>
+
+  <path d="M54 34
+           C47 49 49 65 53 78
+           L53 279
+           C48 292 47 306 54 316
+           L266 316
+           C273 304 272 291 267 279
+           L267 79
+           C272 64 273 48 266 34 Z"
+        fill="url(#paper)" stroke="#7b5a33" stroke-width="1.4" filter="url(#shadow)"/>
+
+  <path d="M58 49 C98 43 222 43 262 49" fill="none" stroke="#f4e5bd" stroke-opacity=".45"/>
+  <path d="M61 302 C104 307 216 307 259 302" fill="none" stroke="#8f6b3a" stroke-opacity=".28"/>
+
+  <rect x="28" y="18" width="264" height="34" rx="16" fill="url(#roll)" stroke="#684524" stroke-width="1.5"/>
+  <rect x="25" y="23" width="10" height="24" rx="4" fill="url(#metal)" stroke="#4a2d1e"/>
+  <rect x="285" y="23" width="10" height="24" rx="4" fill="url(#metal)" stroke="#4a2d1e"/>
+  <path d="M17 35 L25 25 L25 45 Z" fill="#c58e50" stroke="#4a2d1e"/>
+  <path d="M303 35 L295 25 L295 45 Z" fill="#c58e50" stroke="#4a2d1e"/>
+
+  <rect x="28" y="288" width="264" height="34" rx="16" fill="url(#roll)" stroke="#684524" stroke-width="1.5"/>
+  <rect x="25" y="293" width="10" height="24" rx="4" fill="url(#metal)" stroke="#4a2d1e"/>
+  <rect x="285" y="293" width="10" height="24" rx="4" fill="url(#metal)" stroke="#4a2d1e"/>
+  <path d="M17 305 L25 295 L25 315 Z" fill="#c58e50" stroke="#4a2d1e"/>
+  <path d="M303 305 L295 295 L295 315 Z" fill="#c58e50" stroke="#4a2d1e"/>
 </svg>
