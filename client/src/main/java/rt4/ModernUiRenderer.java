@@ -1353,22 +1353,18 @@ public final class ModernUiRenderer {
             );
         }
 
-        if (layout.standardChoiceComponent != null
-            && layout.standardChoice != null) {
-            ModernUiInputRouter.bind(
-                layout.standardChoiceComponent,
-                toModernRect(layout.standardChoice),
-                clip
-            );
-        }
-        if (layout.highChoiceComponent != null
-            && layout.highChoice != null) {
-            ModernUiInputRouter.bind(
-                layout.highChoiceComponent,
-                toModernRect(layout.highChoice),
-                clip
-            );
-        }
+        bindMainMenuChoiceSide(
+            layout,
+            true,
+            layout.standardChoice,
+            clip
+        );
+        bindMainMenuChoiceSide(
+            layout,
+            false,
+            layout.highChoice,
+            clip
+        );
 
         if (layout.musicSlider != null
             && !layout.musicSliderComponentIds.isEmpty()) {
@@ -1419,6 +1415,79 @@ public final class ModernUiRenderer {
                     );
                 }
             }
+        }
+    }
+
+    private static void bindMainMenuChoiceSide(
+        MainMenuLayout layout,
+        boolean leftSide,
+        UiRect target,
+        ModernUiRect clip
+    ) {
+        if (target == null) {
+            return;
+        }
+
+        List<MainMenuImageEntry> entries = new ArrayList<>();
+        List<UiRect> sourceRects = new ArrayList<>();
+        for (MainMenuImageEntry image : layout.images) {
+            if (!layout.choiceComponentIds.contains(image.componentId)) {
+                continue;
+            }
+
+            boolean imageLeft =
+                rectCenterX(image.rect) < layout.centerX;
+            if (imageLeft != leftSide) {
+                continue;
+            }
+
+            entries.add(image);
+            sourceRects.add(image.rect);
+        }
+
+        UiRect sourceUnion = unionRects(sourceRects);
+        if (sourceUnion == null) {
+            Component fallback =
+                leftSide
+                    ? layout.standardChoiceComponent
+                    : layout.highChoiceComponent;
+            if (fallback != null) {
+                ModernUiInputRouter.bind(
+                    fallback,
+                    toModernRect(target),
+                    clip
+                );
+            }
+            return;
+        }
+
+        for (MainMenuImageEntry image : entries) {
+            int x =
+                target.x
+                    + (image.rect.x - sourceUnion.x)
+                        * target.width
+                        / Math.max(1, sourceUnion.width);
+            int y =
+                target.y
+                    + (image.rect.y - sourceUnion.y)
+                        * target.height
+                        / Math.max(1, sourceUnion.height);
+            int width = Math.max(
+                1,
+                image.rect.width * target.width
+                    / Math.max(1, sourceUnion.width)
+            );
+            int height = Math.max(
+                1,
+                image.rect.height * target.height
+                    / Math.max(1, sourceUnion.height)
+            );
+
+            ModernUiInputRouter.bind(
+                image.component,
+                new ModernUiRect(x, y, width, height),
+                clip
+            );
         }
     }
 
