@@ -104,19 +104,35 @@ public final class ModernUiSettingsOverlay {
             return;
         }
 
+        boolean modernStyle = ModernUiManager.isEnabled();
+        if (modernStyle) {
+            selectorX = ModernGraphicsOptionsUi.getModernSelectorX();
+            selectorY = ModernGraphicsOptionsUi.getModernSelectorY();
+            selectorRight =
+                selectorX + ModernGraphicsOptionsUi.getModernSelectorWidth();
+            selectorBottom =
+                selectorY + ModernGraphicsOptionsUi.getModernSelectorHeight();
+
+            editorX = ModernGraphicsOptionsUi.getStyleEditorX();
+            editorY = ModernGraphicsOptionsUi.getStyleEditorY();
+            editorW = ModernGraphicsOptionsUi.getStyleEditorWidth();
+            editorH = ModernGraphicsOptionsUi.getStyleEditorHeight();
+        }
+
         int selectorW = selectorWidth();
         int selectorH = selectorHeight();
-        boolean modernStyle = ModernUiManager.isEnabled();
 
         int popupX =
             modernStyle ? selectorX : selectorX + 10;
         int popupY =
-            modernStyle ? selectorBottom : selectorBottom - 2;
+            modernStyle
+                ? selectorY + selectorH - 1
+                : selectorBottom - 2;
         int popupW =
             modernStyle ? selectorW : Math.max(1, selectorW - 20);
         int rowH =
             modernStyle
-                ? Math.max(ModernUiMetrics.CONTROL_HEIGHT, selectorH)
+                ? ModernUiMetrics.DROPDOWN_POPUP_ROW_HEIGHT
                 : 15;
 
         if (!modernStyle) {
@@ -263,10 +279,11 @@ public final class ModernUiSettingsOverlay {
 
         ModernUiManager.initialize();
 
-        // Standard mode is 100% cache/runtime Components and therefore goes
-        // through the original RT4 renderer. This overlay draws only Modern
-        // mode assets.
-        if (!ModernUiManager.isEnabled()) {
+        // Modern Graphics Options now owns this selector visually as part of
+        // the same independent grid as every other control. This class keeps
+        // only its input/state behavior. Standard mode continues to use the
+        // native cache/runtime selector visuals.
+        if (ModernUiManager.isEnabled()) {
             return;
         }
 
@@ -440,6 +457,10 @@ public final class ModernUiSettingsOverlay {
             ModernUiMetrics.FONT_DROPDOWN,
             false
         );
+    }
+
+    public static boolean isDropdownOpen() {
+        return dropdownOpen;
     }
 
     private static boolean contains(
