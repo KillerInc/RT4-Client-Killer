@@ -20,10 +20,6 @@ public final class ModernUiSettingsOverlay {
     private static int editorW;
     private static int editorH;
 
-    private static final int TEXT = 0x3B2B1B;
-    // Sampled/matched to the stock RT4 Graphics Options popup rows.
-    private static final int NATIVE_POPUP_TEXT = 0x5A2D16;
-    private static final int NATIVE_POPUP_HOVER = 0x7F0000;
 
     private ModernUiSettingsOverlay() {
     }
@@ -98,34 +94,89 @@ public final class ModernUiSettingsOverlay {
     public static void processInput() {
         if (!ModernUiManager.isSupportedDisplayMode()) {
             dropdownOpen = false;
+            GraphicsOptionsUiInjector.setModernNativeDropdownOpen(false);
             return;
         }
-        if (!graphicsOptionsSeen || !selectorSeen || Mouse.clickButton != 1) {
-            if (GraphicsOptionsUiInjector.isNativeDropdownOpen()) {
-                dropdownOpen = false;
-            }
+
+        if (!graphicsOptionsSeen || !selectorSeen) {
+            dropdownOpen = false;
+            GraphicsOptionsUiInjector.setModernNativeDropdownOpen(false);
             return;
         }
 
         int selectorW = selectorWidth();
         int selectorH = selectorHeight();
         boolean modernStyle = ModernUiManager.isEnabled();
-        int popupInset = modernStyle ? 0 : 6;
-        int popupX = selectorX + popupInset;
-        int popupY = modernStyle ? selectorBottom : selectorBottom - 3;
-        int popupW = Math.max(1, selectorW - popupInset * 2);
-        int rowH = modernStyle ? Math.max(18, selectorH) : 16;
+
+        int popupX =
+            modernStyle ? selectorX : selectorX + 10;
+        int popupY =
+            modernStyle ? selectorBottom : selectorBottom - 2;
+        int popupW =
+            modernStyle ? selectorW : Math.max(1, selectorW - 20);
+        int rowH =
+            modernStyle ? Math.max(18, selectorH) : 15;
+
+        if (!modernStyle) {
+            GraphicsOptionsUiInjector.setModernNativeClosedHover(
+                contains(
+                    Mouse.lastMouseX,
+                    Mouse.lastMouseY,
+                    selectorX,
+                    selectorY,
+                    selectorW,
+                    selectorH
+                )
+            );
+
+            int hoveredRow = -1;
+            if (dropdownOpen) {
+                if (contains(
+                    Mouse.lastMouseX,
+                    Mouse.lastMouseY,
+                    popupX,
+                    popupY,
+                    popupW,
+                    rowH
+                )) {
+                    hoveredRow = 0;
+                } else if (contains(
+                    Mouse.lastMouseX,
+                    Mouse.lastMouseY,
+                    popupX,
+                    popupY + rowH,
+                    popupW,
+                    rowH
+                )) {
+                    hoveredRow = 1;
+                }
+            }
+            GraphicsOptionsUiInjector.setModernNativeDropdownHover(hoveredRow);
+        }
+
+        if (Mouse.clickButton != 1) {
+            if (GraphicsOptionsUiInjector.isNativeDropdownOpen()) {
+                dropdownOpen = false;
+                if (!modernStyle) {
+                    GraphicsOptionsUiInjector.setModernNativeDropdownOpen(false);
+                }
+            }
+            return;
+        }
 
         int mx = Mouse.clickX;
         int my = Mouse.clickY;
 
-        // The Modern selector is allowed to take ownership when explicitly
-        // clicked. Close any vanilla popup first so our popup never stacks on
-        // top of a base-game dropdown.
+        // A vanilla popup and Modern UI popup are mutually exclusive. Close
+        // only the two stock popup containers; their CS2-created glyphs remain
+        // intact for the next time that vanilla dropdown opens.
         if (contains(mx, my, selectorX, selectorY, selectorW, selectorH)
             && GraphicsOptionsUiInjector.isNativeDropdownOpen()) {
             GraphicsOptionsUiInjector.closeAllNativeDropdowns();
             dropdownOpen = true;
+            if (!modernStyle) {
+                GraphicsOptionsUiInjector.setModernNativeDropdownOpen(true);
+            }
             DisplayDebug.log(
                 "MODERN_UI selector opened after closing native dropdown"
                     + " x=" + selectorX + " y=" + selectorY
@@ -136,12 +187,18 @@ public final class ModernUiSettingsOverlay {
 
         if (GraphicsOptionsUiInjector.isNativeDropdownOpen()) {
             dropdownOpen = false;
+            if (!modernStyle) {
+                GraphicsOptionsUiInjector.setModernNativeDropdownOpen(false);
+            }
             return;
         }
 
         if (dropdownOpen) {
             if (contains(mx, my, popupX, popupY, popupW, rowH)) {
                 dropdownOpen = false;
+                if (!modernStyle) {
+                    GraphicsOptionsUiInjector.setModernNativeDropdownOpen(false);
+                }
                 DisplayDebug.log("MODERN_UI selector chose enabled=false");
                 ModernUiManager.setEnabled(false);
                 return;
@@ -149,6 +206,9 @@ public final class ModernUiSettingsOverlay {
 
             if (contains(mx, my, popupX, popupY + rowH, popupW, rowH)) {
                 dropdownOpen = false;
+                if (!modernStyle) {
+                    GraphicsOptionsUiInjector.setModernNativeDropdownOpen(false);
+                }
                 DisplayDebug.log("MODERN_UI selector chose enabled=true");
                 ModernUiManager.setEnabled(true);
                 return;
@@ -156,12 +216,20 @@ public final class ModernUiSettingsOverlay {
 
             if (!contains(mx, my, selectorX, selectorY, selectorW, selectorH)) {
                 dropdownOpen = false;
+                if (!modernStyle) {
+                    GraphicsOptionsUiInjector.setModernNativeDropdownOpen(false);
+                }
                 return;
             }
         }
 
         if (contains(mx, my, selectorX, selectorY, selectorW, selectorH)) {
             dropdownOpen = !dropdownOpen;
+            if (!modernStyle) {
+                GraphicsOptionsUiInjector.setModernNativeDropdownOpen(
+                    dropdownOpen
+                );
+            }
             DisplayDebug.log(
                 "MODERN_UI selector popup " + (dropdownOpen ? "opened" : "closed")
                     + " x=" + selectorX + " y=" + selectorY
@@ -182,50 +250,43 @@ public final class ModernUiSettingsOverlay {
             || GraphicsOptionsUiInjector.isNativeDropdownOpen()
             || !graphicsOptionsSeen
             || !selectorSeen) {
-            // Native dropdown popups are rendered by the cache after their
-            // controls. Do not paint our selector on top of an open popup.
             dropdownOpen = false;
+            GraphicsOptionsUiInjector.setModernNativeDropdownOpen(false);
             return;
         }
 
         ModernUiManager.initialize();
 
+        // Standard mode is 100% cache/runtime Components and therefore goes
+        // through the original RT4 renderer. This overlay draws only Modern
+        // mode assets.
+        if (!ModernUiManager.isEnabled()) {
+            return;
+        }
+
         int selectorW = selectorWidth();
         int selectorH = selectorHeight();
 
-        // Standard UI is now rendered entirely by the same native RT4
-        // sprite pieces as the surrounding Graphics Options dropdowns.
-        // Only Modern mode covers that cache-defined control with pack art.
-        if (ModernUiManager.isEnabled()) {
-            drawModernClosedSelector(
-                selectorX,
-                selectorY,
-                selectorW,
-                selectorH
-            );
-        }
+        drawModernClosedSelector(
+            selectorX,
+            selectorY,
+            selectorW,
+            selectorH
+        );
 
         if (!dropdownOpen) {
             return;
         }
 
-        boolean modernStyle = ModernUiManager.isEnabled();
-        int popupInset = modernStyle ? 0 : 6;
-        int popupX = selectorX + popupInset;
-        int popupY = modernStyle ? selectorBottom : selectorBottom - 3;
-        int popupW = Math.max(1, selectorW - popupInset * 2);
-        int rowH = modernStyle ? Math.max(18, selectorH) : 16;
+        int popupX = selectorX;
+        int popupY = selectorBottom;
+        int popupW = selectorW;
+        int rowH = Math.max(18, selectorH);
         int popupH = rowH * 2;
 
-        if (modernStyle) {
-            drawModernPopup(popupX, popupY, popupW, popupH);
-            drawModernChoice("Off", popupX, popupY, popupW, rowH, false);
-            drawModernChoice("On", popupX, popupY + rowH, popupW, rowH, true);
-        } else {
-            drawNativePopup(popupX, popupY, popupW, popupH);
-            drawNativeChoice("Off", popupX, popupY, popupW, rowH);
-            drawNativeChoice("On", popupX, popupY + rowH, popupW, rowH);
-        }
+        drawModernPopup(popupX, popupY, popupW, popupH);
+        drawModernChoice("Off", popupX, popupY, popupW, rowH, false);
+        drawModernChoice("On", popupX, popupY + rowH, popupW, rowH, true);
     }
 
     private static void includeSelectorBounds(int x, int y, int width, int height) {
@@ -343,38 +404,6 @@ public final class ModernUiSettingsOverlay {
         );
     }
 
-    private static void drawNativePopup(int x, int y, int width, int height) {
-        // Stock RT4 two-choice dropdown: one flat popup field with a single
-        // dark outline. There is no selected-row fill and no row separator.
-        fill(x, y, width, height, 0x8D724B);
-        outline(x, y, width, height, 0x000000);
-    }
-
-    private static void drawNativeChoice(
-        String text,
-        int x,
-        int y,
-        int width,
-        int height
-    ) {
-        if (Fonts.p12Full == null) {
-            return;
-        }
-
-        boolean hovered =
-            contains(Mouse.lastMouseX, Mouse.lastMouseY, x, y, width, height);
-
-        // Vanilla option glyphs are left-aligned. Hover changes only the text
-        // color to the stock dark red; it does not paint a selected row.
-        Fonts.p12Full.renderLeft(
-            JagString.parse(text),
-            x + 5,
-            y + Math.min(height - 3, 13),
-            hovered ? NATIVE_POPUP_HOVER : NATIVE_POPUP_TEXT,
-            -1
-        );
-    }
-
     private static boolean contains(
         int mx,
         int my,
@@ -385,45 +414,5 @@ public final class ModernUiSettingsOverlay {
     ) {
         return mx >= x && my >= y && mx < x + width && my < y + height;
     }
-
-    private static void fill(int x, int y, int width, int height, int color) {
-        if (GlRenderer.enabled) {
-            GlRaster.fillRect(x, y, width, height, color);
-        } else {
-            SoftwareRaster.fillRect(x, y, width, height, color);
-        }
-    }
-
-    private static void fillAlpha(
-        int x,
-        int y,
-        int width,
-        int height,
-        int color,
-        int alpha
-    ) {
-        if (GlRenderer.enabled) {
-            GlRaster.fillRectAlpha(x, y, width, height, color, alpha);
-        } else {
-            SoftwareRaster.fillRectAlpha(x, y, width, height, color, alpha);
-        }
-    }
-
-    private static void outline(int x, int y, int width, int height, int color) {
-        if (GlRenderer.enabled) {
-            GlRaster.drawRect(x, y, width, height, color);
-        } else {
-            SoftwareRaster.drawRect(x, y, width, height, color);
-        }
-    }
-
-    private static void hline(int x, int y, int width, int color) {
-        if (GlRenderer.enabled) {
-            GlRaster.drawHorizontalLine(x, y, width, color);
-        } else {
-            SoftwareRaster.drawHorizontalLine(x, y, width, color);
-        }
-    }
-
 
 }

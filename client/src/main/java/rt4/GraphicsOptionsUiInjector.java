@@ -46,6 +46,16 @@ public final class GraphicsOptionsUiInjector {
     private static boolean nativeClosedVisualEnabled;
     private static int nativeClosedVisualCount = -1;
 
+    private static Component nativePopupHitTarget;
+    private static Component nativePopupBodyTarget;
+    private static Component nativePopupVisualSource;
+    private static int nativePopupVisualCount = -1;
+    private static int nativePopupVisualWidth = -1;
+
+    private static final int VANILLA_DROPDOWN_TEXT = 0xFFFFFF;
+    private static final int VANILLA_DROPDOWN_HOVER = 0x7F0000;
+    private static final int VANILLA_DROPDOWN_BACKGROUND = 0x8D724B;
+
     private GraphicsOptionsUiInjector() {
     }
 
@@ -362,12 +372,13 @@ public final class GraphicsOptionsUiInjector {
     }
 
     /**
-     * Mirrors the complete runtime-created CLOSED value visuals from a native
-     * two-choice dropdown (Fog) into the cache-defined Modern UI value
-     * container. The stock cache does not render its value from a static text
-     * component: CS2 creates the value/arrow/decorative children at runtime.
-     * Copying that live child tree is what makes the new selector truly
-     * pixel-identical instead of merely using the same outer 1400/1401 frame.
+     * Builds the Killer selector from the same component pipeline used by the
+     * stock Graphics Options dropdowns.
+     *
+     * The static cache supplies the eight Fog-style containers/sprites. Their
+     * visible value and popup contents are runtime child Components and are
+     * rendered by Cs1ScriptRunner.renderComponent(), exactly like vanilla.
+     * No Standard-UI rectangle or glyph is drawn by ModernUiSettingsOverlay.
      */
     public static void syncModernSelectorNativeVisuals() {
         int interfaceId = resolveGraphicsOptionsInterfaceId();
@@ -382,17 +393,32 @@ public final class GraphicsOptionsUiInjector {
             return;
         }
 
-        Component target = null;
+        Component targetClosed = null;
+        Component targetPopupHit = null;
+        Component targetPopupBody = null;
+
         for (Component component : components) {
-            if (component != null
-                && component.clientCode == CLIENT_CODE_SELECTOR_HIT) {
-                target = component;
-                break;
+            if (component == null) {
+                continue;
+            }
+
+            if (component.clientCode == CLIENT_CODE_SELECTOR_HIT) {
+                targetClosed = component;
+            } else if (component.clientCode == CLIENT_CODE_POPUP_HIT) {
+                targetPopupHit = component;
+            } else if (component.clientCode == CLIENT_CODE_POPUP_BODY) {
+                targetPopupBody = component;
             }
         }
-        if (target == null) {
+
+        if (targetClosed == null
+            || targetPopupHit == null
+            || targetPopupBody == null) {
             return;
         }
+
+        nativePopupHitTarget = targetPopupHit;
+        nativePopupBodyTarget = targetPopupBody;
 
         List<LayoutEntry> entries = new ArrayList<>();
         collectVisibleLayout(components, -1, 0, 0, entries);
@@ -402,92 +428,233 @@ public final class GraphicsOptionsUiInjector {
         }
 
         int fogParentId = fogLabel.component.overlayer;
-        Component source = null;
+        Component sourceClosed = null;
+        Component sourcePopupHit = null;
+        Component sourcePopupBody = null;
+
         for (Component component : components) {
             if (component == null
                 || component.overlayer != fogParentId
-                || component.type != 0
-                || component.hidden) {
+                || component.type != 0) {
                 continue;
             }
 
-            // Fog's closed value container is the native baseY=22,
-            // baseHeight=16 child. Its CS2-created children include everything
-            // visually missing from our previous static approximation.
             if (component.baseY == 22
                 && component.baseHeight == 16
                 && component.dynamicWidthValue == 1) {
-                source = component;
-                break;
+                sourceClosed = component;
+            } else if (component.baseY == 37
+                && component.baseWidth == 18
+                && component.baseHeight == 32
+                && component.dynamicWidthValue == 1) {
+                sourcePopupHit = component;
+            } else if (component.baseY == 38
+                && component.baseWidth == 20
+                && component.baseHeight == 30
+                && component.dynamicWidthValue == 1) {
+                sourcePopupBody = component;
             }
         }
 
-        if (source == null
-            || source.createdComponents == null
-            || source.createdComponents.length == 0) {
+        if (sourceClosed == null
+            || sourceClosed.createdComponents == null
+            || sourceClosed.createdComponents.length == 0) {
             return;
         }
 
         boolean enabled = ModernUiManager.isEnabled();
-        if (source == nativeClosedVisualSource
-            && target == nativeClosedVisualTarget
-            && enabled == nativeClosedVisualEnabled
-            && source.createdComponents.length == nativeClosedVisualCount
-            && target.createdComponents != null) {
-            return;
-        }
 
-        // The Modern renderer owns the enabled appearance entirely.
-        // Keep these vanilla runtime children only while Standard UI is active
-        // so they cannot leak through the scalable renderer.
+        // Modern mode supplies its own scalable renderer. Keep all native
+        // runtime children out of that path.
         if (enabled) {
-            target.createdComponents = null;
-            nativeClosedVisualSource = source;
-            nativeClosedVisualTarget = target;
+            if (targetClosed.createdComponents != null) {
+                targetClosed.createdComponents = null;
+                InterfaceList.redraw(targetClosed);
+            }
+            setModernNativeDropdownOpen(false);
+            nativeClosedVisualSource = sourceClosed;
+            nativeClosedVisualTarget = targetClosed;
             nativeClosedVisualEnabled = true;
-            nativeClosedVisualCount = source.createdComponents.length;
-            InterfaceList.redraw(target);
+            nativeClosedVisualCount = sourceClosed.createdComponents.length;
             return;
         }
 
-        String value = "Off";
-        target.createdComponents =
-            cloneCreatedVisualTree(source.createdComponents, target.id, value);
+        // CLOSED VALUE ------------------------------------------------------
+        if (sourceClosed != nativeClosedVisualSource
+            || targetClosed != nativeClosedVisualTarget
+            || nativeClosedVisualEnabled
+            || sourceClosed.createdComponents.length != nativeClosedVisualCount
+            || targetClosed.createdComponents == null) {
+            targetClosed.createdComponents =
+                cloneCreatedVisualTree(
+                    sourceClosed.createdComponents,
+                    targetClosed.id,
+                    "Off"
+                );
+            normalizeDropdownTextTree(
+                targetClosed.createdComponents,
+                new String[]{"Off"}
+            );
 
-        nativeClosedVisualSource = source;
-        nativeClosedVisualTarget = target;
-        nativeClosedVisualEnabled = false;
-        nativeClosedVisualCount = source.createdComponents.length;
-        InterfaceList.redraw(target);
+            nativeClosedVisualSource = sourceClosed;
+            nativeClosedVisualTarget = targetClosed;
+            nativeClosedVisualEnabled = false;
+            nativeClosedVisualCount = sourceClosed.createdComponents.length;
+            InterfaceList.redraw(targetClosed);
 
-        StringBuilder detail = new StringBuilder(256);
-        detail.append("MODERN_UI selector adopted native runtime visuals")
-            .append(" source=").append(source.id)
-            .append(" target=").append(target.id)
-            .append(" children=").append(source.createdComponents.length)
-            .append(" value=").append(value);
+            DisplayDebug.log(
+                "MODERN_UI selector closed value now uses vanilla runtime renderer"
+                    + " source=" + sourceClosed.id
+                    + " target=" + targetClosed.id
+                    + " children=" + sourceClosed.createdComponents.length
+            );
+        }
 
-        for (Component child : target.createdComponents) {
-            if (child == null) {
-                continue;
+        // OPEN POPUP --------------------------------------------------------
+        // Prefer Fog's exact CS2-created popup child tree if it already
+        // exists. If Fog has never been opened this session, construct the
+        // same two-row native Component tree using Fog's live value text as
+        // the font/style template. Both paths are rendered only by vanilla.
+        Component popupTemplate =
+            sourcePopupBody != null
+                && sourcePopupBody.createdComponents != null
+                && sourcePopupBody.createdComponents.length > 0
+                ? sourcePopupBody
+                : sourcePopupHit != null
+                    && sourcePopupHit.createdComponents != null
+                    && sourcePopupHit.createdComponents.length > 0
+                    ? sourcePopupHit
+                    : null;
+
+        int popupTemplateCount =
+            popupTemplate == null
+                ? -1
+                : popupTemplate.createdComponents.length;
+
+        if (targetPopupBody.createdComponents == null
+            || nativePopupVisualSource != popupTemplate
+            || nativePopupVisualCount != popupTemplateCount
+            || nativePopupVisualWidth != targetPopupBody.width) {
+            if (popupTemplate != null) {
+                targetPopupBody.createdComponents =
+                    cloneCreatedVisualTreeWithValues(
+                        popupTemplate.createdComponents,
+                        targetPopupBody.id,
+                        new String[]{"Off", "On"},
+                        new int[]{0}
+                    );
+                normalizeDropdownTextTree(
+                    targetPopupBody.createdComponents,
+                    new String[]{"Off", "On"}
+                );
+            } else {
+                targetPopupBody.createdComponents =
+                    createVanillaTwoChoicePopup(
+                        targetPopupBody,
+                        sourceClosed.createdComponents
+                    );
             }
-            detail.append(" | type=").append(child.type)
-                .append(" created=").append(child.createdComponentId)
-                .append(" base=").append(child.baseX).append(',').append(child.baseY)
-                .append(" size=").append(child.baseWidth).append('x').append(child.baseHeight)
-                .append(" sprite=").append(child.spriteId)
-                .append(" font=").append(child.font);
-            if (child.text != null && child.text.length() > 0) {
-                detail.append(" text='").append(child.text.toString()).append('\'');
+
+            nativePopupVisualSource = popupTemplate;
+            nativePopupVisualCount = popupTemplateCount;
+            nativePopupVisualWidth = targetPopupBody.width;
+            InterfaceList.redraw(targetPopupBody);
+
+            DisplayDebug.log(
+                "MODERN_UI popup now uses vanilla Component renderer"
+                    + " target=" + targetPopupBody.id
+                    + " width=" + targetPopupBody.width
+                    + " template="
+                    + (popupTemplate == null
+                        ? "Fog closed-value fallback"
+                        : Integer.toString(popupTemplate.id))
+            );
+        }
+    }
+
+    public static void setModernNativeDropdownOpen(boolean open) {
+        if (nativePopupHitTarget == null || nativePopupBodyTarget == null) {
+            syncModernSelectorNativeVisuals();
+        }
+
+        setHidden(nativePopupHitTarget, !open);
+        setHidden(nativePopupBodyTarget, !open);
+
+        if (!open) {
+            setModernNativeDropdownHover(-1);
+        }
+    }
+
+    public static void setModernNativeClosedHover(boolean hovered) {
+        if (nativeClosedVisualTarget == null
+            || nativeClosedVisualTarget.createdComponents == null) {
+            return;
+        }
+
+        int color =
+            hovered ? VANILLA_DROPDOWN_HOVER : VANILLA_DROPDOWN_TEXT;
+
+        if (setTextTreeColor(nativeClosedVisualTarget.createdComponents, color)) {
+            InterfaceList.redraw(nativeClosedVisualTarget);
+        }
+    }
+
+    public static void setModernNativeDropdownHover(int row) {
+        if (nativePopupBodyTarget == null
+            || nativePopupBodyTarget.createdComponents == null) {
+            return;
+        }
+
+        List<Component> text = new ArrayList<>();
+        collectTextComponents(nativePopupBodyTarget.createdComponents, text);
+        text.sort(
+            Comparator.comparingInt((Component component) -> component.y)
+                .thenComparingInt(component -> component.createdComponentId)
+        );
+
+        boolean changed = false;
+        for (int i = 0; i < text.size(); i++) {
+            Component component = text.get(i);
+            int color =
+                i == row ? VANILLA_DROPDOWN_HOVER : VANILLA_DROPDOWN_TEXT;
+            if (component.color != color
+                || component.activeColor != color) {
+                component.color = color;
+                component.activeColor = color;
+                changed = true;
             }
         }
-        DisplayDebug.log(detail.toString());
+
+        if (changed) {
+            InterfaceList.redraw(nativePopupBodyTarget);
+        }
+    }
+
+    private static void setHidden(Component component, boolean hidden) {
+        if (component != null && component.hidden != hidden) {
+            component.hidden = hidden;
+            InterfaceList.redraw(component);
+        }
     }
 
     private static Component[] cloneCreatedVisualTree(
         Component[] source,
         int targetParentId,
         String valueText
+    ) {
+        return cloneCreatedVisualTreeWithValues(
+            source,
+            targetParentId,
+            new String[]{valueText},
+            new int[]{0}
+        );
+    }
+
+    private static Component[] cloneCreatedVisualTreeWithValues(
+        Component[] source,
+        int targetParentId,
+        String[] values,
+        int[] textIndex
     ) {
         Component[] copies = new Component[source.length];
 
@@ -502,26 +669,278 @@ public final class GraphicsOptionsUiInjector {
             copy.createdComponents = null;
             prepareClone(copy);
 
-            // Dynamically-created IF3 children identify their owner through
-            // both id and overlayer. Retarget those links to our cache-defined
-            // closed-value container while preserving createdComponentId.
             copy.id = targetParentId;
             copy.overlayer = targetParentId;
 
-            if (copy.type == 4) {
-                copy.text = JagString.parse(valueText);
+            if (copy.type == 4 && values.length > 0) {
+                int valueIndex = Math.min(textIndex[0], values.length - 1);
+                copy.text = JagString.parse(values[valueIndex]);
                 copy.activeText = copy.text;
+                copy.color = VANILLA_DROPDOWN_TEXT;
+                copy.activeColor = VANILLA_DROPDOWN_TEXT;
+                copy.overColor = 0;
+                copy.activeOverColor = 0;
+                textIndex[0]++;
             }
 
             if (nested != null && nested.length > 0) {
                 copy.createdComponents =
-                    cloneCreatedVisualTree(nested, copy.id, valueText);
+                    cloneCreatedVisualTreeWithValues(
+                        nested,
+                        copy.id,
+                        values,
+                        textIndex
+                    );
             }
 
             copies[i] = copy;
         }
 
         return copies;
+    }
+
+    private static void normalizeDropdownTextTree(
+        Component[] components,
+        String[] values
+    ) {
+        if (components == null || values.length == 0) {
+            return;
+        }
+
+        List<Component> text = new ArrayList<>();
+        collectTextComponents(components, text);
+        text.sort(
+            Comparator.comparingInt((Component component) -> component.y)
+                .thenComparingInt(component -> component.createdComponentId)
+        );
+
+        for (int i = 0; i < text.size(); i++) {
+            Component component = text.get(i);
+            String value = values[Math.min(i, values.length - 1)];
+            component.text = JagString.parse(value);
+            component.activeText = component.text;
+            component.color = VANILLA_DROPDOWN_TEXT;
+            component.activeColor = VANILLA_DROPDOWN_TEXT;
+            component.overColor = 0;
+            component.activeOverColor = 0;
+        }
+    }
+
+    private static void collectTextComponents(
+        Component[] components,
+        List<Component> out
+    ) {
+        if (components == null) {
+            return;
+        }
+
+        for (Component component : components) {
+            if (component == null) {
+                continue;
+            }
+            if (component.type == 4) {
+                out.add(component);
+            }
+            if (component.createdComponents != null) {
+                collectTextComponents(component.createdComponents, out);
+            }
+        }
+    }
+
+    private static boolean setTextTreeColor(
+        Component[] components,
+        int color
+    ) {
+        if (components == null) {
+            return false;
+        }
+
+        boolean changed = false;
+        for (Component component : components) {
+            if (component == null) {
+                continue;
+            }
+
+            if (component.type == 4
+                && (component.color != color
+                    || component.activeColor != color)) {
+                component.color = color;
+                component.activeColor = color;
+                changed = true;
+            }
+
+            if (component.createdComponents != null
+                && setTextTreeColor(component.createdComponents, color)) {
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
+    private static Component[] createVanillaTwoChoicePopup(
+        Component target,
+        Component[] closedValueTree
+    ) {
+        Component textTemplate = firstTextComponent(closedValueTree);
+        if (textTemplate == null) {
+            return new Component[0];
+        }
+
+        int width = Math.max(1, target.width);
+        int height = Math.max(30, target.height);
+        int rowHeight = height / 2;
+
+        Component background =
+            createRuntimeRectangle(
+                target.id,
+                0,
+                0,
+                width,
+                height,
+                VANILLA_DROPDOWN_BACKGROUND,
+                true,
+                0
+            );
+        Component border =
+            createRuntimeRectangle(
+                target.id,
+                0,
+                0,
+                width,
+                height,
+                0x000000,
+                false,
+                1
+            );
+
+        Component off =
+            createRuntimeDropdownText(
+                textTemplate,
+                target.id,
+                "Off",
+                5,
+                0,
+                Math.max(1, width - 10),
+                rowHeight,
+                2
+            );
+        Component on =
+            createRuntimeDropdownText(
+                textTemplate,
+                target.id,
+                "On",
+                5,
+                rowHeight,
+                Math.max(1, width - 10),
+                height - rowHeight,
+                3
+            );
+
+        return new Component[]{background, border, off, on};
+    }
+
+    private static Component createRuntimeRectangle(
+        int parentId,
+        int x,
+        int y,
+        int width,
+        int height,
+        int color,
+        boolean filled,
+        int createdId
+    ) {
+        Component component = new Component();
+        component.if3 = true;
+        component.type = 3;
+        component.id = parentId;
+        component.overlayer = parentId;
+        component.createdComponentId = createdId;
+        component.baseX = x;
+        component.baseY = y;
+        component.baseWidth = width;
+        component.baseHeight = height;
+        component.x = x;
+        component.y = y;
+        component.width = width;
+        component.height = height;
+        component.dynamicWidthValue = 0;
+        component.dynamicHeightValue = 0;
+        component.xMode = 0;
+        component.yMode = 0;
+        component.hidden = false;
+        component.color = color;
+        component.activeColor = color;
+        component.filled = filled;
+        component.alpha = 0;
+        component.properties = Component.DEFAULT_SERVER_ACTIVE_PROPERTIES;
+        component.option = Component.EMPTY_STRING;
+        component.optionBase = Component.EMPTY_STRING;
+        component.optionCircumfix = Component.EMPTY_STRING;
+        component.optionSuffix = Component.EMPTY_STRING;
+        return component;
+    }
+
+    private static Component createRuntimeDropdownText(
+        Component source,
+        int parentId,
+        String value,
+        int x,
+        int y,
+        int width,
+        int height,
+        int createdId
+    ) {
+        Component component = cloneComponent(source);
+        prepareClone(component);
+        component.createdComponents = null;
+        component.if3 = true;
+        component.type = 4;
+        component.id = parentId;
+        component.overlayer = parentId;
+        component.createdComponentId = createdId;
+        component.baseX = x;
+        component.baseY = y;
+        component.baseWidth = width;
+        component.baseHeight = height;
+        component.x = x;
+        component.y = y;
+        component.width = width;
+        component.height = height;
+        component.dynamicWidthValue = 0;
+        component.dynamicHeightValue = 0;
+        component.xMode = 0;
+        component.yMode = 0;
+        component.hidden = false;
+        component.text = JagString.parse(value);
+        component.activeText = component.text;
+        component.halign = 0;
+        component.valign = 1;
+        component.vpadding = 0;
+        component.color = VANILLA_DROPDOWN_TEXT;
+        component.activeColor = VANILLA_DROPDOWN_TEXT;
+        component.overColor = 0;
+        component.activeOverColor = 0;
+        return component;
+    }
+
+    private static Component firstTextComponent(Component[] components) {
+        if (components == null) {
+            return null;
+        }
+
+        for (Component component : components) {
+            if (component == null) {
+                continue;
+            }
+            if (component.type == 4) {
+                return component;
+            }
+            Component nested = firstTextComponent(component.createdComponents);
+            if (nested != null) {
+                return nested;
+            }
+        }
+        return null;
     }
 
     public static boolean shouldSuppressNativeDropdownComponent(
