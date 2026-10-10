@@ -19,11 +19,11 @@ public final class ModernUiReloadOverlay {
         int y = (GameShell.canvasHeight - height) / 2;
 
         if (GlRenderer.enabled) {
-            GlRaster.fillRectAlpha(x, y, width, height, 0x17130F, 230);
-            GlRaster.drawRect(x, y, width, height, 0xB59A68);
+            GlRaster.fillRectAlpha(x, y, width, height, ModernUiMetrics.SURFACE_DARK, 230);
+            GlRaster.drawRect(x, y, width, height, ModernUiMetrics.BORDER);
         } else {
-            SoftwareRaster.fillRectAlpha(x, y, width, height, 0x17130F, 230);
-            SoftwareRaster.drawRect(x, y, width, height, 0xB59A68);
+            SoftwareRaster.fillRectAlpha(x, y, width, height, ModernUiMetrics.SURFACE_DARK, 230);
+            SoftwareRaster.drawRect(x, y, width, height, ModernUiMetrics.BORDER);
         }
 
         String message = ModernUiManager.getReloadNotice();
@@ -36,8 +36,8 @@ public final class ModernUiReloadOverlay {
                 "Please wait - " + message,
                 x + width / 2,
                 y + 32,
-                0xFFFFFF,
-                12.0F,
+                ModernUiMetrics.TEXT_PRIMARY,
+                ModernUiMetrics.FONT_LABEL,
                 true
             );
         } else if (Fonts.p12Full != null) {
@@ -45,7 +45,7 @@ public final class ModernUiReloadOverlay {
                 JagString.parse("Please wait - " + message),
                 x + width / 2,
                 y + 32,
-                0xFFFFFF,
+                ModernUiMetrics.TEXT_PRIMARY,
                 0
             );
         }
