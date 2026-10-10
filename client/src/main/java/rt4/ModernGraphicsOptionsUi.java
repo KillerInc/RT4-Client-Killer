@@ -269,6 +269,97 @@ public final class ModernGraphicsOptionsUi {
         renderModernSelectorPopup(layout);
     }
 
+    public static int closedDropdownParentAt(
+        Component[] components,
+        int x,
+        int y
+    ) {
+        ModernGraphicsOptionsLayout layout = layout();
+
+        for (ControlSpec spec : CONTROLS) {
+            if (spec.closedChild < 0
+                || !layout.control(spec.column, spec.row).contains(x, y)) {
+                continue;
+            }
+            Component value =
+                directChild(components, spec.closedChild);
+            return value == null ? -1 : value.overlayer;
+        }
+
+        if (layout.resolution().contains(x, y)) {
+            Component value =
+                directChild(components, RESOLUTION_VALUE_CHILD);
+            return value == null ? -1 : value.overlayer;
+        }
+
+        return -1;
+    }
+
+    public static boolean isInsideOpenDropdown(
+        Component[] components,
+        int x,
+        int y
+    ) {
+        ModernGraphicsOptionsLayout layout = layout();
+
+        if (isPopupOpen(components, RESOLUTION_POPUP_BODY_CHILD)) {
+            int rows = uniqueResolutionCount();
+            ModernUiRect control = layout.resolution();
+            ModernUiRect popup = new ModernUiRect(
+                control.x,
+                control.bottom() - 1,
+                control.width,
+                Math.max(
+                    1,
+                    rows * ModernUiMetrics.DROPDOWN_POPUP_ROW_HEIGHT
+                )
+            );
+            return popup.contains(x, y);
+        }
+
+        for (ControlSpec spec : CONTROLS) {
+            if (spec.popupBodyChild < 0
+                || !isPopupOpen(components, spec.popupBodyChild)) {
+                continue;
+            }
+
+            int rows =
+                popupTextEntries(
+                    components,
+                    spec.popupBodyChild
+                ).size();
+            ModernUiRect control =
+                layout.control(spec.column, spec.row);
+            ModernUiRect popup = new ModernUiRect(
+                control.x,
+                control.bottom() - 1,
+                control.width,
+                Math.max(
+                    1,
+                    rows * ModernUiMetrics.DROPDOWN_POPUP_ROW_HEIGHT
+                )
+            );
+            return popup.contains(x, y);
+        }
+
+        return false;
+    }
+
+    private static int uniqueResolutionCount() {
+        DisplayMode[] modes = DisplayMode.getDisplayModes();
+        if (modes == null) {
+            return 0;
+        }
+
+        Set<String> seen = new HashSet<>();
+        for (DisplayMode mode : modes) {
+            if (mode != null) {
+                seen.add(mode.width + "x" + mode.height);
+            }
+        }
+        return seen.size();
+    }
+
     public static int getModernSelectorX() {
         return layout().control(4, 2).x;
     }
