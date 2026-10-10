@@ -158,9 +158,7 @@ public final class ModernUiAssetResolver {
             // vector cache.
             for (Map.Entry<String, List<WarmupSize>> entry : plan.entrySet()) {
                 String path = entry.getKey();
-                ResolvedBytes resolved = resolveCandidates(
-                    new String[] {path + ".svg"}
-                );
+                ResolvedBytes resolved = resolve(path);
                 if (resolved == null
                     || !resolved.name.toLowerCase(Locale.ROOT).endsWith(".svg")) {
                     continue;
