@@ -403,6 +403,58 @@ public final class ModernUiAssetResolver {
         addWarmupSpec(plan, "main-menu/header", 300, 32);
         addWarmupSpec(plan, "main-menu/footer", 300, 32);
         addWarmupSpec(plan, "main-menu/edge", 12, 220);
+
+        // Audio Options. These exact sizes match ModernAudioOptionsUi so the
+        // complete login UI vector cache is ready before this screen opens.
+        addWarmupSpec(
+            plan,
+            "audio-options/panel",
+            ModernUiMetrics.AUDIO_PANEL_WIDTH,
+            ModernUiMetrics.AUDIO_PANEL_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
+            "audio-options/divider",
+            ModernUiMetrics.AUDIO_PANEL_WIDTH
+                - ModernUiMetrics.AUDIO_PANEL_INSET * 2,
+            4
+        );
+        addWarmupSpec(
+            plan,
+            "audio-options/slider-track",
+            ModernUiMetrics.AUDIO_SLIDER_WIDTH,
+            ModernUiMetrics.AUDIO_SLIDER_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
+            "audio-options/slider-knob",
+            ModernUiMetrics.AUDIO_SLIDER_KNOB_WIDTH,
+            ModernUiMetrics.AUDIO_SLIDER_KNOB_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
+            "audio-options/toggle-off",
+            ModernUiMetrics.AUDIO_TOGGLE_SIZE,
+            ModernUiMetrics.AUDIO_TOGGLE_SIZE
+        );
+        addWarmupSpec(
+            plan,
+            "audio-options/toggle-on",
+            ModernUiMetrics.AUDIO_TOGGLE_SIZE,
+            ModernUiMetrics.AUDIO_TOGGLE_SIZE
+        );
+        addWarmupSpec(
+            plan,
+            "audio-options/button",
+            ModernUiMetrics.AUDIO_BUTTON_WIDTH,
+            ModernUiMetrics.AUDIO_BUTTON_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
+            "audio-options/button-active",
+            ModernUiMetrics.AUDIO_BUTTON_WIDTH,
+            ModernUiMetrics.AUDIO_BUTTON_HEIGHT
+        );
     }
 
     private static void addWarmupSpec(
