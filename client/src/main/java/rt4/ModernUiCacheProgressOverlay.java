@@ -27,16 +27,16 @@ public final class ModernUiCacheProgressOverlay {
         int fillWidth = barWidth * percent / 100;
 
         if (GlRenderer.enabled) {
-            GlRaster.fillRectAlpha(x, y, width, height, 0x17130F, 220);
-            GlRaster.drawRect(x, y, width, height, 0xB59A68);
-            GlRaster.fillRect(barX, barY, barWidth, barHeight, 0x332A20);
+            GlRaster.fillRectAlpha(x, y, width, height, ModernUiMetrics.SURFACE_DARK, 220);
+            GlRaster.drawRect(x, y, width, height, ModernUiMetrics.BORDER);
+            GlRaster.fillRect(barX, barY, barWidth, barHeight, ModernUiMetrics.SURFACE_TRACK);
             if (fillWidth > 0) {
                 GlRaster.fillRect(
                     barX,
                     barY,
                     fillWidth,
                     barHeight,
-                    0xB59A68
+                    ModernUiMetrics.BORDER
                 );
             }
             GlRaster.drawRect(
@@ -44,17 +44,17 @@ public final class ModernUiCacheProgressOverlay {
                 barY,
                 barWidth,
                 barHeight,
-                0xD8C08D
+                ModernUiMetrics.BORDER_LIGHT
             );
         } else {
-            SoftwareRaster.fillRectAlpha(x, y, width, height, 0x17130F, 220);
-            SoftwareRaster.drawRect(x, y, width, height, 0xB59A68);
+            SoftwareRaster.fillRectAlpha(x, y, width, height, ModernUiMetrics.SURFACE_DARK, 220);
+            SoftwareRaster.drawRect(x, y, width, height, ModernUiMetrics.BORDER);
             SoftwareRaster.fillRect(
                 barX,
                 barY,
                 barWidth,
                 barHeight,
-                0x332A20
+                ModernUiMetrics.SURFACE_TRACK
             );
             if (fillWidth > 0) {
                 SoftwareRaster.fillRect(
@@ -62,7 +62,7 @@ public final class ModernUiCacheProgressOverlay {
                     barY,
                     fillWidth,
                     barHeight,
-                    0xB59A68
+                    ModernUiMetrics.BORDER
                 );
             }
             SoftwareRaster.drawRect(
@@ -70,7 +70,7 @@ public final class ModernUiCacheProgressOverlay {
                 barY,
                 barWidth,
                 barHeight,
-                0xD8C08D
+                ModernUiMetrics.BORDER_LIGHT
             );
         }
 
