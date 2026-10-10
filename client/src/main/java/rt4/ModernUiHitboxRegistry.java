@@ -114,6 +114,33 @@ public final class ModernUiHitboxRegistry {
             : hitbox.height;
     }
 
+    public static synchronized boolean contains(
+        Component component,
+        int sourceX,
+        int sourceY,
+        int x,
+        int y
+    ) {
+        Hitbox hitbox = hitboxes.get(component);
+        if (hitbox == null || !ModernUiManager.isEnabled()) {
+            return false;
+        }
+
+        int left = sourceX + hitbox.offsetX;
+        int top = sourceY + hitbox.offsetY;
+        int width = hitbox.width <= 0
+            ? Math.max(1, component.width)
+            : hitbox.width;
+        int height = hitbox.height <= 0
+            ? Math.max(1, component.height)
+            : hitbox.height;
+
+        return x >= left
+            && x < left + width
+            && y >= top
+            && y < top + height;
+    }
+
     public static synchronized int clipLeft(
         Component component,
         int fallback
