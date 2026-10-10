@@ -686,6 +686,9 @@ public class InterfaceList {
 						: clipBottom;
 				}
 
+				int inputOriginX = absX;
+				int inputOriginY = absY;
+
 				// Child traversal always uses original RT4 layout. The Modern
 				// input router changes only this component's mouse rectangle,
 				// never the coordinates or clipping inherited by descendants.
@@ -700,6 +703,8 @@ public class InterfaceList {
 					ModernUiRect modernClip =
 						ModernUiInputRouter.clip(component);
 					if (bounds != null) {
+						inputOriginX = bounds.x;
+						inputOriginY = bounds.y;
 						int modernClipLeft = modernClip == null
 							? clipLeft
 							: modernClip.x;
@@ -727,8 +732,8 @@ public class InterfaceList {
 				}
 				if (component == Cs1ScriptRunner.draggedComponent) {
 					dragSourceFound = true;
-					dragSourceX = absX;
-					dragSourceY = absY;
+					dragSourceX = inputOriginX;
+					dragSourceY = inputOriginY;
 				}
 				if (!component.if3 || left < right && top < bottom) {
 					if (component.type == 0) {
@@ -780,15 +785,15 @@ public class InterfaceList {
 							}
 						}
 						if (isClicked) {
-							Cs1ScriptRunner.startComponentDrag(Mouse.clickY - absY, Mouse.clickX - absX, component);
+							Cs1ScriptRunner.startComponentDrag(Mouse.clickY - inputOriginY, Mouse.clickX - inputOriginX, component);
 						}
 						if (Cs1ScriptRunner.draggedComponent != null && Cs1ScriptRunner.draggedComponent != component && isHovered && getServerActiveProperties(component).isDragTarget()) {
 							dragTargetComponent = component;
 						}
 						if (component == Cs1ScriptRunner.dragParentComponent) {
 							dragParentFound = true;
-							Cs1ScriptRunner.dragBoundsMinX = absX;
-							dragParentY = absY;
+							Cs1ScriptRunner.dragBoundsMinX = inputOriginX;
+							dragParentY = inputOriginY;
 						}
 						if (component.hasEventHandlers || component.clientCode != 0) {
 							@Pc(399) HookRequest request;
@@ -814,8 +819,8 @@ public class InterfaceList {
 								}
 								if (component.clientCode == 1338) {
 									if (isClicked) {
-										clickOffsetX = Mouse.clickX - absX;
-										MiniMenu.clickOffsetY = Mouse.clickY - absY;
+										clickOffsetX = Mouse.clickX - inputOriginX;
+										MiniMenu.clickOffsetY = Mouse.clickY - inputOriginY;
 									}
 									continue;
 								}
@@ -823,8 +828,8 @@ public class InterfaceList {
 									WorldMap.component = component;
 									if (isClicked) {
 										if (Keyboard.pressedKeys[Keyboard.KEY_CTRL] && LoginManager.staffModLevel > 0) {
-											j = (int) ((double) (Mouse.clickX - absX - component.width / 2) * 2.0D / (double) WorldMap.zoom);
-											skill = (int) ((double) (Mouse.clickY - absY - component.height / 2) * 2.0D / (double) WorldMap.zoom);
+											j = (int) ((double) (Mouse.clickX - inputOriginX - component.width / 2) * 2.0D / (double) WorldMap.zoom);
+											skill = (int) ((double) (Mouse.clickY - inputOriginY - component.height / 2) * 2.0D / (double) WorldMap.zoom);
 											k = WorldMap.viewX + j;
 											@Pc(516) int mapY = WorldMap.viewY + skill;
 											@Pc(520) int tileX = k + WorldMap.originX;
@@ -855,7 +860,7 @@ public class InterfaceList {
 								}
 								if (component.clientCode == 1401) {
 									if (isPressed) {
-										WorldMap.setViewFromMousePosition(component.width, Mouse.lastMouseY - absY, Mouse.lastMouseX - absX, component.height);
+										WorldMap.setViewFromMousePosition(component.width, Mouse.lastMouseY - inputOriginY, Mouse.lastMouseX - inputOriginX, component.height);
 									}
 									continue;
 								}
@@ -872,8 +877,8 @@ public class InterfaceList {
 									request = new HookRequest();
 									request.cancelOnMouseExit = true;
 									request.source = component;
-									request.mouseX = Mouse.clickX - absX;
-									request.mouseY = Mouse.clickY - absY;
+									request.mouseX = Mouse.clickX - inputOriginX;
+									request.mouseY = Mouse.clickY - inputOriginY;
 									request.arguments = component.onClickRepeat;
 									lowPriorityRequests.addTail(request);
 								}
@@ -882,8 +887,8 @@ public class InterfaceList {
 								request = new HookRequest();
 								request.cancelOnMouseExit = true;
 								request.source = component;
-								request.mouseX = Mouse.lastMouseX - absX;
-								request.mouseY = Mouse.lastMouseY - absY;
+								request.mouseX = Mouse.lastMouseX - inputOriginX;
+								request.mouseY = Mouse.lastMouseY - inputOriginY;
 								request.arguments = component.onDrag;
 								lowPriorityRequests.addTail(request);
 							}
@@ -893,8 +898,8 @@ public class InterfaceList {
 									request = new HookRequest();
 									request.cancelOnMouseExit = true;
 									request.source = component;
-									request.mouseX = Mouse.lastMouseX - absX;
-									request.mouseY = Mouse.lastMouseY - absY;
+									request.mouseX = Mouse.lastMouseX - inputOriginX;
+									request.mouseY = Mouse.lastMouseY - inputOriginY;
 									request.arguments = component.onRelease;
 									mediumPriorityRequests.addTail(request);
 								}
@@ -903,8 +908,8 @@ public class InterfaceList {
 								request = new HookRequest();
 								request.cancelOnMouseExit = true;
 								request.source = component;
-								request.mouseX = Mouse.lastMouseX - absX;
-								request.mouseY = Mouse.lastMouseY - absY;
+								request.mouseX = Mouse.lastMouseX - inputOriginX;
+								request.mouseY = Mouse.lastMouseY - inputOriginY;
 								request.arguments = component.onHold;
 								lowPriorityRequests.addTail(request);
 							}
@@ -914,8 +919,8 @@ public class InterfaceList {
 									request = new HookRequest();
 									request.cancelOnMouseExit = true;
 									request.source = component;
-									request.mouseX = Mouse.lastMouseX - absX;
-									request.mouseY = Mouse.lastMouseY - absY;
+									request.mouseX = Mouse.lastMouseX - inputOriginX;
+									request.mouseY = Mouse.lastMouseY - inputOriginY;
 									request.arguments = component.onMouseOver;
 									lowPriorityRequests.addTail(request);
 								}
@@ -924,8 +929,8 @@ public class InterfaceList {
 								request = new HookRequest();
 								request.cancelOnMouseExit = true;
 								request.source = component;
-								request.mouseX = Mouse.lastMouseX - absX;
-								request.mouseY = Mouse.lastMouseY - absY;
+								request.mouseX = Mouse.lastMouseX - inputOriginX;
+								request.mouseY = Mouse.lastMouseY - inputOriginY;
 								request.arguments = component.onMouseRepeat;
 								lowPriorityRequests.addTail(request);
 							}
@@ -935,8 +940,8 @@ public class InterfaceList {
 									request = new HookRequest();
 									request.cancelOnMouseExit = true;
 									request.source = component;
-									request.mouseX = Mouse.lastMouseX - absX;
-									request.mouseY = Mouse.lastMouseY - absY;
+									request.mouseX = Mouse.lastMouseX - inputOriginX;
+									request.mouseY = Mouse.lastMouseY - inputOriginY;
 									request.arguments = component.onMouseLeave;
 									mediumPriorityRequests.addTail(request);
 								}
