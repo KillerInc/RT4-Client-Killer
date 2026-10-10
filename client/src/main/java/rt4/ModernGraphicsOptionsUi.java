@@ -262,8 +262,19 @@ public final class ModernGraphicsOptionsUi {
                 continue;
             }
 
-            ComponentEntry closed =
+            ComponentEntry value =
                 findEntryByChild(entries, spec.closedChild);
+            ComponentEntry closed =
+                value == null
+                    ? null
+                    : findEntryById(
+                        entries,
+                        value.component.overlayer
+                    );
+            if (closed == null) {
+                closed = value;
+            }
+
             Rect control = layout.control(spec.column, spec.row);
             if (closed != null) {
                 registerEntry(
@@ -292,8 +303,18 @@ public final class ModernGraphicsOptionsUi {
         }
 
         Rect resolution = resolutionControl(layout);
-        ComponentEntry resolutionClosed =
+        ComponentEntry resolutionValue =
             findEntryByChild(entries, RESOLUTION_VALUE_CHILD);
+        ComponentEntry resolutionClosed =
+            resolutionValue == null
+                ? null
+                : findEntryById(
+                    entries,
+                    resolutionValue.component.overlayer
+                );
+        if (resolutionClosed == null) {
+            resolutionClosed = resolutionValue;
+        }
         if (resolutionClosed != null) {
             registerEntry(
                 resolutionClosed,
@@ -693,6 +714,21 @@ public final class ModernGraphicsOptionsUi {
     ) {
         for (ComponentEntry entry : entries) {
             if ((entry.component.id & 0xFFFF) == childId) {
+                return entry;
+            }
+        }
+        return null;
+    }
+
+    private static ComponentEntry findEntryById(
+        List<ComponentEntry> entries,
+        int id
+    ) {
+        if (id == -1) {
+            return null;
+        }
+        for (ComponentEntry entry : entries) {
+            if (entry.component.id == id) {
                 return entry;
             }
         }
