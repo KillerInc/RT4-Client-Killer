@@ -45,10 +45,17 @@ public final class ModernUiMetrics {
     public static final int CONTROL_HEIGHT = 24;
     public static final int CONTROL_TEXT_PAD_X = 6;
     public static final int CONTROL_ARROW_RESERVED = 20;
+    public static final int DROPDOWN_POPUP_ROW_HEIGHT = 18;
 
     public static final int NAV_BUTTON_WIDTH = 168;
     public static final int NAV_BUTTON_HEIGHT = 30;
-    public static final int NAV_BUTTON_Y_OFFSET = 330;
+    public static final int NAV_BUTTON_Y_OFFSET = 374;
+
+    public static final int ADVANCED_COLUMN_SPACING = 130;
+    public static final int ADVANCED_FIRST_COLUMN_OFFSET = -260;
+    public static final int ADVANCED_LABEL_Y_OFFSET = 184;
+    public static final int ADVANCED_CONTROL_Y_OFFSET = 202;
+    public static final int ADVANCED_ROW_SPACING = 60;
 
     public static final int SLIDER_HEIGHT = 20;
     public static final int SLIDER_KNOB_WIDTH = 13;
