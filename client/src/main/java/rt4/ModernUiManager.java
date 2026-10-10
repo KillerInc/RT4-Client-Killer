@@ -28,6 +28,12 @@ public final class ModernUiManager {
         initialized = true;
         ModernUiPreferences.load();
         ModernVectorCacheManager.startup();
+        if (DisplayMode.getWindowMode() >= 2) {
+            ModernVectorCacheManager.onViewportChanged(
+                GameShell.canvasWidth,
+                GameShell.canvasHeight
+            );
+        }
         ModernUiDevelopmentMirror.sync();
         UiStyleRepository.refresh();
         DisplayDebug.log(
