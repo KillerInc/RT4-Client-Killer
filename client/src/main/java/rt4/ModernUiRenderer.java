@@ -1288,6 +1288,149 @@ public final class ModernUiRenderer {
         return layout;
     }
 
+    public static void prepareMainMenuInput(
+        Component[] components,
+        int parentX,
+        int parentY
+    ) {
+        if (!ModernUiManager.isEnabled()) {
+            return;
+        }
+
+        MainMenuLayout layout =
+            analyzeMainMenu(components, parentX, parentY);
+        if (layout == null || layout.contentBounds == null) {
+            return;
+        }
+
+        ModernUiRect clip = new ModernUiRect(
+            layout.contentBounds.x,
+            layout.contentBounds.y,
+            layout.contentBounds.width,
+            layout.contentBounds.height
+        );
+
+        for (MainMenuTextEntry entry : layout.texts) {
+            if (entry.component == null
+                || !isMainMenuActionText(entry.text)) {
+                continue;
+            }
+
+            int targetY = layout.textTargetY(entry.text);
+            int y =
+                targetY == Integer.MIN_VALUE
+                    ? entry.rect.y
+                    : targetY;
+            int x = entry.rect.x;
+            int buttonX =
+                x + (entry.component.width
+                    - ModernUiMetrics.MAIN_MENU_BUTTON_WIDTH) / 2;
+            int buttonY =
+                y + (entry.component.height
+                    - ModernUiMetrics.MAIN_MENU_BUTTON_HEIGHT) / 2;
+
+            ModernUiInputRouter.bind(
+                entry.component,
+                new ModernUiRect(
+                    buttonX,
+                    buttonY,
+                    ModernUiMetrics.MAIN_MENU_BUTTON_WIDTH,
+                    ModernUiMetrics.MAIN_MENU_BUTTON_HEIGHT
+                ),
+                clip
+            );
+        }
+
+        if (layout.standardChoiceComponent != null
+            && layout.standardChoice != null) {
+            ModernUiInputRouter.bind(
+                layout.standardChoiceComponent,
+                toModernRect(layout.standardChoice),
+                clip
+            );
+        }
+        if (layout.highChoiceComponent != null
+            && layout.highChoice != null) {
+            ModernUiInputRouter.bind(
+                layout.highChoiceComponent,
+                toModernRect(layout.highChoice),
+                clip
+            );
+        }
+
+        if (layout.musicSlider != null
+            && !layout.musicSliderComponentIds.isEmpty()) {
+            List<UiRect> sourceRects = new ArrayList<>();
+            for (MainMenuImageEntry image : layout.images) {
+                if (layout.musicSliderComponentIds.contains(
+                    image.componentId
+                )) {
+                    sourceRects.add(image.rect);
+                }
+            }
+            UiRect sourceUnion = unionRects(sourceRects);
+            if (sourceUnion != null) {
+                for (MainMenuImageEntry image : layout.images) {
+                    if (!layout.musicSliderComponentIds.contains(
+                        image.componentId
+                    )) {
+                        continue;
+                    }
+
+                    int x =
+                        layout.musicSlider.x
+                            + (image.rect.x - sourceUnion.x)
+                                * layout.musicSlider.width
+                                / Math.max(1, sourceUnion.width);
+                    int y =
+                        layout.musicSlider.y
+                            + (image.rect.y - sourceUnion.y)
+                                * layout.musicSlider.height
+                                / Math.max(1, sourceUnion.height);
+                    int width = Math.max(
+                        1,
+                        image.rect.width
+                            * layout.musicSlider.width
+                            / Math.max(1, sourceUnion.width)
+                    );
+                    int height = Math.max(
+                        1,
+                        image.rect.height
+                            * layout.musicSlider.height
+                            / Math.max(1, sourceUnion.height)
+                    );
+
+                    ModernUiInputRouter.bind(
+                        image.component,
+                        new ModernUiRect(x, y, width, height),
+                        clip
+                    );
+                }
+            }
+        }
+    }
+
+    private static boolean isMainMenuActionText(String text) {
+        String normalized = normalizeGraphicsOptionsText(text);
+        return normalized.equals("log in")
+            || normalized.equals("login")
+            || normalized.equals("create account")
+            || normalized.equals("graphics options")
+            || normalized.equals("audio options")
+            || normalized.equals("music options")
+            || normalized.equals("quit")
+            || normalized.startsWith("world ");
+    }
+
+    private static ModernUiRect toModernRect(UiRect rect) {
+        return new ModernUiRect(
+            rect.x,
+            rect.y,
+            rect.width,
+            rect.height
+        );
+    }
+
     private static void collectMainMenuEntries(
         Component[] components,
         int layer,
@@ -1670,10 +1813,10 @@ public final class ModernUiRenderer {
             int buttonY = y + (component.height - buttonHeight) / 2;
 
             boolean hover =
-                Mouse.lastMouseX >= x
-                    && Mouse.lastMouseX < x + component.width
-                    && Mouse.lastMouseY >= y
-                    && Mouse.lastMouseY < y + component.height;
+                Mouse.lastMouseX >= buttonX
+                    && Mouse.lastMouseX < buttonX + buttonWidth
+                    && Mouse.lastMouseY >= buttonY
+                    && Mouse.lastMouseY < buttonY + buttonHeight;
 
             String asset =
                 hover
@@ -3082,6 +3225,7 @@ public final class ModernUiRenderer {
     public static void clearCaches() {
         loggedMissing.clear();
         lastMainMenuContentBounds = null;
+        ModernUiInputRouter.clear();
         ModernUiAssetResolver.clear();
         ModernTrueTypeFont.clear();
     }
