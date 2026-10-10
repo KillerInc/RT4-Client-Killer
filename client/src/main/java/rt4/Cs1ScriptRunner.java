@@ -296,7 +296,30 @@ public class Cs1ScriptRunner {
 			Rasteriser.prepare();
 		}
 
-		for (@Pc(18) int i = 0; i < components.length; i++) {
+		int modernUiBackIndex = -1;
+		for (int j = 0; j < components.length; j++) {
+			Component candidate = components[j];
+			if (candidate != null
+				&& candidate.overlayer == layer
+				&& candidate.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_CONTAINER) {
+				modernUiBackIndex = j;
+				break;
+			}
+		}
+
+		for (int renderIndex = modernUiBackIndex == -1 ? 0 : -1;
+			renderIndex < components.length;
+			renderIndex++) {
+			int i;
+			if (renderIndex == -1) {
+				i = modernUiBackIndex;
+			} else {
+				i = renderIndex;
+				if (i == modernUiBackIndex) {
+					continue;
+				}
+			}
+
 			@Pc(30) Component component = components[i];
 			if (GraphicsOptionsUiInjector.isModernUiControl(component)
 				&& !ModernUiManager.isSupportedDisplayMode()) {

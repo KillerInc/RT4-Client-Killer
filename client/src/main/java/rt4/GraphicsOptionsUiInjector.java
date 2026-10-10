@@ -29,6 +29,7 @@ public final class GraphicsOptionsUiInjector {
     public static final int CLIENT_CODE_LABEL_TEXT = 1906;
     public static final int CLIENT_CODE_POPUP_HIT = 1907;
     public static final int CLIENT_CODE_POPUP_BODY = 1908;
+    public static final int CLIENT_CODE_CONTAINER = 1909;
 
     private static final int COLUMN_DELTA_X = 130;
     private static final int STYLE_DELTA_Y = 30;
@@ -1536,7 +1537,8 @@ public final class GraphicsOptionsUiInjector {
             || code == CLIENT_CODE_SELECTOR_PIECE
             || code == CLIENT_CODE_LABEL_TEXT
             || code == CLIENT_CODE_POPUP_HIT
-            || code == CLIENT_CODE_POPUP_BODY;
+            || code == CLIENT_CODE_POPUP_BODY
+            || code == CLIENT_CODE_CONTAINER;
     }
 
     private static boolean alreadyInjected(Component[] components) {
