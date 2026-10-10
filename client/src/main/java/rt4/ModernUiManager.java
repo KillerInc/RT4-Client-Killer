@@ -60,10 +60,6 @@ public final class ModernUiManager {
         }
 
         initialize();
-        // Never let a hitbox from the previous canvas size survive into the
-        // first input pass at the new size. Renderers repopulate the registry
-        // from their canonical layout on the next draw.
-        ModernUiHitboxRegistry.clear();
         ModernVectorCacheManager.startup();
         ModernVectorCacheManager.onViewportChanged(width, height);
     }
