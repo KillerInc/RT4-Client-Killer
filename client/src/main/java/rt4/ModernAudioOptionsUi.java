@@ -687,44 +687,6 @@ public final class ModernAudioOptionsUi {
         }
     }
 
-    // Compatibility surface for the pre-rebuild input path. New bindings are
-    // supplied by ModernUiInputRouter, so these intentionally do nothing.
-    public static boolean hasHitboxOverride(Component component) {
-        return false;
-    }
-
-    public static int adjustHitboxX(Component component, int x) {
-        return x;
-    }
-
-    public static int adjustHitboxY(Component component, int y) {
-        return y;
-    }
-
-    public static int hitboxWidth(Component component, int fallback) {
-        return fallback;
-    }
-
-    public static int hitboxHeight(Component component, int fallback) {
-        return fallback;
-    }
-
-    public static int panelLeft(int fallback) {
-        return fallback;
-    }
-
-    public static int panelTop(int fallback) {
-        return fallback;
-    }
-
-    public static int panelRight(int fallback) {
-        return fallback;
-    }
-
-    public static int panelBottom(int fallback) {
-        return fallback;
-    }
-
     private enum TextKind {
         TITLE {
             @Override
