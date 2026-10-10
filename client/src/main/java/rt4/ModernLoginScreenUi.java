@@ -11,7 +11,14 @@ import java.util.Locale;
  * fonts, positions and sizes are never rendered.
  */
 public final class ModernLoginScreenUi {
+    private static final int KEY_TAB = 80;
+    private static final int USERNAME_MAX_LENGTH = 12;
+    private static final int PASSWORD_MAX_LENGTH = 20;
+
     private static boolean logged;
+    private static int activeLoop = -1;
+    private static boolean initialized;
+    private static Focus focus = Focus.USERNAME;
 
     private ModernLoginScreenUi() {
     }
@@ -30,6 +37,9 @@ public final class ModernLoginScreenUi {
             return;
         }
 
+        activeLoop = client.loop;
+        initializeFieldsIfNeeded();
+
         ModernLoginScreenLayout layout =
             ModernLoginScreenLayout.create(
                 GameShell.canvasWidth,
@@ -38,20 +48,9 @@ public final class ModernLoginScreenUi {
 
         ModernUiRect clip = layout.panel;
 
-        if (backend.usernameAction != null) {
-            ModernUiInputRouter.bind(
-                backend.usernameAction,
-                layout.usernameInput,
-                clip
-            );
-        }
-        if (backend.passwordAction != null) {
-            ModernUiInputRouter.bind(
-                backend.passwordAction,
-                layout.passwordInput,
-                clip
-            );
-        }
+        // Username/password editing is owned directly by Modern UI. We do not
+        // bind the old field widgets because their focus model is tied to
+        // cache-era component geometry.
         if (backend.loginAction != null) {
             ModernUiInputRouter.bind(
                 backend.loginAction,
@@ -149,7 +148,8 @@ public final class ModernLoginScreenUi {
             layout.usernameInput,
             Player.usernameInput == null
                 ? ""
-                : Player.usernameInput.toString()
+                : Player.usernameInput.toString(),
+            focus == Focus.USERNAME
         );
 
         drawCentered(
@@ -161,7 +161,8 @@ public final class ModernLoginScreenUi {
         );
         drawInput(
             layout.passwordInput,
-            maskPassword()
+            maskPassword(),
+            focus == Focus.PASSWORD
         );
 
         drawButton(
@@ -176,7 +177,8 @@ public final class ModernLoginScreenUi {
 
     private static void drawInput(
         ModernUiRect rect,
-        String value
+        String value,
+        boolean focused
     ) {
         boolean hover = rect.contains(
             Mouse.lastMouseX,
@@ -184,15 +186,20 @@ public final class ModernLoginScreenUi {
         );
 
         drawAsset(
-            hover
+            hover || focused
                 ? "controls/button-active"
                 : "controls/button",
             rect
         );
 
+        String display = value == null ? "" : value;
+        if (focused && (client.loop / 20 & 1) == 0) {
+            display += "|";
+        }
+
         ModernTrueTypeFont.drawInBox(
             ModernUiFontRegistry.PLAIN_12,
-            value == null ? "" : value,
+            display,
             rect.x + 12,
             rect.y,
             Math.max(1, rect.width - 24),
@@ -202,6 +209,190 @@ public final class ModernLoginScreenUi {
             1,
             ModernUiMetrics.FONT_DROPDOWN,
             false
+        );
+    }
+
+    public static void processInput() {
+        if (!ModernUiManager.isEnabled()
+            || client.gameState != 10
+            || activeLoop != client.loop) {
+            return;
+        }
+
+        initializeFieldsIfNeeded();
+
+        ModernLoginScreenLayout layout =
+            ModernLoginScreenLayout.create(
+                GameShell.canvasWidth,
+                GameShell.canvasHeight
+            );
+
+        if (Mouse.clickButton == 1) {
+            if (layout.usernameInput.contains(
+                Mouse.clickX,
+                Mouse.clickY
+            )) {
+                focus = Focus.USERNAME;
+            } else if (layout.passwordInput.contains(
+                Mouse.clickX,
+                Mouse.clickY
+            )) {
+                focus = Focus.PASSWORD;
+            }
+        }
+
+        for (int i = 0; i < InterfaceList.keyQueueSize; i++) {
+            int code = InterfaceList.keyCodes[i];
+            int ch = InterfaceList.keyChars[i];
+
+            if (code == Keyboard.KEY_BACK_SPACE) {
+                backspace();
+                continue;
+            }
+
+            if (code == KEY_TAB) {
+                focus = focus == Focus.USERNAME
+                    ? Focus.PASSWORD
+                    : Focus.USERNAME;
+                continue;
+            }
+
+            if (code == Keyboard.KEY_ENTER) {
+                if (focus == Focus.USERNAME) {
+                    focus = Focus.PASSWORD;
+                } else {
+                    submitLogin();
+                }
+                continue;
+            }
+
+            if (ch < 32 || ch > 255) {
+                continue;
+            }
+
+            if (focus == Focus.USERNAME) {
+                appendUsername(ch);
+            } else {
+                appendPassword(ch);
+            }
+        }
+    }
+
+    public static void onSuccessfulLogin() {
+        ModernLoginIdentityStore.recordSuccessfulLogin(
+            Player.usernameInput
+        );
+        initialized = false;
+    }
+
+    public static void resetForLoginScreen() {
+        initialized = false;
+        activeLoop = -1;
+        focus = Focus.USERNAME;
+    }
+
+    private static void initializeFieldsIfNeeded() {
+        if (initialized) {
+            return;
+        }
+
+        initialized = true;
+
+        String existing =
+            Player.usernameInput == null
+                ? ""
+                : Player.usernameInput.toString().trim();
+        String remembered =
+            ModernLoginIdentityStore.loadLastUser();
+
+        if (!remembered.isEmpty()) {
+            Player.usernameInput = JagString.parse(remembered);
+            Player.password = JagString.EMPTY;
+            focus = Focus.PASSWORD;
+            DisplayDebug.log(
+                "MODERN_UI restored last successful login user"
+            );
+        } else if (!existing.isEmpty()) {
+            Player.password = JagString.EMPTY;
+            focus = Focus.PASSWORD;
+        } else {
+            Player.usernameInput = JagString.EMPTY;
+            Player.password = JagString.EMPTY;
+            focus = Focus.USERNAME;
+        }
+    }
+
+    private static void appendUsername(int ch) {
+        String value =
+            Player.usernameInput == null
+                ? ""
+                : Player.usernameInput.toString();
+        if (value.length() >= USERNAME_MAX_LENGTH
+            || !isUsernameChar(ch)) {
+            return;
+        }
+
+        Player.usernameInput =
+            JagString.parse(value + (char) ch);
+    }
+
+    private static void appendPassword(int ch) {
+        String value =
+            Player.password == null
+                ? ""
+                : Player.password.toString();
+        if (value.length() >= PASSWORD_MAX_LENGTH
+            || ch < 32 || ch == 127) {
+            return;
+        }
+
+        Player.password =
+            JagString.parse(value + (char) ch);
+    }
+
+    private static void backspace() {
+        if (focus == Focus.USERNAME) {
+            String value =
+                Player.usernameInput == null
+                    ? ""
+                    : Player.usernameInput.toString();
+            if (!value.isEmpty()) {
+                Player.usernameInput = JagString.parse(
+                    value.substring(0, value.length() - 1)
+                );
+            }
+        } else {
+            String value =
+                Player.password == null
+                    ? ""
+                    : Player.password.toString();
+            if (!value.isEmpty()) {
+                Player.password = JagString.parse(
+                    value.substring(0, value.length() - 1)
+                );
+            }
+        }
+    }
+
+    private static boolean isUsernameChar(int ch) {
+        return ch >= 'a' && ch <= 'z'
+            || ch >= 'A' && ch <= 'Z'
+            || ch >= '0' && ch <= '9'
+            || ch == ' '
+            || ch == '_'
+            || ch == '-';
+    }
+
+    private static void submitLogin() {
+        if (Player.usernameInput == null
+            || Player.password == null) {
+            return;
+        }
+
+        LoginManager.startLogin(
+            Player.usernameInput,
+            Player.password,
+            0
         );
     }
 
@@ -687,6 +878,11 @@ public final class ModernLoginScreenUi {
 
     private static int idOf(Component component) {
         return component == null ? -1 : component.id;
+    }
+
+    private enum Focus {
+        USERNAME,
+        PASSWORD
     }
 
     private enum Kind {
