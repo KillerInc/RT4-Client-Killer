@@ -1270,24 +1270,26 @@ public final class GraphicsOptionsUiInjector {
             if (isNativeDropdownPopupContainer(components, component)
                 && !component.hidden) {
                 foundOpen = true;
-                if (containsInteractionPoint(
-                    component,
+                if (containsPoint(
+                    clickX,
+                    clickY,
                     entry.x,
                     entry.y,
-                    clickX,
-                    clickY
+                    component.width,
+                    component.height
                 )) {
                     insideOpenPopup = true;
                 }
             }
 
             if (isNativeDropdownClosedContainer(components, component)
-                && containsInteractionPoint(
-                    component,
+                && containsPoint(
+                    clickX,
+                    clickY,
                     entry.x,
                     entry.y,
-                    clickX,
-                    clickY
+                    component.width,
+                    component.height
                 )) {
                 clickedSelectorParent = component.overlayer;
             }
@@ -1308,32 +1310,6 @@ public final class GraphicsOptionsUiInjector {
         } else {
             closeNativeDropdownsExceptParent(-1, "outside-click");
         }
-    }
-
-    private static boolean containsInteractionPoint(
-        Component component,
-        int sourceX,
-        int sourceY,
-        int x,
-        int y
-    ) {
-        if (ModernUiHitboxRegistry.has(component)) {
-            return ModernUiHitboxRegistry.contains(
-                component,
-                sourceX,
-                sourceY,
-                x,
-                y
-            );
-        }
-        return containsPoint(
-            x,
-            y,
-            sourceX,
-            sourceY,
-            Math.max(1, component.width),
-            Math.max(1, component.height)
-        );
     }
 
     private static void closeNativeDropdownsExceptParent(
