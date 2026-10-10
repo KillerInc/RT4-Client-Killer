@@ -2329,7 +2329,7 @@ public final class ModernUiRenderer {
             }
             if (normalized.equals("standard detail")
                 || normalized.equals("high detail")) {
-                return top + 228;
+                return top + 220;
             }
             if (normalized.equals("graphics options")) {
                 return top + 252;
@@ -2339,7 +2339,7 @@ public final class ModernUiRenderer {
                 return top + 282;
             }
             if (normalized.equals("music volume")) {
-                return top + 310;
+                return top + 302;
             }
             if (normalized.equals("quit")) {
                 return top + 354;
@@ -2385,7 +2385,7 @@ public final class ModernUiRenderer {
             }
 
             if (musicSlider != null) {
-                int targetTop = contentBounds.y + 330;
+                int targetTop = contentBounds.y + 322;
                 musicSliderInputDeltaY = targetTop - musicSlider.y;
                 musicSlider = new UiRect(
                     musicSlider.x,
