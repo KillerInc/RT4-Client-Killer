@@ -21,7 +21,50 @@ public final class ClientPerformanceDiagnostics {
     private static long uiMax;
     private static int uiCount;
 
+    // Actual in-game 3D viewport after RT4 applies its viewport/FOV bounds.
+    // Kept separately from the outer Canvas because the scene may render into
+    // only part of the client window.
+    private static volatile int gameRenderLeft = -1;
+    private static volatile int gameRenderTop = -1;
+    private static volatile int gameRenderWidth = -1;
+    private static volatile int gameRenderHeight = -1;
+
     private ClientPerformanceDiagnostics() {
+    }
+
+    public static void recordGameRenderSize(
+        int left,
+        int top,
+        int width,
+        int height
+    ) {
+        if (left == gameRenderLeft
+            && top == gameRenderTop
+            && width == gameRenderWidth
+            && height == gameRenderHeight) {
+            return;
+        }
+
+        gameRenderLeft = left;
+        gameRenderTop = top;
+        gameRenderWidth = width;
+        gameRenderHeight = height;
+
+        int mode;
+        try {
+            mode = DisplayMode.getWindowMode();
+        } catch (Throwable ignored) {
+            mode = -1;
+        }
+
+        DisplayDebug.log(
+            "GAME_RENDER_SIZE viewport=" + width + "x" + height
+                + " origin=" + left + "," + top
+                + " canvas=" + GameShell.canvasWidth + "x" + GameShell.canvasHeight
+                + " frame=" + GameShell.frameWidth + "x" + GameShell.frameHeight
+                + " mode=" + DisplayDebug.modeName(mode)
+                + " renderer=" + (GlRenderer.enabled ? "GL" : "SOFTWARE")
+        );
     }
 
     public static synchronized void recordLogic(long nanos) {
@@ -98,6 +141,8 @@ public final class ClientPerformanceDiagnostics {
                 + " gameState=" + client.gameState
                 + " topInterface=" + InterfaceList.topLevelInterface
                 + " canvas=" + GameShell.canvasWidth + "x" + GameShell.canvasHeight
+                + " gameViewport=" + gameRenderWidth + "x" + gameRenderHeight
+                + "@" + gameRenderLeft + "," + gameRenderTop
                 + " mode=" + DisplayDebug.modeName(mode)
                 + " renderer=" + (GlRenderer.enabled ? "GL" : "SOFTWARE")
                 + " modernUi=" + ModernUiManager.isEnabled()
