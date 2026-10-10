@@ -278,9 +278,7 @@ public final class ModernGraphicsOptionsUi {
                 ModernUiMetrics.CONTROL_WIDTH,
                 ModernUiMetrics.CONTROL_HEIGHT
             );
-            drawPopupFromComponent(
-                components,
-                RESOLUTION_POPUP_BODY_CHILD,
+            drawResolutionPopup(
                 resolution,
                 valueFor(
                     components,
@@ -341,6 +339,65 @@ public final class ModernGraphicsOptionsUi {
                 row,
                 options[i],
                 options[i].equals(selected)
+            );
+        }
+    }
+
+    private static void drawResolutionPopup(
+        Rect control,
+        String selected
+    ) {
+        DisplayMode[] modes = DisplayMode.getDisplayModes();
+        if (modes == null || modes.length == 0) {
+            return;
+        }
+
+        List<String> options = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+        for (DisplayMode mode : modes) {
+            if (mode == null) {
+                continue;
+            }
+            String option = mode.width + " x " + mode.height;
+            if (seen.add(option)) {
+                options.add(option);
+            }
+        }
+        if (options.isEmpty()) {
+            return;
+        }
+
+        int rowHeight =
+            ModernUiMetrics.NATIVE_DROPDOWN_POPUP_ROW_HEIGHT;
+        int popupY = control.y + control.height - 1;
+        int popupHeight = options.size() * rowHeight;
+
+        List<Rect> rows = new ArrayList<>();
+        for (int i = 0; i < options.size(); i++) {
+            rows.add(
+                new Rect(
+                    control.x,
+                    popupY + i * rowHeight,
+                    control.width,
+                    rowHeight
+                )
+            );
+        }
+
+        drawPopupSurfaceExact(
+            control.x,
+            popupY,
+            control.width,
+            popupHeight,
+            rows
+        );
+
+        for (int i = 0; i < options.size(); i++) {
+            String option = options.get(i);
+            drawPopupRow(
+                rows.get(i),
+                option,
+                normalize(option).equals(normalize(selected))
             );
         }
     }
