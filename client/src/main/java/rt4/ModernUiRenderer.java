@@ -2127,6 +2127,7 @@ public final class ModernUiRenderer {
         private int bodyComponentId = -1;
         private int logoComponentId = -1;
         private int centerX;
+        private ModernMainMenuLayout modernLayout;
 
         private boolean hasText(String wanted) {
             for (MainMenuTextEntry entry : texts) {
@@ -2166,39 +2167,25 @@ public final class ModernUiRenderer {
                 );
             }
 
-            centerX =
-                graphics == null
-                    ? rectCenterX(content)
-                    : rectCenterX(graphics.rect);
-
-            // Give the vector parchment a little more breathing room around
-            // the existing login controls without moving the control layout.
-            // Keep the parchment and its derived inner content bounds in the
-            // same scale system. This is 95% of the previous main-menu size.
-            int scrollWidth = Math.max(552, content.width + 307);
-            int scrollHeight = Math.max(582, content.height + 230);
-            scroll = new UiRect(
-                centerX - scrollWidth / 2,
-                content.y - 161,
-                scrollWidth,
-                scrollHeight
+            // From this point onward, all visible geometry comes from the
+            // declarative Modern layout. The legacy content union above is
+            // retained only to discover which cache Components own actions.
+            modernLayout = ModernMainMenuLayout.create(
+                GameShell.canvasWidth,
+                GameShell.canvasHeight
             );
-
-            // The usable menu area is derived from the parchment itself.
-            // Future scaling/resizing therefore changes the outer artwork and
-            // the interaction/render bounds together instead of preserving the
-            // obsolete 2009 cache container dimensions.
-            int contentInsetX = Math.max(42, scroll.width * 12 / 100);
-            int contentInsetTop = Math.max(58, scroll.height * 12 / 100);
-            int contentInsetBottom = Math.max(48, scroll.height * 10 / 100);
+            centerX = modernLayout.centerX;
+            scroll = new UiRect(
+                modernLayout.scroll.x,
+                modernLayout.scroll.y,
+                modernLayout.scroll.width,
+                modernLayout.scroll.height
+            );
             contentBounds = new UiRect(
-                scroll.x + contentInsetX,
-                scroll.y + contentInsetTop,
-                Math.max(1, scroll.width - contentInsetX * 2),
-                Math.max(
-                    1,
-                    scroll.height - contentInsetTop - contentInsetBottom
-                )
+                modernLayout.content.x,
+                modernLayout.content.y,
+                modernLayout.content.width,
+                modernLayout.content.height
             );
             lastMainMenuContentBounds = contentBounds;
 
@@ -2261,26 +2248,11 @@ public final class ModernUiRenderer {
                 logoComponentId = bestLogo.componentId;
             }
 
-            // Keep the 2008 vector logo prominent in resizable mode.
-            // The upper cap prevents it from overwhelming smaller layouts.
-            int logoWidth = Math.min(
-                620,
-                Math.max(400, GameShell.canvasWidth * 54 / 100)
-            );
-            logoWidth = Math.min(
-                logoWidth,
-                Math.max(240, GameShell.canvasWidth - 40)
-            );
-            int logoHeight = Math.max(
-                90,
-                logoWidth * 500 / 1445
-            );
-            int logoBottom = scroll.y - 24;
             logo = new UiRect(
-                centerX - logoWidth / 2,
-                Math.max(8, logoBottom - logoHeight),
-                logoWidth,
-                logoHeight
+                modernLayout.logo.x,
+                modernLayout.logo.y,
+                modernLayout.logo.width,
+                modernLayout.logo.height
             );
 
             List<UiRect> headerParts = new ArrayList<>();
@@ -2504,48 +2476,10 @@ public final class ModernUiRenderer {
         }
 
         private int textTargetY(String normalized) {
-            if (contentBounds == null || normalized == null) {
+            if (modernLayout == null || normalized == null) {
                 return Integer.MIN_VALUE;
             }
-
-            int top = contentBounds.y;
-            if (normalized.equals("log in")
-                || normalized.equals("login")) {
-                return top + 56;
-            }
-            if (normalized.contains("existing user")) {
-                return top + 77;
-            }
-            if (normalized.equals("create account")) {
-                return top + 102;
-            }
-            if (normalized.contains("new user")) {
-                return top + 123;
-            }
-            if (normalized.startsWith("world ")) {
-                return top + 148;
-            }
-            if (normalized.contains("click to switch")) {
-                return top + 169;
-            }
-            if (normalized.equals("standard detail")
-                || normalized.equals("high detail")) {
-                return top + 220;
-            }
-            if (normalized.equals("graphics options")) {
-                return top + 252;
-            }
-            if (normalized.equals("audio options")
-                || normalized.equals("music options")) {
-                return top + 282;
-            }
-            if (normalized.equals("music volume")) {
-                return top + 309;
-            }
-            if (normalized.equals("quit")) {
-                return top + 354;
-            }
-            return Integer.MIN_VALUE;
+            return modernLayout.textY(normalized);
         }
 
         private void applyModernVerticalLayout() {
@@ -2563,7 +2497,10 @@ public final class ModernUiRenderer {
                 }
 
                 if (oldTop != Integer.MAX_VALUE) {
-                    int targetTop = contentBounds.y + 190;
+                    int targetTop =
+                        modernLayout == null
+                            ? contentBounds.y + 190
+                            : modernLayout.choiceTop;
                     choiceInputDeltaY = targetTop - oldTop;
 
                     if (standardChoice != null) {
@@ -2586,7 +2523,10 @@ public final class ModernUiRenderer {
             }
 
             if (musicSlider != null) {
-                int targetTop = contentBounds.y + 322;
+                int targetTop =
+                    modernLayout == null
+                        ? contentBounds.y + 322
+                        : modernLayout.musicSliderTop;
                 musicSliderInputDeltaY = targetTop - musicSlider.y;
                 musicSlider = new UiRect(
                     musicSlider.x,
