@@ -80,7 +80,7 @@ public final class ModernUiCacheProgressOverlay {
                 JagString.parse(message),
                 x + padding,
                 y + 18,
-                0xFFFFFF,
+                ModernUiMetrics.TEXT_PRIMARY,
                 0
             );
         } else {
@@ -88,8 +88,8 @@ public final class ModernUiCacheProgressOverlay {
                 message,
                 x + padding,
                 y + 18,
-                0xFFFFFF,
-                12.0F,
+                ModernUiMetrics.TEXT_PRIMARY,
+                ModernUiMetrics.FONT_LABEL,
                 true
             );
         }
