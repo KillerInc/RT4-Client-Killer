@@ -20,6 +20,7 @@ public final class ModernUiRenderer {
     private static final Set<String> loggedMissing = new HashSet<>();
     private static int graphicsOptionsDepth;
     private static int audioOptionsDepth;
+    private static int loginScreenDepth;
     private static int graphicsOptionsTitleCenterX;
     private static int graphicsOptionsTitleY;
     private static boolean graphicsOptionsBrightnessRendered;
@@ -79,14 +80,23 @@ public final class ModernUiRenderer {
             GraphicsOptionsUiInjector.isGraphicsOptionsActive(loadedComponents);
         boolean audioOptions =
             ModernAudioOptionsUi.isAudioOptionsActive(loadedComponents);
+        boolean loginScreen =
+            interfaceId == LoginManager.loginScreenId
+                && ModernLoginScreenUi.isLoginScreenActive(
+                    loadedComponents
+                );
 
         MainMenuLayout detectedMainMenu =
             interfaceId == LoginManager.loginScreenId
+                && !loginScreen
                 ? analyzeMainMenu(loadedComponents, parentX, parentY)
                 : null;
         boolean mainMenu = detectedMainMenu != null;
 
-        if (mainMenu || graphicsOptions || audioOptions) {
+        if (mainMenu
+            || graphicsOptions
+            || audioOptions
+            || loginScreen) {
             loginUiActivated = true;
         }
 
@@ -95,7 +105,8 @@ public final class ModernUiRenderer {
                 && !loginUiActivated
                 && !mainMenu
                 && !graphicsOptions
-                && !audioOptions;
+                && !audioOptions
+                && !loginScreen;
 
         int oldTitleCenterX = graphicsOptionsTitleCenterX;
         int oldTitleY = graphicsOptionsTitleY;
@@ -125,6 +136,12 @@ public final class ModernUiRenderer {
             audioOptionsDepth++;
         }
 
+        if (loginScreen) {
+            // Username/password login is a complete Modern-owned surface.
+            // Vanilla components remain loaded only for scripts and actions.
+            loginScreenDepth++;
+        }
+
         renderComponents(
             loadedComponents,
             -1,
@@ -136,6 +153,17 @@ public final class ModernUiRenderer {
             parentY,
             rectangle
         );
+
+        if (loginScreen) {
+            setClip(0, 0, GameShell.canvasWidth, GameShell.canvasHeight);
+            ModernLoginScreenUi.render(
+                loadedComponents,
+                parentX,
+                parentY
+            );
+            setClip(clipLeft, clipTop, clipRight, clipBottom);
+            loginScreenDepth--;
+        }
 
         if (mainMenu) {
             // Permanent UI pass: everything in the Modern main menu is
@@ -339,7 +367,15 @@ public final class ModernUiRenderer {
             return true;
         }
         if (component.clientCode == 1402) {
-            drawMissing("login-flames", x, y, component.width, component.height);
+            if (loginScreenDepth == 0) {
+                drawMissing(
+                    "login-flames",
+                    x,
+                    y,
+                    component.width,
+                    component.height
+                );
+            }
             return true;
         }
         if (component.clientCode == 1406) {
@@ -351,10 +387,12 @@ public final class ModernUiRenderer {
     }
 
     private static void renderComponentVisual(Component component, int x, int y) {
-        if (graphicsOptionsDepth > 0 || audioOptionsDepth > 0) {
-            // No legacy component visuals are allowed through in Modern
-            // Graphics or Audio Options. Their complete surfaces are drawn
-            // after the component state/input pass.
+        if (graphicsOptionsDepth > 0
+            || audioOptionsDepth > 0
+            || loginScreenDepth > 0) {
+            // Rebuilt Modern screens never paint cache-era UI components.
+            // Their vanilla trees remain available only as state/action
+            // backends while the game scene stays in the background pass.
             return;
         }
 
