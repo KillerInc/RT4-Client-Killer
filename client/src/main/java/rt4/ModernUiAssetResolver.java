@@ -67,6 +67,13 @@ public final class ModernUiAssetResolver {
             if (cached != null) {
                 return cached;
             }
+
+            // Missing resources are stable for the current reload generation.
+            // Without this negative cache every frame re-opened/scanned style
+            // archives for the same absent component assets.
+            if (missingPaths.contains(path)) {
+                return null;
+            }
         }
 
         try {
