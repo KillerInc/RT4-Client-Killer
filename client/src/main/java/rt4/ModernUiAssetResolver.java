@@ -411,6 +411,39 @@ public final class ModernUiAssetResolver {
         addWarmupSpec(plan, "main-menu/footer", 300, 32);
         addWarmupSpec(plan, "main-menu/edge", 12, 220);
 
+        // Login form reuses existing Modern vectors but at its own exact
+        // declarative sizes so opening the screen never rasterizes on demand.
+        addWarmupSpec(
+            plan,
+            "audio-options/panel",
+            ModernLoginScreenLayout.PANEL_WIDTH,
+            ModernLoginScreenLayout.PANEL_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
+            "controls/button",
+            ModernLoginScreenLayout.INPUT_WIDTH,
+            ModernLoginScreenLayout.INPUT_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
+            "controls/button-active",
+            ModernLoginScreenLayout.INPUT_WIDTH,
+            ModernLoginScreenLayout.INPUT_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
+            "audio-options/button",
+            ModernLoginScreenLayout.BUTTON_WIDTH,
+            ModernLoginScreenLayout.BUTTON_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
+            "audio-options/button-active",
+            ModernLoginScreenLayout.BUTTON_WIDTH,
+            ModernLoginScreenLayout.BUTTON_HEIGHT
+        );
+
         // Audio Options. These exact sizes match ModernAudioOptionsUi so the
         // complete login UI vector cache is ready before this screen opens.
         addWarmupSpec(
