@@ -2754,14 +2754,18 @@ public final class ModernUiRenderer {
                 false,
                 active
             );
-            ModernTrueTypeFont.drawCentered(
+            ModernTrueTypeFont.drawInBox(
                 ModernUiFontRegistry.BOLD_12,
                 labels[i],
-                centers[i],
-                buttonY + 19,
+                buttonX,
+                buttonY,
+                ModernUiMetrics.DISPLAY_BUTTON_WIDTH,
+                ModernUiMetrics.DISPLAY_BUTTON_HEIGHT,
                 active
                     ? ModernUiMetrics.TEXT_ACCENT
                     : ModernUiMetrics.TEXT_PRIMARY,
+                1,
+                1,
                 ModernUiMetrics.FONT_BUTTON,
                 true
             );
