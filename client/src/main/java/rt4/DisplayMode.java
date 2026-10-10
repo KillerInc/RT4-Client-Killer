@@ -318,6 +318,8 @@ public final class DisplayMode {
 				GameShell.canvasWidth,
 				GameShell.canvasHeight
 			);
+		} else {
+			ModernVectorCacheManager.onUnsupportedDisplayMode(actualMode);
 		}
 		// Do not reload plugins inside the graphics-mode transaction. Some plugins
 		// perform Swing/resource work here, which can make RuneScape's own mode
