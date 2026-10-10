@@ -661,6 +661,30 @@ public class InterfaceList {
 						absY
 					);
 				}
+				boolean modernAudioHitbox =
+					ModernAudioOptionsUi.hasHitboxOverride(component);
+				if (modernAudioHitbox) {
+					absX = ModernAudioOptionsUi.adjustHitboxX(
+						component,
+						absX
+					);
+					absY = ModernAudioOptionsUi.adjustHitboxY(
+						component,
+						absY
+					);
+				}
+				int interactionWidth = modernAudioHitbox
+					? ModernAudioOptionsUi.hitboxWidth(
+						component,
+						component.width
+					)
+					: component.width;
+				int interactionHeight = modernAudioHitbox
+					? ModernAudioOptionsUi.hitboxHeight(
+						component,
+						component.height
+					)
+					: component.height;
 				ModernUiSettingsOverlay.observeComponent(component, absX, absY);
 				@Pc(61) int left;
 				@Pc(63) int top;
@@ -679,6 +703,15 @@ public class InterfaceList {
 						ModernUiRenderer.getMainMenuContentRight(clipRight);
 					effectiveClipBottom =
 						ModernUiRenderer.getMainMenuContentBottom(clipBottom);
+				} else if (modernAudioHitbox) {
+					effectiveClipLeft =
+						ModernAudioOptionsUi.panelLeft(clipLeft);
+					effectiveClipTop =
+						ModernAudioOptionsUi.panelTop(clipTop);
+					effectiveClipRight =
+						ModernAudioOptionsUi.panelRight(clipRight);
+					effectiveClipBottom =
+						ModernAudioOptionsUi.panelBottom(clipBottom);
 				}
 				if (component.type == 2) {
 					left = effectiveClipLeft;
@@ -686,8 +719,8 @@ public class InterfaceList {
 					right = effectiveClipRight;
 					bottom = effectiveClipBottom;
 				} else {
-					@Pc(73) int compRight = absX + component.width;
-					@Pc(78) int compBottom = absY + component.height;
+					@Pc(73) int compRight = absX + interactionWidth;
+					@Pc(78) int compBottom = absY + interactionHeight;
 					if (component.type == 9) {
 						compRight++;
 						compBottom++;
