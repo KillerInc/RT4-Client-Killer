@@ -222,6 +222,12 @@ public abstract class GameShell extends Applet implements Runnable, FocusListene
 		if (InterfaceList.topLevelInterface != -1) {
 			InterfaceList.layoutTopLevel(true);
 		}
+		if (DisplayMode.getWindowMode() >= 2) {
+			ModernVectorCacheManager.onViewportChanged(
+				canvasWidth,
+				canvasHeight
+			);
+		}
 		paintFrameLetterbox();
 	}
 
