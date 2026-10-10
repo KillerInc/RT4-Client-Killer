@@ -17,6 +17,7 @@ import java.util.Set;
 public final class ModernUiRenderer {
     private static final Set<String> loggedMissing = new HashSet<>();
     private static int graphicsOptionsDepth;
+    private static int audioOptionsDepth;
     private static int graphicsOptionsTitleCenterX;
     private static int graphicsOptionsTitleY;
     private static boolean graphicsOptionsBrightnessRendered;
@@ -75,6 +76,8 @@ public final class ModernUiRenderer {
         Component[] loadedComponents = InterfaceList.components[interfaceId];
         boolean graphicsOptions =
             GraphicsOptionsUiInjector.isGraphicsOptionsActive(loadedComponents);
+        boolean audioOptions =
+            ModernAudioOptionsUi.isAudioOptionsActive(loadedComponents);
 
         MainMenuLayout detectedMainMenu =
             interfaceId == LoginManager.loginScreenId
@@ -82,7 +85,7 @@ public final class ModernUiRenderer {
                 : null;
         boolean mainMenu = detectedMainMenu != null;
 
-        if (mainMenu || graphicsOptions) {
+        if (mainMenu || graphicsOptions || audioOptions) {
             loginUiActivated = true;
         }
 
@@ -90,7 +93,8 @@ public final class ModernUiRenderer {
             interfaceId == LoginManager.loginScreenId
                 && !loginUiActivated
                 && !mainMenu
-                && !graphicsOptions;
+                && !graphicsOptions
+                && !audioOptions;
 
         int oldTitleCenterX = graphicsOptionsTitleCenterX;
         int oldTitleY = graphicsOptionsTitleY;
@@ -114,6 +118,12 @@ public final class ModernUiRenderer {
             graphicsOptionsDepth++;
         }
 
+        if (audioOptions) {
+            // Audio Options uses the original components only for their
+            // scripts/input state. All visible chrome is Modern vector UI.
+            audioOptionsDepth++;
+        }
+
         renderComponents(
             loadedComponents,
             -1,
@@ -132,6 +142,18 @@ public final class ModernUiRenderer {
             // This keeps the scene fade/transition confined to the background.
             renderPermanentMainMenuUi();
             setClip(clipLeft, clipTop, clipRight, clipBottom);
+        }
+
+        if (audioOptions) {
+            setClip(clipLeft, clipTop, clipRight, clipBottom);
+            ModernAudioOptionsUi.render(
+                interfaceId,
+                loadedComponents,
+                parentX,
+                parentY
+            );
+            setClip(clipLeft, clipTop, clipRight, clipBottom);
+            audioOptionsDepth--;
         }
 
         if (graphicsOptions) {
@@ -488,10 +510,10 @@ public final class ModernUiRenderer {
     }
 
     private static void renderComponentVisual(Component component, int x, int y) {
-        if (graphicsOptionsDepth > 0) {
+        if (graphicsOptionsDepth > 0 || audioOptionsDepth > 0) {
             // No legacy component visuals are allowed through in Modern
-            // Graphics Options. The complete surface is drawn once by
-            // ModernGraphicsOptionsUi after the component state pass.
+            // Graphics or Audio Options. Their complete surfaces are drawn
+            // after the component state/input pass.
             return;
         }
 
