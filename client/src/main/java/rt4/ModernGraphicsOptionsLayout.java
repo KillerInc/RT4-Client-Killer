@@ -58,6 +58,75 @@ public final class ModernGraphicsOptionsLayout {
         );
     }
 
+    public ModernUiRect title() {
+        return new ModernUiRect(
+            panelX,
+            panelY + 22,
+            panelWidth,
+            22
+        );
+    }
+
+    public ModernUiRect topDivider() {
+        return new ModernUiRect(
+            panelX + ModernUiMetrics.GRAPHICS_PANEL_INSET,
+            panelY + 146,
+            panelWidth - ModernUiMetrics.GRAPHICS_PANEL_INSET * 2,
+            4
+        );
+    }
+
+    public ModernUiRect bottomDivider() {
+        return new ModernUiRect(
+            panelX + ModernUiMetrics.GRAPHICS_PANEL_INSET,
+            panelY + 360,
+            panelWidth - ModernUiMetrics.GRAPHICS_PANEL_INSET * 2,
+            4
+        );
+    }
+
+    public ModernUiRect displaySectionLabel() {
+        return new ModernUiRect(
+            panelX + 48,
+            panelY + 40,
+            180,
+            18
+        );
+    }
+
+    public ModernUiRect advancedSectionLabel() {
+        return new ModernUiRect(
+            panelX + 48,
+            panelY + 160,
+            180,
+            18
+        );
+    }
+
+    public int displayModeCenter(int index) {
+        return centerX - 225
+            + Math.max(0, Math.min(3, index)) * 150;
+    }
+
+    public ModernUiRect displayModeDetail(int index) {
+        return new ModernUiRect(
+            displayModeCenter(index) - 65,
+            panelY + 96,
+            130,
+            34
+        );
+    }
+
+    public ModernUiRect controlLabel(int column, int row) {
+        ModernUiRect control = control(column, row);
+        return new ModernUiRect(
+            control.x - 8,
+            labelY(row),
+            control.width + 16,
+            16
+        );
+    }
+
     public ModernUiRect control(int column, int row) {
         int center =
             centerX
@@ -85,9 +154,7 @@ public final class ModernGraphicsOptionsLayout {
     }
 
     public ModernUiRect displayModeButton(int index) {
-        int center =
-            centerX - 225
-                + Math.max(0, Math.min(3, index)) * 150;
+        int center = displayModeCenter(index);
         return new ModernUiRect(
             ModernUiMetrics.centeredX(
                 center,
