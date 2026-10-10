@@ -9,13 +9,16 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -118,6 +121,470 @@ public final class ModernUiAssetResolver {
             DisplayDebug.log("MODERN_UI asset failed " + path + ": " + ex.getMessage());
             return null;
         }
+    }
+
+    /**
+     * Builds the complete effective Modern UI vector set for the current
+     * scalable canvas. This runs on the ModernVectorCache worker, so archive
+     * discovery, hashing and SVG raster work never block the game thread.
+     */
+    static void prebuildCompleteVectorCache(
+        int canvasWidth,
+        int canvasHeight
+    ) {
+        long startedAt = System.nanoTime();
+
+        try {
+            LinkedHashMap<String, List<WarmupSize>> plan =
+                new LinkedHashMap<>();
+
+            addKnownWarmupVariants(plan, canvasWidth, canvasHeight);
+
+            // Discover SVGs supplied by the built-in pack, selected style,
+            // enabled add-ons and user overrides. New mod files therefore join
+            // the cache automatically without requiring another hard-coded
+            // path here.
+            Set<String> discovered = discoverEffectiveVectorPaths();
+            for (String path : discovered) {
+                if (!plan.containsKey(path)) {
+                    plan.put(path, new ArrayList<WarmupSize>());
+                }
+            }
+
+            LinkedHashMap<String, ResolvedBytes> resolvedByPath =
+                new LinkedHashMap<>();
+
+            // Resolve each logical vector once. If a style/add-on replaces a
+            // built-in SVG with a PNG, it is intentionally excluded from the
+            // vector cache.
+            for (Map.Entry<String, List<WarmupSize>> entry : plan.entrySet()) {
+                String path = entry.getKey();
+                ResolvedBytes resolved = resolveCandidates(
+                    new String[] {path + ".svg"}
+                );
+                if (resolved == null
+                    || !resolved.name.toLowerCase(Locale.ROOT).endsWith(".svg")) {
+                    continue;
+                }
+
+                resolvedByPath.put(path, resolved);
+
+                int[] intrinsic = parseSvgIntrinsicSize(resolved.bytes);
+                if (intrinsic != null) {
+                    addWarmupSize(
+                        entry.getValue(),
+                        intrinsic[0],
+                        intrinsic[1]
+                    );
+                }
+            }
+
+            int total = 0;
+            for (Map.Entry<String, ResolvedBytes> entry
+                : resolvedByPath.entrySet()) {
+                List<WarmupSize> sizes = plan.get(entry.getKey());
+                if (sizes != null) {
+                    total += sizes.size();
+                }
+            }
+
+            String viewport = canvasWidth + "x" + canvasHeight;
+            ModernVectorCacheManager.beginPlannedBuild(
+                viewport,
+                total,
+                "complete-modern-ui"
+            );
+
+            int queued = 0;
+            for (Map.Entry<String, ResolvedBytes> entry
+                : resolvedByPath.entrySet()) {
+                String path = entry.getKey();
+                ResolvedBytes resolved = entry.getValue();
+                List<WarmupSize> sizes = plan.get(path);
+                if (sizes == null) {
+                    continue;
+                }
+
+                for (WarmupSize size : sizes) {
+                    ModernVectorCacheManager.queuePrebuildAsset(
+                        path,
+                        size.width,
+                        size.height,
+                        resolved.bytes
+                    );
+                    queued++;
+                }
+            }
+
+            DisplayDebug.log(
+                "VECTOR_CACHE complete-plan viewport=" + viewport
+                    + " vectorPaths=" + resolvedByPath.size()
+                    + " variants=" + queued
+                    + " discoverMs="
+                    + String.format(
+                        Locale.ROOT,
+                        "%.3f",
+                        (System.nanoTime() - startedAt) / 1_000_000.0D
+                    )
+            );
+        } catch (Throwable ex) {
+            DisplayDebug.log(
+                "VECTOR_CACHE complete-plan failed viewport="
+                    + canvasWidth + "x" + canvasHeight
+                    + ": " + ex,
+                ex
+            );
+            ModernVectorCacheManager.finishPlannedBuildOnFailure();
+        }
+    }
+
+    private static void addKnownWarmupVariants(
+        Map<String, List<WarmupSize>> plan,
+        int canvasWidth,
+        int canvasHeight
+    ) {
+        // Graphics Options - current exact renderer sizes.
+        addWarmupSpec(plan, "graphics-options/panel", 690, 385);
+        addWarmupSpec(plan, "graphics-options/divider", 654, 4);
+
+        addWarmupSpec(plan, "controls/button", 84, 40);
+        addWarmupSpec(plan, "controls/button", 156, 28);
+        addWarmupSpec(plan, "controls/button", 116, 20);
+        addWarmupSpec(plan, "controls/button-active", 84, 40);
+        addWarmupSpec(plan, "controls/button-active", 116, 20);
+        addWarmupSpec(plan, "controls/button-disabled", 116, 20);
+
+        addWarmupSpec(plan, "controls/dropdown", 92, 22);
+        addWarmupSpec(plan, "controls/dropdown", 110, 22);
+        addWarmupSpec(plan, "controls/dropdown", 128, 20);
+        addWarmupSpec(plan, "controls/dropdown", 92, 21);
+        addWarmupSpec(plan, "controls/dropdown", 116, 20);
+        addWarmupSpec(plan, "controls/dropdown-disabled", 116, 20);
+
+        addWarmupSpec(plan, "controls/popup", 128, 40);
+        addWarmupSpec(plan, "controls/popup", 116, 40);
+        addWarmupSpec(plan, "controls/choice-hover", 124, 18);
+        addWarmupSpec(plan, "controls/choice-hover", 112, 18);
+        addWarmupSpec(plan, "controls/choice-selected", 124, 18);
+        addWarmupSpec(plan, "controls/choice-selected", 112, 18);
+        addWarmupSpec(plan, "controls/slider-track", 164, 24);
+        addWarmupSpec(plan, "controls/slider-track", 116, 20);
+        addWarmupSpec(plan, "controls/slider-knob", 13, 18);
+        addWarmupSpec(plan, "icons/dropdown", 9, 6);
+        addWarmupSpec(plan, "icons/dropdown", 12, 8);
+
+        // Main menu. Most cache components are fixed-size; the logo follows
+        // the same viewport-dependent formula as ModernUiRenderer.
+        int logoWidth = Math.min(
+            620,
+            Math.max(400, canvasWidth * 54 / 100)
+        );
+        logoWidth = Math.min(
+            logoWidth,
+            Math.max(240, canvasWidth - 40)
+        );
+        int logoHeight = Math.max(
+            90,
+            logoWidth * 500 / 1445
+        );
+
+        addWarmupSpec(plan, "main-menu/scroll", 552, 582);
+        addWarmupSpec(plan, "main-menu/logo", logoWidth, logoHeight);
+        addWarmupSpec(plan, "main-menu/button", 180, 18);
+        addWarmupSpec(plan, "main-menu/button", 140, 24);
+        addWarmupSpec(plan, "main-menu/button-active", 180, 18);
+        addWarmupSpec(plan, "main-menu/button-active", 140, 24);
+        addWarmupSpec(plan, "main-menu/choice", 95, 62);
+        addWarmupSpec(plan, "main-menu/choice", 68, 38);
+        addWarmupSpec(plan, "main-menu/choice-active", 95, 62);
+        addWarmupSpec(plan, "main-menu/choice-active", 68, 38);
+        addWarmupSpec(plan, "main-menu/music-volume-track", 110, 18);
+        addWarmupSpec(plan, "main-menu/music-volume-track", 180, 18);
+        addWarmupSpec(plan, "main-menu/music-volume-knob", 20, 26);
+        addWarmupSpec(plan, "main-menu/sd-icon", 63, 41);
+        addWarmupSpec(plan, "main-menu/sd-icon", 123, 80);
+        addWarmupSpec(plan, "main-menu/hd-icon", 41, 41);
+        addWarmupSpec(plan, "main-menu/hd-icon", 24, 24);
+
+        // Still-supported frame assets. They are included even while the
+        // current main-menu composition primarily uses scroll.svg.
+        addWarmupSpec(plan, "main-menu/panel", 220, 250);
+        addWarmupSpec(plan, "main-menu/header", 300, 32);
+        addWarmupSpec(plan, "main-menu/footer", 300, 32);
+        addWarmupSpec(plan, "main-menu/edge", 12, 220);
+    }
+
+    private static void addWarmupSpec(
+        Map<String, List<WarmupSize>> plan,
+        String path,
+        int width,
+        int height
+    ) {
+        if (width < 1 || height < 1) {
+            return;
+        }
+        List<WarmupSize> sizes = plan.get(path);
+        if (sizes == null) {
+            sizes = new ArrayList<>();
+            plan.put(path, sizes);
+        }
+        addWarmupSize(sizes, width, height);
+    }
+
+    private static void addWarmupSize(
+        List<WarmupSize> sizes,
+        int width,
+        int height
+    ) {
+        if (width < 1 || height < 1) {
+            return;
+        }
+        for (WarmupSize size : sizes) {
+            if (size.width == width && size.height == height) {
+                return;
+            }
+        }
+        sizes.add(new WarmupSize(width, height));
+    }
+
+    private static Set<String> discoverEffectiveVectorPaths()
+        throws Exception {
+        LinkedHashSet<String> paths = new LinkedHashSet<>();
+
+        collectBuiltInVectorPaths(paths);
+
+        File overrides = new File(
+            ModernUiPreferences.getUiRootDirectory(),
+            "overrides"
+        );
+        collectDirectoryVectorPaths(overrides, overrides, paths);
+
+        UiStyleInfo selected = UiStyleRepository.getEffectiveStyle(
+            ModernUiPreferences.getStyleId()
+        );
+        Set<String> enabled = ModernUiPreferences.getEnabledAddons();
+
+        List<UiStyleInfo> addons = new ArrayList<>();
+        for (UiStyleInfo addon : UiStyleRepository.getAddons()) {
+            if (enabled.contains(addon.id)
+                && UiStyleRepository.requirementsSatisfied(
+                    addon,
+                    selected.id,
+                    enabled
+                )) {
+                addons.add(addon);
+            }
+        }
+        addons.sort(
+            Comparator.comparingInt(
+                (UiStyleInfo info) -> info.priority
+            ).reversed()
+        );
+        for (UiStyleInfo addon : addons) {
+            collectArchiveVectorPaths(addon, paths);
+        }
+
+        java.util.HashSet<String> visited = new java.util.HashSet<>();
+        UiStyleInfo current = selected;
+        while (current != null && visited.add(current.id)) {
+            collectArchiveVectorPaths(current, paths);
+            if (current.base == null
+                || current.base.isEmpty()
+                || current.base.equals("none")) {
+                break;
+            }
+            current = UiStyleRepository.get(current.base);
+        }
+
+        return paths;
+    }
+
+    private static void collectBuiltInVectorPaths(Set<String> paths)
+        throws Exception {
+        InputStream resource =
+            ModernUiAssetResolver.class.getResourceAsStream(
+                BUILT_IN_PACK_RESOURCE
+            );
+        if (resource == null) {
+            return;
+        }
+
+        try (ZipInputStream zip = new ZipInputStream(resource)) {
+            ZipEntry entry;
+            while ((entry = zip.getNextEntry()) != null) {
+                if (entry.isDirectory()) {
+                    continue;
+                }
+                String name = entry.getName().replace('\\', '/');
+                if (name.toLowerCase(Locale.ROOT).endsWith(".svg")) {
+                    paths.add(name.substring(0, name.length() - 4));
+                }
+            }
+        }
+    }
+
+    private static void collectArchiveVectorPaths(
+        UiStyleInfo info,
+        Set<String> paths
+    ) throws Exception {
+        if (info == null
+            || info.builtIn
+            || info.archive == null
+            || !info.archive.isFile()) {
+            return;
+        }
+
+        try (ZipFile zip = new ZipFile(info.archive)) {
+            java.util.Enumeration<? extends ZipEntry> entries =
+                zip.entries();
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = entries.nextElement();
+                if (entry.isDirectory()) {
+                    continue;
+                }
+                String name = entry.getName().replace('\\', '/');
+                if (name.toLowerCase(Locale.ROOT).endsWith(".svg")) {
+                    paths.add(name.substring(0, name.length() - 4));
+                }
+            }
+        }
+    }
+
+    private static void collectDirectoryVectorPaths(
+        File root,
+        File directory,
+        Set<String> paths
+    ) throws Exception {
+        if (root == null
+            || directory == null
+            || !directory.isDirectory()) {
+            return;
+        }
+
+        File[] files = directory.listFiles();
+        if (files == null) {
+            return;
+        }
+
+        for (File file : files) {
+            if (file.isDirectory()) {
+                collectDirectoryVectorPaths(root, file, paths);
+                continue;
+            }
+            if (!file.getName().toLowerCase(Locale.ROOT).endsWith(".svg")) {
+                continue;
+            }
+            String rootPath = root.getCanonicalPath();
+            String filePath = file.getCanonicalPath();
+            if (!filePath.startsWith(rootPath)) {
+                continue;
+            }
+            String relative = filePath.substring(rootPath.length())
+                .replace('\\', '/');
+            while (relative.startsWith("/")) {
+                relative = relative.substring(1);
+            }
+            if (relative.toLowerCase(Locale.ROOT).endsWith(".svg")) {
+                paths.add(
+                    relative.substring(0, relative.length() - 4)
+                );
+            }
+        }
+    }
+
+    private static int[] parseSvgIntrinsicSize(byte[] bytes) {
+        if (bytes == null || bytes.length == 0) {
+            return null;
+        }
+
+        String text = new String(bytes, StandardCharsets.UTF_8);
+        int tagEnd = text.indexOf('>');
+        if (tagEnd < 0) {
+            return null;
+        }
+        String root = text.substring(0, tagEnd + 1);
+
+        Double width = parseSvgNumberAttribute(root, "width");
+        Double height = parseSvgNumberAttribute(root, "height");
+        if (width != null && height != null
+            && width > 0.0D && height > 0.0D) {
+            return new int[] {
+                Math.max(1, (int) Math.round(width)),
+                Math.max(1, (int) Math.round(height))
+            };
+        }
+
+        String viewBox = parseSvgStringAttribute(root, "viewBox");
+        if (viewBox == null) {
+            return null;
+        }
+        String[] parts = viewBox.trim().split("[\\s,]+");
+        if (parts.length != 4) {
+            return null;
+        }
+        try {
+            double viewWidth = Double.parseDouble(parts[2]);
+            double viewHeight = Double.parseDouble(parts[3]);
+            if (viewWidth <= 0.0D || viewHeight <= 0.0D) {
+                return null;
+            }
+            return new int[] {
+                Math.max(1, (int) Math.round(viewWidth)),
+                Math.max(1, (int) Math.round(viewHeight))
+            };
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+    }
+
+    private static Double parseSvgNumberAttribute(
+        String tag,
+        String attribute
+    ) {
+        String value = parseSvgStringAttribute(tag, attribute);
+        if (value == null) {
+            return null;
+        }
+        value = value.trim().toLowerCase(Locale.ROOT);
+        if (value.endsWith("px")) {
+            value = value.substring(0, value.length() - 2).trim();
+        }
+        try {
+            return Double.parseDouble(value);
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+    }
+
+    private static String parseSvgStringAttribute(
+        String tag,
+        String attribute
+    ) {
+        String lower = tag.toLowerCase(Locale.ROOT);
+        String wanted = attribute.toLowerCase(Locale.ROOT) + "=";
+        int index = lower.indexOf(wanted);
+        if (index < 0) {
+            return null;
+        }
+
+        int valueStart = index + wanted.length();
+        while (valueStart < tag.length()
+            && Character.isWhitespace(tag.charAt(valueStart))) {
+            valueStart++;
+        }
+        if (valueStart >= tag.length()) {
+            return null;
+        }
+
+        char quote = tag.charAt(valueStart);
+        if (quote != '\'' && quote != '"') {
+            return null;
+        }
+        int valueEnd = tag.indexOf(quote, valueStart + 1);
+        if (valueEnd < 0) {
+            return null;
+        }
+        return tag.substring(valueStart + 1, valueEnd);
     }
 
     public static byte[] getBytes(String logicalPath) {
@@ -337,6 +804,16 @@ public final class ModernUiAssetResolver {
             return null;
         }
         return path;
+    }
+
+    private static final class WarmupSize {
+        private final int width;
+        private final int height;
+
+        private WarmupSize(int width, int height) {
+            this.width = width;
+            this.height = height;
+        }
     }
 
     private static final class ResolvedBytes {
