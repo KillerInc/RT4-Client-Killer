@@ -642,6 +642,9 @@ public class InterfaceList {
 		if (ModernUiStyleEditorOverlay.isOpen()) {
 			return;
 		}
+		if (overlayerId == -1) {
+			ModernUiInputRouter.prepare(children, parentX, parentY);
+		}
 		for (@Pc(1) int i = 0; i < children.length; i++) {
 			@Pc(9) Component component = children[i];
 			if (GraphicsOptionsUiInjector.isModernUiControl(component)
@@ -651,7 +654,18 @@ public class InterfaceList {
 			if (component != null && component.overlayer == overlayerId && (!component.if3 || component.type == 0 || component.hasEventHandlers || getServerActiveProperties(component).events != 0 || component == Cs1ScriptRunner.dragParentComponent || component.clientCode == 1338) && (!component.if3 || !isHidden(component))) {
 				@Pc(50) int absX = component.x + parentX;
 				@Pc(55) int absY = component.y + parentY;
-				if (ModernUiRenderer.usesMainMenuContentBounds(component)) {
+
+				boolean modernInput =
+					ModernUiInputRouter.has(component);
+				boolean modernAudioHitbox =
+					!modernInput
+						&& ModernAudioOptionsUi.hasHitboxOverride(component);
+
+				// Compatibility fallback for controls that have not yet been
+				// migrated to the declarative Modern input router. Once a
+				// component is bound, its vanilla position is left untouched.
+				if (!modernInput
+					&& ModernUiRenderer.usesMainMenuContentBounds(component)) {
 					absX = ModernUiRenderer.adjustMainMenuComponentX(
 						component,
 						absX
@@ -661,8 +675,6 @@ public class InterfaceList {
 						absY
 					);
 				}
-				boolean modernAudioHitbox =
-					ModernAudioOptionsUi.hasHitboxOverride(component);
 				if (modernAudioHitbox) {
 					absX = ModernAudioOptionsUi.adjustHitboxX(
 						component,
@@ -673,6 +685,7 @@ public class InterfaceList {
 						absY
 					);
 				}
+
 				int interactionWidth = modernAudioHitbox
 					? ModernAudioOptionsUi.hitboxWidth(
 						component,
@@ -685,16 +698,20 @@ public class InterfaceList {
 						component.height
 					)
 					: component.height;
+
 				ModernUiSettingsOverlay.observeComponent(component, absX, absY);
 				@Pc(61) int left;
 				@Pc(63) int top;
 				@Pc(65) int right;
 				@Pc(67) int bottom;
+
 				int effectiveClipLeft = clipLeft;
 				int effectiveClipTop = clipTop;
 				int effectiveClipRight = clipRight;
 				int effectiveClipBottom = clipBottom;
-				if (ModernUiRenderer.usesMainMenuContentBounds(component)) {
+
+				if (!modernInput
+					&& ModernUiRenderer.usesMainMenuContentBounds(component)) {
 					effectiveClipLeft =
 						ModernUiRenderer.getMainMenuContentLeft(clipLeft);
 					effectiveClipTop =
@@ -713,6 +730,7 @@ public class InterfaceList {
 					effectiveClipBottom =
 						ModernAudioOptionsUi.panelBottom(clipBottom);
 				}
+
 				if (component.type == 2) {
 					left = effectiveClipLeft;
 					top = effectiveClipTop;
@@ -733,6 +751,46 @@ public class InterfaceList {
 					bottom = compBottom < effectiveClipBottom
 						? compBottom
 						: effectiveClipBottom;
+				}
+
+				// Child traversal always uses the untouched component geometry.
+				// Modern hitboxes are event rectangles only; they never move a
+				// parent or alter where its descendants are laid out.
+				int childLeft = left;
+				int childTop = top;
+				int childRight = right;
+				int childBottom = bottom;
+
+				if (modernInput) {
+					ModernUiRect bounds =
+						ModernUiInputRouter.bounds(component);
+					ModernUiRect modernClip =
+						ModernUiInputRouter.clip(component);
+					if (bounds != null) {
+						int modernClipLeft = modernClip == null
+							? clipLeft
+							: modernClip.x;
+						int modernClipTop = modernClip == null
+							? clipTop
+							: modernClip.y;
+						int modernClipRight = modernClip == null
+							? clipRight
+							: modernClip.right();
+						int modernClipBottom = modernClip == null
+							? clipBottom
+							: modernClip.bottom();
+
+						left = Math.max(bounds.x, modernClipLeft);
+						top = Math.max(bounds.y, modernClipTop);
+						right = Math.min(
+							bounds.right(),
+							modernClipRight
+						);
+						bottom = Math.min(
+							bounds.bottom(),
+							modernClipBottom
+						);
+					}
 				}
 				if (component == Cs1ScriptRunner.draggedComponent) {
 					dragSourceFound = true;
@@ -1137,13 +1195,13 @@ public class InterfaceList {
 						}
 					}
 					if (component.type == 0) {
-						processComponents(children, component.id, left, top, right, bottom, absX - component.scrollX, absY - component.scrollY);
+						processComponents(children, component.id, childLeft, childTop, childRight, childBottom, absX - component.scrollX, absY - component.scrollY);
 						if (component.createdComponents != null) {
-							processComponents(component.createdComponents, component.id, left, top, right, bottom, absX - component.scrollX, absY - component.scrollY);
+							processComponents(component.createdComponents, component.id, childLeft, childTop, childRight, childBottom, absX - component.scrollX, absY - component.scrollY);
 						}
 						@Pc(1595) ComponentPointer subPtr = (ComponentPointer) openInterfaces.get(component.id);
 						if (subPtr != null) {
-							processSubInterface(absX, top, absY, right, subPtr.interfaceId, left, bottom);
+							processSubInterface(absX, childTop, absY, childRight, subPtr.interfaceId, childLeft, childBottom);
 						}
 					}
 				}
