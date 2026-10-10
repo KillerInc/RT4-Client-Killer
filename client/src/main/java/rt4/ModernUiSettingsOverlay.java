@@ -21,6 +21,9 @@ public final class ModernUiSettingsOverlay {
     private static int editorH;
 
     private static final int TEXT = 0x3B2B1B;
+    // Sampled/matched to the stock RT4 Graphics Options popup rows.
+    private static final int NATIVE_POPUP_TEXT = 0x5A2D16;
+    private static final int NATIVE_POPUP_HOVER = 0x7F0000;
 
     private ModernUiSettingsOverlay() {
     }
@@ -106,10 +109,11 @@ public final class ModernUiSettingsOverlay {
 
         int selectorW = selectorWidth();
         int selectorH = selectorHeight();
+        boolean modernStyle = ModernUiManager.isEnabled();
         int popupX = selectorX;
-        int popupY = selectorBottom;
+        int popupY = modernStyle ? selectorBottom : selectorBottom - 3;
         int popupW = selectorW;
-        int rowH = Math.max(18, selectorH);
+        int rowH = modernStyle ? Math.max(18, selectorH) : 16;
 
         int mx = Mouse.clickX;
         int my = Mouse.clickY;
@@ -204,20 +208,21 @@ public final class ModernUiSettingsOverlay {
             return;
         }
 
+        boolean modernStyle = ModernUiManager.isEnabled();
         int popupX = selectorX;
-        int popupY = selectorBottom;
+        int popupY = modernStyle ? selectorBottom : selectorBottom - 3;
         int popupW = selectorW;
-        int rowH = Math.max(18, selectorH);
+        int rowH = modernStyle ? Math.max(18, selectorH) : 16;
         int popupH = rowH * 2;
 
-        if (ModernUiManager.isEnabled()) {
+        if (modernStyle) {
             drawModernPopup(popupX, popupY, popupW, popupH);
             drawModernChoice("Off", popupX, popupY, popupW, rowH, false);
             drawModernChoice("On", popupX, popupY + rowH, popupW, rowH, true);
         } else {
             drawNativePopup(popupX, popupY, popupW, popupH);
-            drawNativeChoice("Off", popupX, popupY, popupW, rowH, true);
-            drawNativeChoice("On", popupX, popupY + rowH, popupW, rowH, false);
+            drawNativeChoice("Off", popupX, popupY, popupW, rowH);
+            drawNativeChoice("On", popupX, popupY + rowH, popupW, rowH);
         }
     }
 
@@ -337,10 +342,10 @@ public final class ModernUiSettingsOverlay {
     }
 
     private static void drawNativePopup(int x, int y, int width, int height) {
-        fill(x, y, width, height, 0x9B8458);
-        outline(x, y, width, height, 0x29251C);
-        outline(x + 1, y + 1, width - 2, height - 2, 0x6F5B3B);
-        hline(x + 2, y + 2, width - 4, 0xC7B07B);
+        // Stock RT4 two-choice dropdown: one flat popup field with a single
+        // dark outline. There is no selected-row fill and no row separator.
+        fill(x, y, width, height, 0x8D724B);
+        outline(x, y, width, height, 0x000000);
     }
 
     private static void drawNativeChoice(
@@ -348,22 +353,24 @@ public final class ModernUiSettingsOverlay {
         int x,
         int y,
         int width,
-        int height,
-        boolean selected
+        int height
     ) {
-        if (selected) {
-            fillAlpha(x + 2, y + 2, width - 4, height - 4, 0xD1B875, 150);
+        if (Fonts.p12Full == null) {
+            return;
         }
-        hline(x + 2, y + height - 1, width - 4, 0x6F5B3B);
-        if (Fonts.p12Full != null) {
-            Fonts.p12Full.renderCenter(
-                JagString.parse(text),
-                x + width / 2,
-                y + Math.min(height - 3, 15),
-                TEXT,
-                -1
-            );
-        }
+
+        boolean hovered =
+            contains(Mouse.lastMouseX, Mouse.lastMouseY, x, y, width, height);
+
+        // Vanilla option glyphs are left-aligned. Hover changes only the text
+        // color to the stock dark red; it does not paint a selected row.
+        Fonts.p12Full.renderLeft(
+            JagString.parse(text),
+            x + 5,
+            y + Math.min(height - 3, 13),
+            hovered ? NATIVE_POPUP_HOVER : NATIVE_POPUP_TEXT,
+            -1
+        );
     }
 
     private static boolean contains(
