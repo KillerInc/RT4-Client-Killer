@@ -40,6 +40,118 @@ public final class ModernGraphicsOptionsUi {
     private ModernGraphicsOptionsUi() {
     }
 
+    public static void prepareInput(
+        Component[] components,
+        int parentX,
+        int parentY
+    ) {
+        if (components == null
+            || !GraphicsOptionsUiInjector.isGraphicsOptionsActive(
+                components
+            )) {
+            return;
+        }
+
+        Layout layout = layout();
+        ModernUiRect clip = new ModernUiRect(
+            layout.panelX,
+            layout.panelY,
+            layout.panelWidth,
+            layout.panelHeight
+        );
+
+        // Closed dropdowns: bind only the action container. The vanilla
+        // component position is irrelevant; the Modern control rectangle is
+        // authoritative.
+        for (ControlSpec spec : CONTROLS) {
+            if (spec.closedChild < 0) {
+                continue;
+            }
+            Component value =
+                directChild(components, spec.closedChild);
+            Component action =
+                value == null
+                    ? null
+                    : componentById(
+                        components,
+                        value.overlayer
+                    );
+            if (action == null) {
+                action = value;
+            }
+            if (action != null) {
+                ModernUiInputRouter.bind(
+                    action,
+                    toModern(layout.control(spec.column, spec.row)),
+                    clip
+                );
+            }
+
+            if (spec.popupBodyChild >= 0
+                && isPopupOpen(components, spec.popupBodyChild)) {
+                bindPopupRows(
+                    components,
+                    spec.popupBodyChild,
+                    layout.control(spec.column, spec.row),
+                    clip
+                );
+            }
+        }
+
+        Component resolutionValue =
+            directChild(components, RESOLUTION_VALUE_CHILD);
+        Component resolutionAction =
+            resolutionValue == null
+                ? null
+                : componentById(
+                    components,
+                    resolutionValue.overlayer
+                );
+        if (resolutionAction == null) {
+            resolutionAction = resolutionValue;
+        }
+        if (resolutionAction != null) {
+            ModernUiInputRouter.bind(
+                resolutionAction,
+                toModern(layout.resolution()),
+                clip
+            );
+        }
+
+        if (isPopupOpen(components, RESOLUTION_POPUP_BODY_CHILD)) {
+            bindResolutionPopupRows(
+                components,
+                layout.resolution(),
+                clip
+            );
+        }
+
+        Component mainMenu =
+            findTextComponent(components, "main menu");
+        if (mainMenu != null) {
+            ModernUiInputRouter.bind(
+                mainMenu,
+                toModern(layout.mainMenu()),
+                clip
+            );
+        }
+
+        bindDisplayModeActions(
+            components,
+            parentX,
+            parentY,
+            layout,
+            clip
+        );
+        bindBrightnessActions(
+            components,
+            parentX,
+            parentY,
+            layout.control(0, 0),
+            clip
+        );
+    }
+
     public static void render(Component[] components) {
         Layout layout = layout();
 
@@ -214,15 +326,7 @@ public final class ModernGraphicsOptionsUi {
                 + 36;
 
         for (int i = 0; i < centers.length; i++) {
-            Rect button = new Rect(
-                ModernUiMetrics.centeredX(
-                    centers[i],
-                    ModernUiMetrics.DISPLAY_BUTTON_WIDTH
-                ),
-                buttonY,
-                ModernUiMetrics.DISPLAY_BUTTON_WIDTH,
-                ModernUiMetrics.DISPLAY_BUTTON_HEIGHT
-            );
+            Rect button = layout.displayModeButton(i);
             drawButton(button, active == i);
             drawCenteredText(
                 labels[i],
@@ -246,15 +350,7 @@ public final class ModernGraphicsOptionsUi {
             );
         }
 
-        Rect resolution = new Rect(
-            ModernUiMetrics.centeredX(
-                centers[3],
-                ModernUiMetrics.CONTROL_WIDTH
-            ),
-            layout.panelY + 128,
-            ModernUiMetrics.CONTROL_WIDTH,
-            ModernUiMetrics.CONTROL_HEIGHT
-        );
+        Rect resolution = layout.resolution();
         String resolutionValue = valueFor(
             components,
             RESOLUTION_VALUE_CHILD,
@@ -268,16 +364,7 @@ public final class ModernGraphicsOptionsUi {
         Layout layout
     ) {
         if (isPopupOpen(components, RESOLUTION_POPUP_BODY_CHILD)) {
-            int fullscreenCenter = layout.centerX + 225;
-            Rect resolution = new Rect(
-                ModernUiMetrics.centeredX(
-                    fullscreenCenter,
-                    ModernUiMetrics.CONTROL_WIDTH
-                ),
-                layout.panelY + 128,
-                ModernUiMetrics.CONTROL_WIDTH,
-                ModernUiMetrics.CONTROL_HEIGHT
-            );
+            Rect resolution = layout.resolution();
             drawResolutionPopup(
                 resolution,
                 valueFor(
@@ -902,6 +989,7 @@ public final class ModernGraphicsOptionsUi {
                 && component.text.length() > 0) {
                 out.add(
                     new TextEntry(
+                        component,
                         component.x,
                         y,
                         component.text.toString()
@@ -911,6 +999,400 @@ public final class ModernGraphicsOptionsUi {
 
             collectTextEntries(component.createdComponents, y, out);
         }
+    }
+
+    private static void bindPopupRows(
+        Component[] components,
+        int popupBodyChild,
+        Rect control,
+        ModernUiRect clip
+    ) {
+        List<TextEntry> entries =
+            popupTextEntries(components, popupBodyChild);
+        if (entries.isEmpty()) {
+            return;
+        }
+
+        int popupY = control.y + control.height - 1;
+        for (int i = 0; i < entries.size(); i++) {
+            TextEntry entry = entries.get(i);
+            ModernUiInputRouter.bind(
+                entry.component,
+                new ModernUiRect(
+                    control.x,
+                    popupY
+                        + i * ModernUiMetrics.DROPDOWN_POPUP_ROW_HEIGHT,
+                    control.width,
+                    ModernUiMetrics.DROPDOWN_POPUP_ROW_HEIGHT
+                ),
+                clip
+            );
+        }
+    }
+
+    private static void bindResolutionPopupRows(
+        Component[] components,
+        Rect control,
+        ModernUiRect clip
+    ) {
+        List<TextEntry> entries =
+            popupTextEntries(
+                components,
+                RESOLUTION_POPUP_BODY_CHILD
+            );
+        if (entries.isEmpty()) {
+            return;
+        }
+
+        int popupY = control.y + control.height - 1;
+        int row = 0;
+        for (DisplayMode mode : DisplayMode.getDisplayModes()) {
+            if (mode == null) {
+                continue;
+            }
+            String wanted =
+                normalize(mode.width + " x " + mode.height);
+            TextEntry backend = null;
+            for (TextEntry entry : entries) {
+                if (normalize(entry.text).equals(wanted)) {
+                    backend = entry;
+                    break;
+                }
+            }
+            if (backend == null) {
+                continue;
+            }
+
+            ModernUiInputRouter.bind(
+                backend.component,
+                new ModernUiRect(
+                    control.x,
+                    popupY
+                        + row
+                            * ModernUiMetrics
+                                .NATIVE_DROPDOWN_POPUP_ROW_HEIGHT,
+                    control.width,
+                    ModernUiMetrics
+                        .NATIVE_DROPDOWN_POPUP_ROW_HEIGHT
+                ),
+                clip
+            );
+            row++;
+        }
+    }
+
+    private static void bindDisplayModeActions(
+        Component[] components,
+        int parentX,
+        int parentY,
+        Layout layout,
+        ModernUiRect clip
+    ) {
+        List<ComponentEntry> entries = new ArrayList<>();
+        collectComponentEntries(
+            components,
+            -1,
+            parentX,
+            parentY,
+            entries
+        );
+
+        ComponentEntry displayLabel =
+            findTextEntry(entries, "display modes");
+        ComponentEntry advancedLabel =
+            findTextEntry(entries, "advanced options");
+        if (displayLabel == null || advancedLabel == null) {
+            return;
+        }
+
+        int bandTop = displayLabel.y + 10;
+        int bandBottom = advancedLabel.y - 4;
+        List<ComponentEntry> candidates = new ArrayList<>();
+
+        for (ComponentEntry entry : entries) {
+            Component component = entry.component;
+            if (!isInteractive(component)
+                || component.type == 0) {
+                continue;
+            }
+            int width = Math.max(1, component.width);
+            int height = Math.max(1, component.height);
+            int cy = entry.y + height / 2;
+            if (cy < bandTop || cy >= bandBottom
+                || width < 20 || width > 180
+                || height < 12 || height > 80) {
+                continue;
+            }
+            candidates.add(entry);
+        }
+
+        candidates.sort(
+            Comparator.comparingInt(
+                entry ->
+                    entry.x
+                        + Math.max(
+                            1,
+                            entry.component.width
+                        ) / 2
+            )
+        );
+
+        List<ComponentEntry> selected = new ArrayList<>();
+        for (ComponentEntry candidate : candidates) {
+            int cx =
+                candidate.x
+                    + Math.max(1, candidate.component.width) / 2;
+            if (selected.isEmpty()) {
+                selected.add(candidate);
+                continue;
+            }
+            ComponentEntry previous =
+                selected.get(selected.size() - 1);
+            int previousCx =
+                previous.x
+                    + Math.max(1, previous.component.width) / 2;
+            if (Math.abs(cx - previousCx) > 24) {
+                selected.add(candidate);
+            }
+        }
+
+        if (selected.size() < 4) {
+            return;
+        }
+
+        for (int i = 0; i < 4; i++) {
+            ModernUiInputRouter.bind(
+                selected.get(i).component,
+                toModern(layout.displayModeButton(i)),
+                clip
+            );
+        }
+    }
+
+    private static void bindBrightnessActions(
+        Component[] components,
+        int parentX,
+        int parentY,
+        Rect target,
+        ModernUiRect clip
+    ) {
+        List<ComponentEntry> entries = new ArrayList<>();
+        collectComponentEntries(
+            components,
+            -1,
+            parentX,
+            parentY,
+            entries
+        );
+        ComponentEntry label =
+            findTextEntry(entries, "brightness");
+        if (label == null) {
+            return;
+        }
+
+        List<ComponentEntry> sliderParts = new ArrayList<>();
+        for (ComponentEntry entry : entries) {
+            Component component = entry.component;
+            if (!isInteractive(component)
+                || component.type == 0
+                || component.width > 60
+                || component.height > 50) {
+                continue;
+            }
+
+            int cx = entry.x + Math.max(1, component.width) / 2;
+            int cy = entry.y + Math.max(1, component.height) / 2;
+            int labelCx =
+                label.x
+                    + Math.max(1, label.component.width) / 2;
+            if (Math.abs(cx - labelCx) <= 100
+                && cy >= label.y + 8
+                && cy <= label.y + 55) {
+                sliderParts.add(entry);
+            }
+        }
+
+        if (sliderParts.isEmpty()) {
+            return;
+        }
+
+        int sourceLeft = Integer.MAX_VALUE;
+        int sourceTop = Integer.MAX_VALUE;
+        int sourceRight = Integer.MIN_VALUE;
+        int sourceBottom = Integer.MIN_VALUE;
+        for (ComponentEntry entry : sliderParts) {
+            sourceLeft = Math.min(sourceLeft, entry.x);
+            sourceTop = Math.min(sourceTop, entry.y);
+            sourceRight = Math.max(
+                sourceRight,
+                entry.x + Math.max(1, entry.component.width)
+            );
+            sourceBottom = Math.max(
+                sourceBottom,
+                entry.y + Math.max(1, entry.component.height)
+            );
+        }
+
+        int sourceWidth = Math.max(1, sourceRight - sourceLeft);
+        int sourceHeight = Math.max(1, sourceBottom - sourceTop);
+
+        for (ComponentEntry entry : sliderParts) {
+            int x =
+                target.x
+                    + (entry.x - sourceLeft) * target.width
+                        / sourceWidth;
+            int y =
+                target.y
+                    + (entry.y - sourceTop) * target.height
+                        / sourceHeight;
+            int width = Math.max(
+                1,
+                Math.max(1, entry.component.width)
+                    * target.width / sourceWidth
+            );
+            int height = Math.max(
+                1,
+                Math.max(1, entry.component.height)
+                    * target.height / sourceHeight
+            );
+            ModernUiInputRouter.bind(
+                entry.component,
+                new ModernUiRect(x, y, width, height),
+                clip
+            );
+        }
+    }
+
+    private static void collectComponentEntries(
+        Component[] components,
+        int layer,
+        int parentX,
+        int parentY,
+        List<ComponentEntry> out
+    ) {
+        if (components == null) {
+            return;
+        }
+
+        for (Component component : components) {
+            if (component == null || component.overlayer != layer) {
+                continue;
+            }
+            if (component.if3 && InterfaceList.isHidden(component)) {
+                continue;
+            }
+            if (component.type == 0
+                && !component.if3
+                && InterfaceList.isHidden(component)
+                && InterfaceList.hoveredComponent != component) {
+                continue;
+            }
+
+            int x = parentX + component.x;
+            int y = parentY + component.y;
+            out.add(new ComponentEntry(component, x, y));
+
+            if (component.type == 0) {
+                int childX = x - component.scrollX;
+                int childY = y - component.scrollY;
+                collectComponentEntries(
+                    components,
+                    component.id,
+                    childX,
+                    childY,
+                    out
+                );
+                if (component.createdComponents != null) {
+                    collectComponentEntries(
+                        component.createdComponents,
+                        component.id,
+                        childX,
+                        childY,
+                        out
+                    );
+                }
+            }
+        }
+    }
+
+    private static ComponentEntry findTextEntry(
+        List<ComponentEntry> entries,
+        String text
+    ) {
+        String wanted = normalize(text);
+        for (ComponentEntry entry : entries) {
+            Component component = entry.component;
+            if (component.type == 4
+                && component.text != null
+                && normalize(component.text.toString()).equals(wanted)) {
+                return entry;
+            }
+        }
+        return null;
+    }
+
+    private static Component findTextComponent(
+        Component[] components,
+        String text
+    ) {
+        List<ComponentEntry> entries = new ArrayList<>();
+        collectComponentEntries(
+            components,
+            -1,
+            0,
+            0,
+            entries
+        );
+        ComponentEntry entry = findTextEntry(entries, text);
+        return entry == null ? null : entry.component;
+    }
+
+    private static boolean isInteractive(Component component) {
+        return component != null
+            && (component.hasEventHandlers
+                || component.clientCode != 0
+                || InterfaceList.getServerActiveProperties(
+                    component
+                ).events != 0);
+    }
+
+    private static Component componentById(
+        Component[] components,
+        int id
+    ) {
+        if (components == null || id == -1) {
+            return null;
+        }
+        int child = id & 0xFFFF;
+        if (child >= 0 && child < components.length) {
+            Component direct = components[child];
+            if (direct != null && direct.id == id) {
+                return direct;
+            }
+        }
+        for (Component component : components) {
+            if (component == null) {
+                continue;
+            }
+            if (component.id == id) {
+                return component;
+            }
+            Component nested =
+                componentById(component.createdComponents, id);
+            if (nested != null) {
+                return nested;
+            }
+        }
+        return null;
+    }
+
+    private static ModernUiRect toModern(Rect rect) {
+        return new ModernUiRect(
+            rect.x,
+            rect.y,
+            rect.width,
+            rect.height
+        );
     }
 
     private static Component directChild(
@@ -1078,6 +1560,35 @@ public final class ModernGraphicsOptionsUi {
             );
         }
 
+        private Rect displayModeButton(int index) {
+            int center =
+                centerX - 225
+                    + Math.max(0, Math.min(3, index)) * 150;
+            return new Rect(
+                ModernUiMetrics.centeredX(
+                    center,
+                    ModernUiMetrics.DISPLAY_BUTTON_WIDTH
+                ),
+                panelY
+                    + ModernUiMetrics.DISPLAY_BUTTON_Y_OFFSET
+                    + 36,
+                ModernUiMetrics.DISPLAY_BUTTON_WIDTH,
+                ModernUiMetrics.DISPLAY_BUTTON_HEIGHT
+            );
+        }
+
+        private Rect resolution() {
+            return new Rect(
+                ModernUiMetrics.centeredX(
+                    centerX + 225,
+                    ModernUiMetrics.CONTROL_WIDTH
+                ),
+                panelY + 128,
+                ModernUiMetrics.CONTROL_WIDTH,
+                ModernUiMetrics.CONTROL_HEIGHT
+            );
+        }
+
         private Rect styleEditor() {
             return new Rect(
                 panelX + panelWidth
@@ -1126,12 +1637,31 @@ public final class ModernGraphicsOptionsUi {
         }
     }
 
+    private static final class ComponentEntry {
+        private final Component component;
+        private final int x;
+        private final int y;
+
+        private ComponentEntry(Component component, int x, int y) {
+            this.component = component;
+            this.x = x;
+            this.y = y;
+        }
+    }
+
     private static final class TextEntry {
+        private final Component component;
         private final int x;
         private final int y;
         private final String text;
 
-        private TextEntry(int x, int y, String text) {
+        private TextEntry(
+            Component component,
+            int x,
+            int y,
+            String text
+        ) {
+            this.component = component;
             this.x = x;
             this.y = y;
             this.text = text;
