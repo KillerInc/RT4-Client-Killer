@@ -2072,7 +2072,6 @@ public final class ModernUiRenderer {
         private Component standardChoiceComponent;
         private Component highChoiceComponent;
         private UiRect musicSlider;
-        private int choiceInputDeltaY;
         private int musicSliderInputDeltaY;
 
         private int bodyComponentId = -1;
@@ -2462,38 +2461,22 @@ public final class ModernUiRenderer {
                 return;
             }
 
-            if (standardChoice != null || highChoice != null) {
-                int oldTop = Integer.MAX_VALUE;
+            if (modernLayout != null) {
                 if (standardChoice != null) {
-                    oldTop = Math.min(oldTop, standardChoice.y);
+                    standardChoice = new UiRect(
+                        modernLayout.standardChoice.x,
+                        modernLayout.standardChoice.y,
+                        modernLayout.standardChoice.width,
+                        modernLayout.standardChoice.height
+                    );
                 }
                 if (highChoice != null) {
-                    oldTop = Math.min(oldTop, highChoice.y);
-                }
-
-                if (oldTop != Integer.MAX_VALUE) {
-                    int targetTop =
-                        modernLayout == null
-                            ? contentBounds.y + 190
-                            : modernLayout.choiceTop;
-                    choiceInputDeltaY = targetTop - oldTop;
-
-                    if (standardChoice != null) {
-                        standardChoice = new UiRect(
-                            standardChoice.x + 3,
-                            standardChoice.y + choiceInputDeltaY,
-                            standardChoice.width,
-                            standardChoice.height
-                        );
-                    }
-                    if (highChoice != null) {
-                        highChoice = new UiRect(
-                            highChoice.x - 3,
-                            highChoice.y + choiceInputDeltaY,
-                            highChoice.width,
-                            highChoice.height
-                        );
-                    }
+                    highChoice = new UiRect(
+                        modernLayout.highChoice.x,
+                        modernLayout.highChoice.y,
+                        modernLayout.highChoice.width,
+                        modernLayout.highChoice.height
+                    );
                 }
             }
 
