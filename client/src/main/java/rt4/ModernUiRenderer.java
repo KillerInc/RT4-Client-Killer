@@ -2310,39 +2310,39 @@ public final class ModernUiRenderer {
             int top = contentBounds.y;
             if (normalized.equals("log in")
                 || normalized.equals("login")) {
-                return top + 26;
+                return top + 22;
             }
             if (normalized.contains("existing user")) {
-                return top + 58;
+                return top + 48;
             }
             if (normalized.equals("create account")) {
-                return top + 86;
+                return top + 72;
             }
             if (normalized.contains("new user")) {
-                return top + 118;
+                return top + 98;
             }
             if (normalized.startsWith("world ")) {
-                return top + 146;
+                return top + 122;
             }
             if (normalized.contains("click to switch")) {
-                return top + 178;
+                return top + 148;
             }
             if (normalized.equals("standard detail")
                 || normalized.equals("high detail")) {
-                return top + 250;
+                return top + 214;
             }
             if (normalized.equals("graphics options")) {
-                return top + 282;
+                return top + 240;
             }
             if (normalized.equals("audio options")
                 || normalized.equals("music options")) {
-                return top + 320;
+                return top + 272;
             }
             if (normalized.equals("music volume")) {
-                return top + 356;
+                return top + 302;
             }
             if (normalized.equals("quit")) {
-                return top + 416;
+                return top + 354;
             }
             return Integer.MIN_VALUE;
         }
@@ -2362,7 +2362,7 @@ public final class ModernUiRenderer {
                 }
 
                 if (oldTop != Integer.MAX_VALUE) {
-                    int targetTop = contentBounds.y + 198;
+                    int targetTop = contentBounds.y + 170;
                     choiceInputDeltaY = targetTop - oldTop;
 
                     if (standardChoice != null) {
@@ -2385,7 +2385,7 @@ public final class ModernUiRenderer {
             }
 
             if (musicSlider != null) {
-                int targetTop = contentBounds.y + 378;
+                int targetTop = contentBounds.y + 324;
                 musicSliderInputDeltaY = targetTop - musicSlider.y;
                 musicSlider = new UiRect(
                     musicSlider.x,
