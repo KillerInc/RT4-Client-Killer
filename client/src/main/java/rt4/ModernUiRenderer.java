@@ -642,9 +642,9 @@ public final class ModernUiRenderer {
                     buttonWidth,
                     buttonHeight,
                     ModernUiMetrics.TEXT_PRIMARY,
-                    component.halign,
+                    0,
                     1,
-                    ModernUiMetrics.FONT_CONTROL,
+                    ModernUiMetrics.FONT_DROPDOWN,
                     false
                 );
                 return;
@@ -2682,7 +2682,9 @@ public final class ModernUiRenderer {
             graphicsOptionsTitleCenterX,
             width
         );
-        int y = graphicsOptionsTitleY - 34;
+        int y =
+            graphicsOptionsTitleY
+                - ModernUiMetrics.GRAPHICS_PANEL_Y_OFFSET;
 
         ModernUiImage panel = ModernUiAssetResolver.get(
             "graphics-options/panel",
