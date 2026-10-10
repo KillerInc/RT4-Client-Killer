@@ -1,28 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="156" height="20" viewBox="0 0 156 20">
   <defs>
-    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#80683f"/>
-      <stop offset=".5" stop-color="#c8ab68"/>
-      <stop offset="1" stop-color="#5a472c"/>
-    </linearGradient>
     <linearGradient id="rail" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#655439"/>
-      <stop offset="1" stop-color="#3a2f21"/>
+      <stop offset="0" stop-color="#2a2118"/>
+      <stop offset="1" stop-color="#17120e"/>
     </linearGradient>
   </defs>
-
-  <path d="M3 10 L9 4 L14 4 L14 7 L19 7 L19 13 L14 13 L14 16 L9 16 Z"
-        fill="url(#metal)" stroke="#5a452a" stroke-width="1"/>
-  <path d="M153 10 L147 4 L142 4 L142 7 L137 7 L137 13 L142 13 L142 16 L147 16 Z"
-        fill="url(#metal)" stroke="#5a452a" stroke-width="1"/>
-
-  <rect x="19" y="8" width="118" height="4" rx="2" fill="url(#rail)" stroke="#6d5938" stroke-width="1"/>
-  <g fill="#a78f59" stroke="#55442c" stroke-width=".7">
-    <circle cx="25" cy="10" r="3"/>
-    <circle cx="47" cy="10" r="3"/>
-    <circle cx="68" cy="10" r="3"/>
-    <circle cx="89" cy="10" r="3"/>
-    <circle cx="110" cy="10" r="3"/>
-    <circle cx="131" cy="10" r="3"/>
+  <rect x="8" y="8" width="140" height="4" rx="2"
+        fill="url(#rail)" stroke="#836a42"/>
+  <g fill="#b89a61" stroke="#3d3021" stroke-width=".7">
+    <circle cx="10" cy="10" r="3"/>
+    <circle cx="33" cy="10" r="3"/>
+    <circle cx="56" cy="10" r="3"/>
+    <circle cx="79" cy="10" r="3"/>
+    <circle cx="102" cy="10" r="3"/>
+    <circle cx="125" cy="10" r="3"/>
+    <circle cx="146" cy="10" r="3"/>
   </g>
 </svg>
