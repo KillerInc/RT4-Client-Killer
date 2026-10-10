@@ -1321,7 +1321,14 @@ public final class ModernUiRenderer {
                 targetY == Integer.MIN_VALUE
                     ? entry.rect.y
                     : targetY;
-            int x = entry.rect.x;
+            int targetX = layout.textTargetX(
+                entry.text,
+                entry.component.width
+            );
+            int x =
+                targetX == Integer.MIN_VALUE
+                    ? entry.rect.x
+                    : targetX;
             int buttonX =
                 x + (entry.component.width
                     - ModernUiMetrics.MAIN_MENU_BUTTON_WIDTH) / 2;
@@ -1616,14 +1623,17 @@ public final class ModernUiRenderer {
 
             String text = getCurrentMainMenuText(entry.component);
             String normalized = normalizeGraphicsOptionsText(text);
-            int x = adjustMainMenuComponentX(
-                entry.component,
-                entry.rect.x
+            int x = mainMenuLayout.textTargetX(
+                normalized,
+                entry.component.width
             );
-            int y = adjustMainMenuComponentY(
-                entry.component,
-                entry.rect.y
-            );
+            int y = mainMenuLayout.textTargetY(normalized);
+            if (x == Integer.MIN_VALUE) {
+                x = entry.rect.x;
+            }
+            if (y == Integer.MIN_VALUE) {
+                y = entry.rect.y;
+            }
 
             if (normalized.equals("music volume")) {
                 renderMainMenuMusicLabel(
@@ -2473,6 +2483,31 @@ public final class ModernUiRenderer {
             }
 
             applyModernVerticalLayout();
+        }
+
+        private int textTargetX(
+            String normalized,
+            int componentWidth
+        ) {
+            if (contentBounds == null || normalized == null) {
+                return Integer.MIN_VALUE;
+            }
+
+            int width = Math.max(1, componentWidth);
+            if (normalized.equals("standard detail")
+                && standardChoice != null) {
+                return standardChoice.x
+                    + (standardChoice.width - width) / 2;
+            }
+            if (normalized.equals("high detail")
+                && highChoice != null) {
+                return highChoice.x
+                    + (highChoice.width - width) / 2;
+            }
+
+            // All other Modern main-menu text is centered from the Modern
+            // layout rather than inheriting cache-era X coordinates.
+            return centerX - width / 2;
         }
 
         private int textTargetY(String normalized) {
