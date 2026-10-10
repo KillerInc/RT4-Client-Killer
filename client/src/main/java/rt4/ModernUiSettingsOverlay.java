@@ -167,6 +167,10 @@ public final class ModernUiSettingsOverlay {
         int mx = Mouse.clickX;
         int my = Mouse.clickY;
 
+        // Vanilla gets first crack at the click. Afterwards, enforce the same
+        // single-open / click-away behavior used by the Modern UI selector.
+        GraphicsOptionsUiInjector.autoCloseNativeDropdownsForClick(mx, my);
+
         // A vanilla popup and Modern UI popup are mutually exclusive. Close
         // only the two stock popup containers; their CS2-created glyphs remain
         // intact for the next time that vanilla dropdown opens.
