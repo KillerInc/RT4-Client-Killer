@@ -120,3 +120,13 @@ tasks.register('verifyModernSvgAssets', JavaExec) {
         '/ui/killer-modern/controls/popup-divider.svg',
         '/ui/killer-modern/controls/popup-row.svg'
 }
+
+
+tasks.register('verifyModernUiLayouts', JavaExec) {
+    group = 'verification'
+    description = 'Validates declarative Modern UI geometry across representative viewports.'
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'rt4.ModernUiLayoutVerifier'
+}
+
