@@ -18,6 +18,7 @@ public final class ModernAudioOptionsUi {
     private static final Set<Integer> loggedInterfaces = new HashSet<>();
     private static final Map<Integer, HitboxSpec> hitboxes = new HashMap<>();
     private static Rect lastPanelBounds;
+    private static String lastHitboxSignature = "";
 
     private ModernAudioOptionsUi() {
     }
@@ -665,18 +666,31 @@ public final class ModernAudioOptionsUi {
             HitboxSpec.absolute(layout.mainMenu.rect, mainTarget)
         );
 
-        DisplayDebug.log(
-            "MODERN_UI audio hitboxes refreshed"
-                + " count=" + hitboxes.size()
-                + " panel=" + rectString(lastPanelBounds)
-                + " mono=" + rectString(
+        String signature =
+            hitboxes.size()
+                + "|" + rectString(lastPanelBounds)
+                + "|" + rectString(
                     monoHit == null ? null : monoHit.rect
                 )
-                + " stereo=" + rectString(
+                + "|" + rectString(
                     stereoHit == null ? null : stereoHit.rect
                 )
-                + " mainMenu=" + rectString(mainTarget)
-        );
+                + "|" + rectString(mainTarget);
+        if (!signature.equals(lastHitboxSignature)) {
+            lastHitboxSignature = signature;
+            DisplayDebug.log(
+                "MODERN_UI audio hitboxes refreshed"
+                    + " count=" + hitboxes.size()
+                    + " panel=" + rectString(lastPanelBounds)
+                    + " mono=" + rectString(
+                        monoHit == null ? null : monoHit.rect
+                    )
+                    + " stereo=" + rectString(
+                        stereoHit == null ? null : stereoHit.rect
+                    )
+                    + " mainMenu=" + rectString(mainTarget)
+            );
+        }
     }
 
     private static void registerSliderHitboxes(
