@@ -52,7 +52,7 @@ public final class ModernGraphicsOptionsUi {
             return;
         }
 
-        Layout layout = layout();
+        ModernGraphicsOptionsLayout layout = layout();
         ModernUiRect clip = new ModernUiRect(
             layout.panelX,
             layout.panelY,
@@ -153,7 +153,7 @@ public final class ModernGraphicsOptionsUi {
     }
 
     public static void render(Component[] components) {
-        Layout layout = layout();
+        ModernGraphicsOptionsLayout layout = layout();
 
         drawAsset(
             "graphics-options/panel",
@@ -213,7 +213,7 @@ public final class ModernGraphicsOptionsUi {
         );
 
         for (ControlSpec spec : CONTROLS) {
-            Rect rect = layout.control(spec.column, spec.row);
+            ModernUiRect rect = layout.control(spec.column, spec.row);
             drawCenteredLabel(
                 spec.label,
                 rect.x - 8,
@@ -243,7 +243,7 @@ public final class ModernGraphicsOptionsUi {
             drawDropdown(rect, value);
         }
 
-        Rect mainMenu = layout.mainMenu();
+        ModernUiRect mainMenu = layout.mainMenu();
         drawButton(mainMenu, false);
         drawCenteredText(
             "Main Menu",
@@ -254,7 +254,7 @@ public final class ModernGraphicsOptionsUi {
             false
         );
 
-        Rect styleEditor = layout.styleEditor();
+        ModernUiRect styleEditor = layout.styleEditor();
         drawButton(styleEditor, false);
         drawCenteredText(
             "Style Editor",
@@ -302,7 +302,7 @@ public final class ModernGraphicsOptionsUi {
     }
 
     private static void renderDisplayModes(
-        Layout layout,
+        ModernGraphicsOptionsLayout layout,
         Component[] components
     ) {
         int[] centers = {
@@ -326,7 +326,7 @@ public final class ModernGraphicsOptionsUi {
                 + 36;
 
         for (int i = 0; i < centers.length; i++) {
-            Rect button = layout.displayModeButton(i);
+            ModernUiRect button = layout.displayModeButton(i);
             drawButton(button, active == i);
             drawCenteredText(
                 labels[i],
@@ -350,7 +350,7 @@ public final class ModernGraphicsOptionsUi {
             );
         }
 
-        Rect resolution = layout.resolution();
+        ModernUiRect resolution = layout.resolution();
         String resolutionValue = valueFor(
             components,
             RESOLUTION_VALUE_CHILD,
@@ -361,10 +361,10 @@ public final class ModernGraphicsOptionsUi {
 
     private static void renderOpenNativePopup(
         Component[] components,
-        Layout layout
+        ModernGraphicsOptionsLayout layout
     ) {
         if (isPopupOpen(components, RESOLUTION_POPUP_BODY_CHILD)) {
-            Rect resolution = layout.resolution();
+            ModernUiRect resolution = layout.resolution();
             drawResolutionPopup(
                 resolution,
                 valueFor(
@@ -382,7 +382,7 @@ public final class ModernGraphicsOptionsUi {
                 continue;
             }
 
-            Rect rect = layout.control(spec.column, spec.row);
+            ModernUiRect rect = layout.control(spec.column, spec.row);
             String selected = valueFor(
                 components,
                 spec.closedChild,
@@ -398,12 +398,12 @@ public final class ModernGraphicsOptionsUi {
         }
     }
 
-    private static void renderModernSelectorPopup(Layout layout) {
+    private static void renderModernSelectorPopup(ModernGraphicsOptionsLayout layout) {
         if (!ModernUiSettingsOverlay.isDropdownOpen()) {
             return;
         }
 
-        Rect control = layout.control(4, 2);
+        ModernUiRect control = layout.control(4, 2);
         String[] options = {"Off", "On"};
         int popupY = control.y + control.height - 1;
         drawPopupSurface(
@@ -415,7 +415,7 @@ public final class ModernGraphicsOptionsUi {
 
         String selected = ModernUiManager.isEnabled() ? "On" : "Off";
         for (int i = 0; i < options.length; i++) {
-            Rect row = new Rect(
+            ModernUiRect row = new ModernUiRect(
                 control.x,
                 popupY
                     + i * ModernUiMetrics.DROPDOWN_POPUP_ROW_HEIGHT,
@@ -431,7 +431,7 @@ public final class ModernGraphicsOptionsUi {
     }
 
     private static void drawResolutionPopup(
-        Rect control,
+        ModernUiRect control,
         String selected
     ) {
         DisplayMode[] modes = DisplayMode.getDisplayModes();
@@ -459,10 +459,10 @@ public final class ModernGraphicsOptionsUi {
         int popupY = control.y + control.height - 1;
         int popupHeight = options.size() * rowHeight;
 
-        List<Rect> rows = new ArrayList<>();
+        List<ModernUiRect> rows = new ArrayList<>();
         for (int i = 0; i < options.size(); i++) {
             rows.add(
-                new Rect(
+                new ModernUiRect(
                     control.x,
                     popupY + i * rowHeight,
                     control.width,
@@ -492,7 +492,7 @@ public final class ModernGraphicsOptionsUi {
     private static void drawPopupFromComponent(
         Component[] components,
         int popupBodyChild,
-        Rect control,
+        ModernUiRect control,
         String selected
     ) {
         List<TextEntry> entries =
@@ -513,7 +513,7 @@ public final class ModernGraphicsOptionsUi {
         );
 
         for (int i = 0; i < entries.size(); i++) {
-            Rect row = new Rect(
+            ModernUiRect row = new ModernUiRect(
                 control.x,
                 popupY + i * rowHeight,
                 control.width,
@@ -537,10 +537,10 @@ public final class ModernGraphicsOptionsUi {
         int rows = Math.max(1, rowCount);
         int rowHeight = ModernUiMetrics.DROPDOWN_POPUP_ROW_HEIGHT;
         int height = rows * rowHeight;
-        List<Rect> rowRects = new ArrayList<>();
+        List<ModernUiRect> rowRects = new ArrayList<>();
         for (int i = 0; i < rows; i++) {
             rowRects.add(
-                new Rect(
+                new ModernUiRect(
                     x,
                     y + i * rowHeight,
                     width,
@@ -562,7 +562,7 @@ public final class ModernGraphicsOptionsUi {
         int y,
         int width,
         int height,
-        List<Rect> rows
+        List<ModernUiRect> rows
     ) {
         drawAsset(
             "controls/popup",
@@ -575,7 +575,7 @@ public final class ModernGraphicsOptionsUi {
         // Paint every row with an opaque fixed-height surface. This prevents
         // the underlying Graphics Options controls/labels from showing
         // through long dropdowns while keeping the outer popup frame intact.
-        for (Rect row : rows) {
+        for (ModernUiRect row : rows) {
             drawAsset(
                 "controls/popup-row",
                 x + 1,
@@ -586,7 +586,7 @@ public final class ModernGraphicsOptionsUi {
         }
 
         for (int i = 1; i < rows.size(); i++) {
-            Rect row = rows.get(i);
+            ModernUiRect row = rows.get(i);
             drawAsset(
                 "controls/popup-divider",
                 x + 2,
@@ -598,7 +598,7 @@ public final class ModernGraphicsOptionsUi {
     }
 
     private static void drawPopupRow(
-        Rect row,
+        ModernUiRect row,
         String text,
         boolean selected
     ) {
@@ -641,7 +641,7 @@ public final class ModernGraphicsOptionsUi {
         );
     }
 
-    private static void drawBrightness(Rect rect) {
+    private static void drawBrightness(ModernUiRect rect) {
         ModernUiImage track = ModernUiAssetResolver.get(
             "controls/slider-track",
             rect.width,
@@ -689,7 +689,7 @@ public final class ModernGraphicsOptionsUi {
         );
     }
 
-    private static void drawDropdown(Rect rect, String value) {
+    private static void drawDropdown(ModernUiRect rect, String value) {
         drawAsset(
             "controls/dropdown",
             rect.x,
@@ -733,7 +733,7 @@ public final class ModernGraphicsOptionsUi {
         );
     }
 
-    private static void drawButton(Rect rect, boolean active) {
+    private static void drawButton(ModernUiRect rect, boolean active) {
         drawAsset(
             active ? "controls/button-active" : "controls/button",
             rect.x,
@@ -745,7 +745,7 @@ public final class ModernGraphicsOptionsUi {
 
     private static void drawCenteredText(
         String text,
-        Rect rect,
+        ModernUiRect rect,
         String font,
         float size,
         int color,
@@ -950,7 +950,7 @@ public final class ModernGraphicsOptionsUi {
     private static void bindPopupRows(
         Component[] components,
         int popupBodyChild,
-        Rect control,
+        ModernUiRect control,
         ModernUiRect clip
     ) {
         List<TextEntry> entries =
@@ -978,7 +978,7 @@ public final class ModernGraphicsOptionsUi {
 
     private static void bindResolutionPopupRows(
         Component[] components,
-        Rect control,
+        ModernUiRect control,
         ModernUiRect clip
     ) {
         List<TextEntry> entries =
@@ -1031,7 +1031,7 @@ public final class ModernGraphicsOptionsUi {
         Component[] components,
         int parentX,
         int parentY,
-        Layout layout,
+        ModernGraphicsOptionsLayout layout,
         ModernUiRect clip
     ) {
         List<ComponentEntry> entries = new ArrayList<>();
@@ -1119,7 +1119,7 @@ public final class ModernGraphicsOptionsUi {
         Component[] components,
         int parentX,
         int parentY,
-        Rect target,
+        ModernUiRect target,
         ModernUiRect clip
     ) {
         List<ComponentEntry> entries = new ArrayList<>();
@@ -1332,13 +1332,8 @@ public final class ModernGraphicsOptionsUi {
         return null;
     }
 
-    private static ModernUiRect toModern(Rect rect) {
-        return new ModernUiRect(
-            rect.x,
-            rect.y,
-            rect.width,
-            rect.height
-        );
+    private static ModernUiRect toModern(ModernUiRect rect) {
+        return rect;
     }
 
     private static Component directChild(
@@ -1433,132 +1428,11 @@ public final class ModernGraphicsOptionsUi {
                 .toLowerCase(java.util.Locale.ROOT);
     }
 
-    private static Layout layout() {
-        int panelWidth = ModernUiMetrics.GRAPHICS_PANEL_WIDTH;
-        int panelHeight = ModernUiMetrics.GRAPHICS_PANEL_HEIGHT;
-        int panelX = Math.max(
-            8,
-            (GameShell.canvasWidth - panelWidth) / 2
+    private static ModernGraphicsOptionsLayout layout() {
+        return ModernGraphicsOptionsLayout.create(
+            GameShell.canvasWidth,
+            GameShell.canvasHeight
         );
-        int panelY = Math.max(
-            8,
-            (GameShell.canvasHeight - panelHeight) / 2
-        );
-        return new Layout(panelX, panelY, panelWidth, panelHeight);
-    }
-
-    private static final class Layout {
-        private final int panelX;
-        private final int panelY;
-        private final int panelWidth;
-        private final int panelHeight;
-        private final int centerX;
-
-        private Layout(
-            int panelX,
-            int panelY,
-            int panelWidth,
-            int panelHeight
-        ) {
-            this.panelX = panelX;
-            this.panelY = panelY;
-            this.panelWidth = panelWidth;
-            this.panelHeight = panelHeight;
-            this.centerX = panelX + panelWidth / 2;
-        }
-
-        private Rect control(int column, int row) {
-            int center =
-                centerX
-                    + ModernUiMetrics.ADVANCED_FIRST_COLUMN_OFFSET
-                    + column
-                        * ModernUiMetrics.ADVANCED_COLUMN_SPACING;
-            return new Rect(
-                ModernUiMetrics.centeredX(
-                    center,
-                    ModernUiMetrics.CONTROL_WIDTH
-                ),
-                panelY
-                    + ModernUiMetrics.ADVANCED_CONTROL_Y_OFFSET
-                    + row
-                        * ModernUiMetrics.ADVANCED_ROW_SPACING,
-                ModernUiMetrics.CONTROL_WIDTH,
-                ModernUiMetrics.CONTROL_HEIGHT
-            );
-        }
-
-        private int labelY(int row) {
-            return panelY
-                + ModernUiMetrics.ADVANCED_LABEL_Y_OFFSET
-                + row
-                    * ModernUiMetrics.ADVANCED_ROW_SPACING;
-        }
-
-        private Rect mainMenu() {
-            return new Rect(
-                ModernUiMetrics.centeredX(
-                    centerX,
-                    ModernUiMetrics.NAV_BUTTON_WIDTH
-                ),
-                panelY + ModernUiMetrics.NAV_BUTTON_Y_OFFSET,
-                ModernUiMetrics.NAV_BUTTON_WIDTH,
-                ModernUiMetrics.NAV_BUTTON_HEIGHT
-            );
-        }
-
-        private Rect displayModeButton(int index) {
-            int center =
-                centerX - 225
-                    + Math.max(0, Math.min(3, index)) * 150;
-            return new Rect(
-                ModernUiMetrics.centeredX(
-                    center,
-                    ModernUiMetrics.DISPLAY_BUTTON_WIDTH
-                ),
-                panelY
-                    + ModernUiMetrics.DISPLAY_BUTTON_Y_OFFSET
-                    + 36,
-                ModernUiMetrics.DISPLAY_BUTTON_WIDTH,
-                ModernUiMetrics.DISPLAY_BUTTON_HEIGHT
-            );
-        }
-
-        private Rect resolution() {
-            return new Rect(
-                ModernUiMetrics.centeredX(
-                    centerX + 225,
-                    ModernUiMetrics.CONTROL_WIDTH
-                ),
-                panelY + 128,
-                ModernUiMetrics.CONTROL_WIDTH,
-                ModernUiMetrics.CONTROL_HEIGHT
-            );
-        }
-
-        private Rect styleEditor() {
-            return new Rect(
-                panelX + panelWidth
-                    - ModernUiMetrics.GRAPHICS_PANEL_INSET
-                    - ModernUiMetrics.CONTROL_WIDTH,
-                panelY + ModernUiMetrics.NAV_BUTTON_Y_OFFSET,
-                ModernUiMetrics.CONTROL_WIDTH,
-                ModernUiMetrics.NAV_BUTTON_HEIGHT
-            );
-        }
-    }
-
-    private static final class Rect {
-        private final int x;
-        private final int y;
-        private final int width;
-        private final int height;
-
-        private Rect(int x, int y, int width, int height) {
-            this.x = x;
-            this.y = y;
-            this.width = width;
-            this.height = height;
-        }
     }
 
     private static final class ControlSpec {
