@@ -2346,22 +2346,22 @@ public final class ModernUiRenderer {
             int top = contentBounds.y;
             if (normalized.equals("log in")
                 || normalized.equals("login")) {
-                return top + 42;
+                return top + 56;
             }
             if (normalized.contains("existing user")) {
-                return top + 63;
+                return top + 77;
             }
             if (normalized.equals("create account")) {
-                return top + 92;
+                return top + 102;
             }
             if (normalized.contains("new user")) {
-                return top + 113;
+                return top + 123;
             }
             if (normalized.startsWith("world ")) {
-                return top + 142;
+                return top + 148;
             }
             if (normalized.contains("click to switch")) {
-                return top + 163;
+                return top + 169;
             }
             if (normalized.equals("standard detail")
                 || normalized.equals("high detail")) {
