@@ -46,6 +46,7 @@ public final class ModernUiMetrics {
     public static final int CONTROL_TEXT_PAD_X = 6;
     public static final int CONTROL_ARROW_RESERVED = 20;
     public static final int DROPDOWN_POPUP_ROW_HEIGHT = 18;
+    public static final int NATIVE_DROPDOWN_POPUP_ROW_HEIGHT = 15;
 
     public static final int NAV_BUTTON_WIDTH = 168;
     public static final int NAV_BUTTON_HEIGHT = 30;
