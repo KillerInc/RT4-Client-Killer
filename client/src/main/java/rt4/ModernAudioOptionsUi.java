@@ -387,16 +387,28 @@ public final class ModernAudioOptionsUi {
                 Math.max(1, component.height)
             );
 
-            if ((component.type == 4 || component.type == 8)
-                && component.text != null
-                && component.text.length() > 0) {
-                texts.add(
-                    new TextEntry(
+            if (component.type == 4 || component.type == 8) {
+                JagString current = component.text;
+                if (Cs1ScriptRunner.isTrue(component)
+                    && component.activeText != null
+                    && component.activeText.length() > 0) {
+                    current = component.activeText;
+                }
+                if (!component.if3 && current != null) {
+                    current = Cs1ScriptRunner.interpolate(
                         component,
-                        component.text.toString(),
-                        rect
-                    )
-                );
+                        current
+                    );
+                }
+                if (current != null && current.length() > 0) {
+                    texts.add(
+                        new TextEntry(
+                            component,
+                            current.toString(),
+                            rect
+                        )
+                    );
+                }
             } else if (component.type == 5) {
                 images.add(new ImageEntry(component, rect));
             }
