@@ -321,15 +321,11 @@ public final class ModernGraphicsOptionsUi {
         Rect control = layout.control(4, 2);
         String[] options = {"Off", "On"};
         int popupY = control.y + control.height - 1;
-        int popupHeight =
-            ModernUiMetrics.DROPDOWN_POPUP_ROW_HEIGHT * options.length;
-
-        drawAsset(
-            "controls/popup",
+        drawPopupSurface(
             control.x,
             popupY,
             control.width,
-            popupHeight
+            options.length
         );
 
         String selected = ModernUiManager.isEnabled() ? "On" : "Off";
@@ -362,14 +358,11 @@ public final class ModernGraphicsOptionsUi {
         }
 
         int popupY = control.y + control.height - 1;
-        int popupHeight =
-            entries.size() * ModernUiMetrics.DROPDOWN_POPUP_ROW_HEIGHT;
-        drawAsset(
-            "controls/popup",
+        drawPopupSurface(
             control.x,
             popupY,
             control.width,
-            popupHeight
+            entries.size()
         );
 
         for (int i = 0; i < entries.size(); i++) {
@@ -385,6 +378,38 @@ public final class ModernGraphicsOptionsUi {
                 row,
                 text,
                 normalize(text).equals(normalize(selected))
+            );
+        }
+    }
+
+    private static void drawPopupSurface(
+        int x,
+        int y,
+        int width,
+        int rowCount
+    ) {
+        int rows = Math.max(1, rowCount);
+        int rowHeight = ModernUiMetrics.DROPDOWN_POPUP_ROW_HEIGHT;
+        int height = rows * rowHeight;
+
+        drawAsset(
+            "controls/popup",
+            x,
+            y,
+            width,
+            height
+        );
+
+        // popup.svg is now only the outer frame/background. Row separators
+        // are rendered at real row boundaries so 3+ option dropdowns do not
+        // stretch one baked-in midpoint line across the whole popup.
+        for (int i = 1; i < rows; i++) {
+            drawAsset(
+                "controls/popup-divider",
+                x + 2,
+                y + i * rowHeight - 1,
+                Math.max(1, width - 4),
+                2
             );
         }
     }
