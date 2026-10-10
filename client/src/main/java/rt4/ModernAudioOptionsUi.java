@@ -56,15 +56,37 @@ public final class ModernAudioOptionsUi {
             layout.panel.height
         );
 
+        drawAsset(
+            "audio-options/divider",
+            layout.panel.x + ModernUiMetrics.AUDIO_PANEL_INSET,
+            layout.panel.y + 58,
+            layout.panel.width
+                - ModernUiMetrics.AUDIO_PANEL_INSET * 2,
+            4
+        );
+
+        int choiceDividerY = Math.min(
+            layout.monoLabel.rect.y,
+            layout.stereoLabel.rect.y
+        ) - 16;
+        drawAsset(
+            "audio-options/divider",
+            layout.panel.x + ModernUiMetrics.AUDIO_PANEL_INSET,
+            choiceDividerY,
+            layout.panel.width
+                - ModernUiMetrics.AUDIO_PANEL_INSET * 2,
+            4
+        );
+
         drawCentered(
             display(layout.title.text),
             layout.panel.x,
-            layout.panel.y + 42,
+            layout.panel.y + 18,
             layout.panel.width,
             28,
             ModernUiFontRegistry.PLAIN_12,
             ModernUiMetrics.FONT_TITLE,
-            ModernUiMetrics.TEXT_PARCHMENT,
+            ModernUiMetrics.TEXT_PRIMARY,
             false
         );
 
@@ -100,17 +122,24 @@ public final class ModernAudioOptionsUi {
 
         boolean mainMenuHover =
             contains(layout.mainMenuButton, Mouse.lastMouseX, Mouse.lastMouseY);
+        drawAsset(
+            mainMenuHover
+                ? "audio-options/button-active"
+                : "audio-options/button",
+            layout.mainMenuButton.x,
+            layout.mainMenuButton.y,
+            layout.mainMenuButton.width,
+            layout.mainMenuButton.height
+        );
         drawCentered(
             display(layout.mainMenu.text),
             layout.mainMenuButton.x,
             layout.mainMenuButton.y,
             layout.mainMenuButton.width,
             layout.mainMenuButton.height,
-            ModernUiFontRegistry.BOLD_12,
+            ModernUiFontRegistry.PLAIN_12,
             ModernUiMetrics.FONT_BUTTON,
-            mainMenuHover
-                ? 0x7A3C20
-                : ModernUiMetrics.TEXT_PARCHMENT,
+            ModernUiMetrics.TEXT_PRIMARY,
             false
         );
     }
@@ -129,7 +158,7 @@ public final class ModernAudioOptionsUi {
             Math.max(18, label.rect.height),
             ModernUiFontRegistry.BOLD_12,
             ModernUiMetrics.FONT_LABEL,
-            ModernUiMetrics.TEXT_PARCHMENT,
+            ModernUiMetrics.TEXT_PRIMARY,
             false
         );
 
@@ -181,7 +210,9 @@ public final class ModernAudioOptionsUi {
             Math.max(18, label.rect.height),
             ModernUiFontRegistry.BOLD_12,
             ModernUiMetrics.FONT_LABEL,
-            ModernUiMetrics.TEXT_PARCHMENT,
+            selected
+                ? ModernUiMetrics.TEXT_GOLD
+                : ModernUiMetrics.TEXT_PRIMARY,
             false
         );
 
@@ -238,7 +269,7 @@ public final class ModernAudioOptionsUi {
         int panelWidth = ModernUiMetrics.AUDIO_PANEL_WIDTH;
         int panelHeight = ModernUiMetrics.AUDIO_PANEL_HEIGHT;
         int panelX = centerX - panelWidth / 2;
-        int panelY = title.rect.y - 48;
+        int panelY = title.rect.y - 30;
 
         panelX = Math.max(
             8,
