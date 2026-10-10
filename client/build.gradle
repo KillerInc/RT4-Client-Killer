@@ -116,5 +116,6 @@ tasks.register('verifyModernSvgAssets', JavaExec) {
         '/ui/killer-modern/audio-options/panel.svg',
         '/ui/killer-modern/audio-options/slider-track.svg',
         '/ui/killer-modern/audio-options/toggle-on.svg',
-        '/ui/killer-modern/controls/popup-divider.svg'
+        '/ui/killer-modern/controls/popup-divider.svg',
+        '/ui/killer-modern/controls/popup-row.svg'
 }
