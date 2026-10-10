@@ -75,6 +75,11 @@ public final class ModernUiInputRouter {
 
         // Each screen adapter discovers only action/state components. Geometry
         // always comes from the corresponding Modern layout.
+        ModernLoginScreenUi.prepareInput(
+            components,
+            parentX,
+            parentY
+        );
         ModernAudioOptionsUi.prepareInput(
             components,
             parentX,
