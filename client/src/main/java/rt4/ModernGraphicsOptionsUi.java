@@ -261,21 +261,36 @@ public final class ModernGraphicsOptionsUi {
             fallbackResolution()
         );
         drawDropdown(resolution, resolutionValue);
-
-        if (isPopupOpen(components, RESOLUTION_POPUP_BODY_CHILD)) {
-            drawPopupFromComponent(
-                components,
-                RESOLUTION_POPUP_BODY_CHILD,
-                resolution,
-                resolutionValue
-            );
-        }
     }
 
     private static void renderOpenNativePopup(
         Component[] components,
         Layout layout
     ) {
+        if (isPopupOpen(components, RESOLUTION_POPUP_BODY_CHILD)) {
+            int fullscreenCenter = layout.centerX + 225;
+            Rect resolution = new Rect(
+                ModernUiMetrics.centeredX(
+                    fullscreenCenter,
+                    ModernUiMetrics.CONTROL_WIDTH
+                ),
+                layout.panelY + 128,
+                ModernUiMetrics.CONTROL_WIDTH,
+                ModernUiMetrics.CONTROL_HEIGHT
+            );
+            drawPopupFromComponent(
+                components,
+                RESOLUTION_POPUP_BODY_CHILD,
+                resolution,
+                valueFor(
+                    components,
+                    RESOLUTION_VALUE_CHILD,
+                    fallbackResolution()
+                )
+            );
+            return;
+        }
+
         for (ControlSpec spec : CONTROLS) {
             if (spec.popupBodyChild < 0
                 || !isPopupOpen(components, spec.popupBodyChild)) {
