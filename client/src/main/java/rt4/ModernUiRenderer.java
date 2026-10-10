@@ -2313,23 +2313,23 @@ public final class ModernUiRenderer {
                 return top + 36;
             }
             if (normalized.contains("existing user")) {
-                return top + 62;
+                return top + 57;
             }
             if (normalized.equals("create account")) {
                 return top + 86;
             }
             if (normalized.contains("new user")) {
-                return top + 112;
+                return top + 107;
             }
             if (normalized.startsWith("world ")) {
                 return top + 136;
             }
             if (normalized.contains("click to switch")) {
-                return top + 162;
+                return top + 157;
             }
             if (normalized.equals("standard detail")
                 || normalized.equals("high detail")) {
-                return top + 220;
+                return top + 214;
             }
             if (normalized.equals("graphics options")) {
                 return top + 252;
@@ -2339,7 +2339,7 @@ public final class ModernUiRenderer {
                 return top + 282;
             }
             if (normalized.equals("music volume")) {
-                return top + 302;
+                return top + 309;
             }
             if (normalized.equals("quit")) {
                 return top + 354;
