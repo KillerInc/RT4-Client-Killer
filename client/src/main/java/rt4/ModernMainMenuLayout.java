@@ -11,13 +11,17 @@ public final class ModernMainMenuLayout {
     public static final int SCROLL_WIDTH = 552;
     public static final int SCROLL_HEIGHT = 582;
     public static final int SCROLL_VERTICAL_BIAS = 0;
+    public static final int CHOICE_WIDTH = 68;
+    public static final int CHOICE_HEIGHT = 38;
+    public static final int CHOICE_CENTER_OFFSET = 44;
 
     public final int centerX;
     public final ModernUiRect scroll;
     public final ModernUiRect content;
     public final ModernUiRect logo;
 
-    public final int choiceTop;
+    public final ModernUiRect standardChoice;
+    public final ModernUiRect highChoice;
     public final int musicSliderTop;
 
     private ModernMainMenuLayout(
@@ -25,14 +29,16 @@ public final class ModernMainMenuLayout {
         ModernUiRect scroll,
         ModernUiRect content,
         ModernUiRect logo,
-        int choiceTop,
+        ModernUiRect standardChoice,
+        ModernUiRect highChoice,
         int musicSliderTop
     ) {
         this.centerX = centerX;
         this.scroll = scroll;
         this.content = content;
         this.logo = logo;
-        this.choiceTop = choiceTop;
+        this.standardChoice = standardChoice;
+        this.highChoice = highChoice;
         this.musicSliderTop = musicSliderTop;
     }
 
@@ -103,12 +109,31 @@ public final class ModernMainMenuLayout {
             logoHeight
         );
 
+        int choiceTop = content.y + 190;
+        ModernUiRect standardChoice = new ModernUiRect(
+            centerX
+                - CHOICE_CENTER_OFFSET
+                - CHOICE_WIDTH / 2,
+            choiceTop,
+            CHOICE_WIDTH,
+            CHOICE_HEIGHT
+        );
+        ModernUiRect highChoice = new ModernUiRect(
+            centerX
+                + CHOICE_CENTER_OFFSET
+                - CHOICE_WIDTH / 2,
+            choiceTop,
+            CHOICE_WIDTH,
+            CHOICE_HEIGHT
+        );
+
         return new ModernMainMenuLayout(
             centerX,
             scroll,
             content,
             logo,
-            content.y + 190,
+            standardChoice,
+            highChoice,
             content.y + 322
         );
     }
