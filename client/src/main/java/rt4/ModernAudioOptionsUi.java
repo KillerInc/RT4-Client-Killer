@@ -1,31 +1,85 @@
 package rt4;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
- * Complete Modern rendering for the login Audio Options surface.
+ * Modern-owned Audio Options screen.
  *
- * The original RT4 components remain loaded and interactive so their CS2
- * scripts continue to own preference changes. This class replaces only the
- * legacy sprites/fonts with scalable vector artwork and TrueType text.
+ * Vanilla components are inspected only to locate state/action backends.
+ * Their positions are never used for Modern rendering. All visible geometry
+ * comes from ModernAudioOptionsLayout, and the same rectangles are registered
+ * with ModernUiInputRouter for input.
  */
 public final class ModernAudioOptionsUi {
     private static final Set<Integer> loggedInterfaces = new HashSet<>();
-    private static final Map<Integer, HitboxSpec> hitboxes = new HashMap<>();
-    private static Rect lastPanelBounds;
-    private static String lastHitboxSignature = "";
 
     private ModernAudioOptionsUi() {
     }
 
     public static boolean isAudioOptionsActive(Component[] components) {
-        Layout layout = analyze(components, 0, 0);
-        return layout != null;
+        return discover(components, 0, 0) != null;
+    }
+
+    public static void prepareInput(
+        Component[] components,
+        int parentX,
+        int parentY
+    ) {
+        Backend backend = discover(components, parentX, parentY);
+        if (backend == null) {
+            return;
+        }
+
+        ModernAudioOptionsLayout layout =
+            ModernAudioOptionsLayout.create(
+                GameShell.canvasWidth,
+                GameShell.canvasHeight
+            );
+
+        ModernUiRect clip = layout.panel;
+
+        bindSliderRow(
+            backend.images,
+            backend.musicRow,
+            layout.musicSlider,
+            clip
+        );
+        bindSliderRow(
+            backend.images,
+            backend.effectsRow,
+            layout.effectsSlider,
+            clip
+        );
+        bindSliderRow(
+            backend.images,
+            backend.areaRow,
+            layout.areaSlider,
+            clip
+        );
+
+        if (backend.monoHit != null) {
+            ModernUiInputRouter.bind(
+                backend.monoHit.component,
+                layout.monoToggle,
+                clip
+            );
+        }
+        if (backend.stereoHit != null) {
+            ModernUiInputRouter.bind(
+                backend.stereoHit.component,
+                layout.stereoToggle,
+                clip
+            );
+        }
+
+        ModernUiInputRouter.bind(
+            backend.mainMenu.component,
+            layout.mainMenu,
+            clip
+        );
     }
 
     public static void render(
@@ -34,61 +88,42 @@ public final class ModernAudioOptionsUi {
         int parentX,
         int parentY
     ) {
-        Layout layout = analyze(components, parentX, parentY);
-        if (layout == null) {
+        Backend backend = discover(components, parentX, parentY);
+        if (backend == null) {
             return;
         }
 
+        ModernAudioOptionsLayout layout =
+            ModernAudioOptionsLayout.create(
+                GameShell.canvasWidth,
+                GameShell.canvasHeight
+            );
+
+        // Rendering can happen before the next input pass after a screen
+        // transition. Register the same canonical geometry here too.
+        prepareInput(components, parentX, parentY);
+
         if (loggedInterfaces.add(interfaceId)) {
             DisplayDebug.log(
-                "MODERN_UI audio-options active interface=" + interfaceId
-                    + " panel=" + layout.panel.x + "," + layout.panel.y
-                    + " " + layout.panel.width + "x" + layout.panel.height
-                    + " music=" + rectString(layout.musicSlider)
-                    + " effects=" + rectString(layout.effectsSlider)
-                    + " area=" + rectString(layout.areaSlider)
-                    + " mono=" + rectString(layout.monoToggle)
-                    + " stereo=" + rectString(layout.stereoToggle)
-                    + " mainMenu=" + rectString(layout.mainMenuButton)
+                "MODERN_UI audio-options declarative"
+                    + " interface=" + interfaceId
+                    + " panel=" + layout.panel
+                    + " music=" + layout.musicSlider
+                    + " effects=" + layout.effectsSlider
+                    + " area=" + layout.areaSlider
+                    + " mono=" + layout.monoToggle
+                    + " stereo=" + layout.stereoToggle
+                    + " mainMenu=" + layout.mainMenu
             );
         }
 
-        drawAsset(
-            "audio-options/panel",
-            layout.panel.x,
-            layout.panel.y,
-            layout.panel.width,
-            layout.panel.height
-        );
-
-        drawAsset(
-            "audio-options/divider",
-            layout.panel.x + ModernUiMetrics.AUDIO_PANEL_INSET,
-            layout.panel.y + 58,
-            layout.panel.width
-                - ModernUiMetrics.AUDIO_PANEL_INSET * 2,
-            4
-        );
-
-        int choiceDividerY = Math.min(
-            layout.monoLabel.rect.y,
-            layout.stereoLabel.rect.y
-        ) + 4;
-        drawAsset(
-            "audio-options/divider",
-            layout.panel.x + ModernUiMetrics.AUDIO_PANEL_INSET,
-            choiceDividerY,
-            layout.panel.width
-                - ModernUiMetrics.AUDIO_PANEL_INSET * 2,
-            4
-        );
+        drawAsset("audio-options/panel", layout.panel);
+        drawAsset("audio-options/divider", layout.topDivider);
+        drawAsset("audio-options/divider", layout.lowerDivider);
 
         drawCentered(
-            display(layout.title.text),
-            layout.panel.x,
-            layout.panel.y + 28,
-            layout.panel.width,
-            28,
+            display(backend.title.text),
+            layout.title,
             ModernUiFontRegistry.PLAIN_12,
             ModernUiMetrics.FONT_TITLE,
             ModernUiMetrics.TEXT_PRIMARY,
@@ -96,63 +131,54 @@ public final class ModernAudioOptionsUi {
         );
 
         drawVolume(
+            display(backend.music.text),
             layout.musicLabel,
             layout.musicSlider,
             Preferences.musicVolume,
-            255,
-            -4
+            255
         );
         drawVolume(
+            display(backend.effects.text),
             layout.effectsLabel,
             layout.effectsSlider,
             Preferences.soundEffectVolume,
-            127,
-            2
+            127
         );
         drawVolume(
+            display(backend.area.text),
             layout.areaLabel,
             layout.areaSlider,
             Preferences.ambientSoundsVolume,
-            127,
-            8
+            127
         );
 
         drawChoice(
+            display(backend.mono.text),
             layout.monoLabel,
             layout.monoToggle,
-            !Preferences.stereo,
-            24
+            !Preferences.stereo
         );
         drawChoice(
+            display(backend.stereo.text),
             layout.stereoLabel,
             layout.stereoToggle,
-            Preferences.stereo,
-            24
+            Preferences.stereo
         );
 
-        Rect mainMenuVisual = new Rect(
-            layout.mainMenuButton.x,
-            layout.mainMenuButton.y + 36,
-            layout.mainMenuButton.width,
-            layout.mainMenuButton.height
-        );
         boolean mainMenuHover =
-            contains(mainMenuVisual, Mouse.lastMouseX, Mouse.lastMouseY);
+            layout.mainMenu.contains(
+                Mouse.lastMouseX,
+                Mouse.lastMouseY
+            );
         drawAsset(
             mainMenuHover
                 ? "audio-options/button-active"
                 : "audio-options/button",
-            mainMenuVisual.x,
-            mainMenuVisual.y,
-            mainMenuVisual.width,
-            mainMenuVisual.height
+            layout.mainMenu
         );
         drawCentered(
-            display(layout.mainMenu.text),
-            mainMenuVisual.x,
-            mainMenuVisual.y,
-            mainMenuVisual.width,
-            mainMenuVisual.height,
+            display(backend.mainMenu.text),
+            layout.mainMenu,
             ModernUiFontRegistry.PLAIN_12,
             ModernUiMetrics.FONT_BUTTON,
             ModernUiMetrics.TEXT_PRIMARY,
@@ -161,18 +187,15 @@ public final class ModernAudioOptionsUi {
     }
 
     private static void drawVolume(
-        TextEntry label,
-        Rect slider,
+        String label,
+        ModernUiRect labelRect,
+        ModernUiRect slider,
         int value,
-        int max,
-        int yOffset
+        int max
     ) {
         drawCentered(
-            display(label.text),
-            slider.x - 80,
-            label.rect.y - 5 + yOffset,
-            slider.width + 160,
-            Math.max(18, label.rect.height),
+            label,
+            labelRect,
             ModernUiFontRegistry.BOLD_12,
             ModernUiMetrics.FONT_LABEL,
             ModernUiMetrics.TEXT_PRIMARY,
@@ -181,53 +204,43 @@ public final class ModernAudioOptionsUi {
 
         int trackY =
             slider.y
-                + yOffset
-                + (slider.height - ModernUiMetrics.AUDIO_SLIDER_HEIGHT) / 2;
-        drawAsset(
-            "audio-options/slider-track",
+                + (slider.height
+                    - ModernUiMetrics.AUDIO_SLIDER_HEIGHT) / 2;
+        ModernUiRect track = new ModernUiRect(
             slider.x,
             trackY,
             slider.width,
             ModernUiMetrics.AUDIO_SLIDER_HEIGHT
         );
+        drawAsset("audio-options/slider-track", track);
 
         int clamped = Math.max(0, Math.min(max, value));
         int left = slider.x + 10;
-        int right = slider.x + slider.width - 10;
+        int right = slider.right() - 10;
         int centerX =
             max <= 0
                 ? left
                 : left + (right - left) * clamped / max;
-        int knobX =
-            centerX
-                - ModernUiMetrics.AUDIO_SLIDER_KNOB_WIDTH / 2;
-        int knobY =
+        ModernUiRect knob = new ModernUiRect(
+            centerX - ModernUiMetrics.AUDIO_SLIDER_KNOB_WIDTH / 2,
             slider.y
-                + yOffset
                 + (slider.height
-                    - ModernUiMetrics.AUDIO_SLIDER_KNOB_HEIGHT) / 2;
-
-        drawAsset(
-            "audio-options/slider-knob",
-            knobX,
-            knobY,
+                    - ModernUiMetrics.AUDIO_SLIDER_KNOB_HEIGHT) / 2,
             ModernUiMetrics.AUDIO_SLIDER_KNOB_WIDTH,
             ModernUiMetrics.AUDIO_SLIDER_KNOB_HEIGHT
         );
+        drawAsset("audio-options/slider-knob", knob);
     }
 
     private static void drawChoice(
-        TextEntry label,
-        Rect toggle,
-        boolean selected,
-        int yOffset
+        String label,
+        ModernUiRect labelRect,
+        ModernUiRect toggle,
+        boolean selected
     ) {
         drawCentered(
-            display(label.text),
-            toggle.x - 42,
-            label.rect.y + yOffset,
-            toggle.width + 84,
-            Math.max(18, label.rect.height),
+            label,
+            labelRect,
             ModernUiFontRegistry.BOLD_12,
             ModernUiMetrics.FONT_LABEL,
             selected
@@ -240,14 +253,60 @@ public final class ModernAudioOptionsUi {
             selected
                 ? "audio-options/toggle-on"
                 : "audio-options/toggle-off",
-            toggle.x,
-            toggle.y + yOffset,
-            toggle.width,
-            toggle.height
+            toggle
         );
     }
 
-    private static Layout analyze(
+    private static void bindSliderRow(
+        List<ImageEntry> images,
+        LegacyRect sourceRow,
+        ModernUiRect target,
+        ModernUiRect clip
+    ) {
+        if (sourceRow == null || target == null) {
+            return;
+        }
+
+        for (ImageEntry image : images) {
+            LegacyRect source = image.rect;
+            if (!intersects(source, sourceRow)) {
+                continue;
+            }
+            if (source.width > 60 || source.height > 50) {
+                continue;
+            }
+
+            int relativeX = source.x - sourceRow.x;
+            int relativeY = source.y - sourceRow.y;
+
+            int x =
+                target.x
+                    + relativeX * target.width
+                        / Math.max(1, sourceRow.width);
+            int y =
+                target.y
+                    + relativeY * target.height
+                        / Math.max(1, sourceRow.height);
+            int width = Math.max(
+                1,
+                source.width * target.width
+                    / Math.max(1, sourceRow.width)
+            );
+            int height = Math.max(
+                1,
+                source.height * target.height
+                    / Math.max(1, sourceRow.height)
+            );
+
+            ModernUiInputRouter.bind(
+                image.component,
+                new ModernUiRect(x, y, width, height),
+                clip
+            );
+        }
+    }
+
+    private static Backend discover(
         Component[] components,
         int parentX,
         int parentY
@@ -281,87 +340,38 @@ public final class ModernAudioOptionsUi {
             return null;
         }
 
-        int centerX =
-            (rectCenterX(music.rect)
-                + rectCenterX(effects.rect)
-                + rectCenterX(area.rect)) / 3;
+        // Legacy geometry is used only to discover which original Components
+        // own the actions. It never feeds the Modern layout.
+        int legacyCenterX =
+            (centerX(music.rect)
+                + centerX(effects.rect)
+                + centerX(area.rect)) / 3;
 
-        int panelWidth = ModernUiMetrics.AUDIO_PANEL_WIDTH;
-        int panelHeight = ModernUiMetrics.AUDIO_PANEL_HEIGHT;
-        int panelX = centerX - panelWidth / 2;
-        int panelY = title.rect.y - 40;
-
-        panelX = Math.max(
-            8,
-            Math.min(
-                panelX,
-                Math.max(8, GameShell.canvasWidth - panelWidth - 8)
-            )
-        );
-        panelY = Math.max(
-            8,
-            Math.min(
-                panelY,
-                Math.max(8, GameShell.canvasHeight - panelHeight - 8)
-            )
-        );
-
-        Rect musicRow = findImageRowBelow(
+        LegacyRect musicRow = findImageRowBelow(
             music,
             effects,
             images,
-            centerX
+            legacyCenterX
         );
-        Rect effectsRow = findImageRowBelow(
+        LegacyRect effectsRow = findImageRowBelow(
             effects,
             area,
             images,
-            centerX
+            legacyCenterX
         );
-        Rect areaRow = findImageRowBelow(
+        LegacyRect areaRow = findImageRowBelow(
             area,
             mono,
             images,
-            centerX
+            legacyCenterX
         );
 
-        Rect musicSlider = sliderRect(music, musicRow, centerX);
-        Rect effectsSlider = sliderRect(effects, effectsRow, centerX);
-        Rect areaSlider = sliderRect(area, areaRow, centerX);
+        ImageEntry monoHit =
+            findChoiceImage(mono, mainMenu, images);
+        ImageEntry stereoHit =
+            findChoiceImage(stereo, mainMenu, images);
 
-        ImageEntry monoHit = findChoiceImage(
-            mono,
-            mainMenu,
-            images
-        );
-        ImageEntry stereoHit = findChoiceImage(
-            stereo,
-            mainMenu,
-            images
-        );
-
-        Rect monoToggle = toggleRect(
-            mono,
-            monoHit == null ? null : monoHit.rect
-        );
-        Rect stereoToggle = toggleRect(
-            stereo,
-            stereoHit == null ? null : stereoHit.rect
-        );
-
-        int mainMenuY =
-            mainMenu.rect.y
-                + (mainMenu.rect.height
-                    - ModernUiMetrics.AUDIO_BUTTON_HEIGHT) / 2;
-        Rect mainMenuButton = new Rect(
-            centerX - ModernUiMetrics.AUDIO_BUTTON_WIDTH / 2,
-            mainMenuY,
-            ModernUiMetrics.AUDIO_BUTTON_WIDTH,
-            ModernUiMetrics.AUDIO_BUTTON_HEIGHT
-        );
-
-        Layout layout = new Layout(
-            new Rect(panelX, panelY, panelWidth, panelHeight),
+        return new Backend(
             title,
             music,
             effects,
@@ -369,16 +379,6 @@ public final class ModernAudioOptionsUi {
             mono,
             stereo,
             mainMenu,
-            musicSlider,
-            effectsSlider,
-            areaSlider,
-            monoToggle,
-            stereoToggle,
-            mainMenuButton
-        );
-
-        rememberHitboxes(
-            layout,
             images,
             musicRow,
             effectsRow,
@@ -386,7 +386,6 @@ public final class ModernAudioOptionsUi {
             monoHit,
             stereoHit
         );
-        return layout;
     }
 
     private static void collect(
@@ -417,7 +416,7 @@ public final class ModernAudioOptionsUi {
 
             int x = parentX + component.x;
             int y = parentY + component.y;
-            Rect rect = new Rect(
+            LegacyRect rect = new LegacyRect(
                 x,
                 y,
                 Math.max(1, component.width),
@@ -480,31 +479,28 @@ public final class ModernAudioOptionsUi {
         TextKind kind
     ) {
         for (TextEntry entry : entries) {
-            String normalized = normalize(entry.text);
-            if (kind.matches(normalized)) {
+            if (kind.matches(normalize(entry.text))) {
                 return entry;
             }
         }
         return null;
     }
 
-    private static Rect findImageRowBelow(
+    private static LegacyRect findImageRowBelow(
         TextEntry label,
         TextEntry next,
         List<ImageEntry> images,
         int centerX
     ) {
-        int minY = label.rect.y + Math.max(6, label.rect.height - 2);
-        int maxY = Math.max(
-            minY + 18,
-            next.rect.y - 4
-        );
+        int minY =
+            label.rect.y + Math.max(6, label.rect.height - 2);
+        int maxY =
+            Math.max(minY + 18, next.rect.y - 4);
 
-        List<Rect> candidates = new ArrayList<>();
+        List<LegacyRect> candidates = new ArrayList<>();
         for (ImageEntry image : images) {
-            Rect rect = image.rect;
-            int centerY = rectCenterY(rect);
-
+            LegacyRect rect = image.rect;
+            int centerY = centerY(rect);
             if (centerY < minY || centerY >= maxY) {
                 continue;
             }
@@ -514,13 +510,13 @@ public final class ModernAudioOptionsUi {
                 || rect.height > 48) {
                 continue;
             }
-            if (Math.abs(rectCenterX(rect) - centerX) > 120) {
+            if (Math.abs(centerX(rect) - centerX) > 120) {
                 continue;
             }
             candidates.add(rect);
         }
 
-        Rect union = union(candidates);
+        LegacyRect union = union(candidates);
         if (union == null
             || union.width < 70
             || union.width > 240
@@ -537,23 +533,24 @@ public final class ModernAudioOptionsUi {
     ) {
         ImageEntry best = null;
         int bestDistance = Integer.MAX_VALUE;
-        int labelCenter = rectCenterX(label.rect);
-        int minY = label.rect.y + Math.max(4, label.rect.height - 2);
+        int labelCenter = centerX(label.rect);
+        int minY =
+            label.rect.y + Math.max(4, label.rect.height - 2);
         int maxY = Math.max(minY + 18, mainMenu.rect.y - 4);
 
         for (ImageEntry image : images) {
-            Rect rect = image.rect;
+            LegacyRect rect = image.rect;
             if (rect.width < 12
                 || rect.width > 70
                 || rect.height < 12
                 || rect.height > 70) {
                 continue;
             }
-            int centerY = rectCenterY(rect);
-            if (centerY < minY || centerY >= maxY) {
+            int cy = centerY(rect);
+            if (cy < minY || cy >= maxY) {
                 continue;
             }
-            int dx = Math.abs(rectCenterX(rect) - labelCenter);
+            int dx = Math.abs(centerX(rect) - labelCenter);
             if (dx > 55) {
                 continue;
             }
@@ -567,244 +564,7 @@ public final class ModernAudioOptionsUi {
         return best;
     }
 
-    private static Rect sliderRect(
-        TextEntry label,
-        Rect legacyRow,
-        int fallbackCenterX
-    ) {
-        int centerX =
-            legacyRow == null
-                ? fallbackCenterX
-                : rectCenterX(legacyRow);
-        int centerY =
-            legacyRow == null
-                ? label.rect.y + label.rect.height + 15
-                : rectCenterY(legacyRow);
-
-        return new Rect(
-            centerX - ModernUiMetrics.AUDIO_SLIDER_WIDTH / 2,
-            centerY - ModernUiMetrics.AUDIO_SLIDER_CONTAINER_HEIGHT / 2,
-            ModernUiMetrics.AUDIO_SLIDER_WIDTH,
-            ModernUiMetrics.AUDIO_SLIDER_CONTAINER_HEIGHT
-        );
-    }
-
-    private static Rect toggleRect(
-        TextEntry label,
-        Rect legacyHit
-    ) {
-        int centerX =
-            legacyHit == null
-                ? rectCenterX(label.rect)
-                : rectCenterX(legacyHit);
-        int centerY =
-            legacyHit == null
-                ? label.rect.y + label.rect.height + 20
-                : rectCenterY(legacyHit);
-
-        return new Rect(
-            centerX - ModernUiMetrics.AUDIO_TOGGLE_SIZE / 2,
-            centerY - ModernUiMetrics.AUDIO_TOGGLE_SIZE / 2,
-            ModernUiMetrics.AUDIO_TOGGLE_SIZE,
-            ModernUiMetrics.AUDIO_TOGGLE_SIZE
-        );
-    }
-
-    private static synchronized void rememberHitboxes(
-        Layout layout,
-        List<ImageEntry> images,
-        Rect musicRow,
-        Rect effectsRow,
-        Rect areaRow,
-        ImageEntry monoHit,
-        ImageEntry stereoHit
-    ) {
-        hitboxes.clear();
-        lastPanelBounds = layout.panel;
-
-        registerSliderHitboxes(images, musicRow, -4);
-        registerSliderHitboxes(images, effectsRow, 2);
-        registerSliderHitboxes(images, areaRow, 8);
-
-        if (monoHit != null) {
-            Rect target = new Rect(
-                layout.monoToggle.x,
-                layout.monoToggle.y + 24,
-                layout.monoToggle.width,
-                layout.monoToggle.height
-            );
-            hitboxes.put(
-                monoHit.component.id,
-                HitboxSpec.absolute(monoHit.rect, target)
-            );
-        }
-
-        if (stereoHit != null) {
-            Rect target = new Rect(
-                layout.stereoToggle.x,
-                layout.stereoToggle.y + 24,
-                layout.stereoToggle.width,
-                layout.stereoToggle.height
-            );
-            hitboxes.put(
-                stereoHit.component.id,
-                HitboxSpec.absolute(stereoHit.rect, target)
-            );
-        }
-
-        // The legacy Main Menu text owns the original click script. Give that
-        // component the entire visible Modern button so its interaction region
-        // follows the rendered control instead of remaining up by Mono/Stereo.
-        Rect mainTarget = new Rect(
-            layout.mainMenuButton.x,
-            layout.mainMenuButton.y + 36,
-            layout.mainMenuButton.width,
-            layout.mainMenuButton.height
-        );
-        hitboxes.put(
-            layout.mainMenu.component.id,
-            HitboxSpec.absolute(layout.mainMenu.rect, mainTarget)
-        );
-
-        String signature =
-            hitboxes.size()
-                + "|" + rectString(lastPanelBounds)
-                + "|" + rectString(
-                    monoHit == null ? null : monoHit.rect
-                )
-                + "|" + rectString(
-                    stereoHit == null ? null : stereoHit.rect
-                )
-                + "|" + rectString(mainTarget);
-        if (!signature.equals(lastHitboxSignature)) {
-            lastHitboxSignature = signature;
-            DisplayDebug.log(
-                "MODERN_UI audio hitboxes refreshed"
-                    + " count=" + hitboxes.size()
-                    + " panel=" + rectString(lastPanelBounds)
-                    + " mono=" + rectString(
-                        monoHit == null ? null : monoHit.rect
-                    )
-                    + " stereo=" + rectString(
-                        stereoHit == null ? null : stereoHit.rect
-                    )
-                    + " mainMenu=" + rectString(mainTarget)
-            );
-        }
-    }
-
-    private static void registerSliderHitboxes(
-        List<ImageEntry> images,
-        Rect row,
-        int yOffset
-    ) {
-        if (row == null) {
-            return;
-        }
-
-        for (ImageEntry image : images) {
-            if (!intersects(image.rect, row)) {
-                continue;
-            }
-
-            // Only the compact cache-sprite pieces that make up a legacy
-            // volume slider belong to this row. Large backgrounds must never
-            // inherit the slider offset.
-            if (image.rect.width > 60 || image.rect.height > 50) {
-                continue;
-            }
-
-            hitboxes.put(
-                image.component.id,
-                HitboxSpec.offset(0, yOffset)
-            );
-        }
-    }
-
-    private static boolean intersects(Rect a, Rect b) {
-        return a != null
-            && b != null
-            && a.x < b.x + b.width
-            && a.x + a.width > b.x
-            && a.y < b.y + b.height
-            && a.y + a.height > b.y;
-    }
-
-    public static synchronized boolean hasHitboxOverride(
-        Component component
-    ) {
-        return component != null
-            && ModernUiManager.isEnabled()
-            && hitboxes.containsKey(component.id);
-    }
-
-    public static synchronized int adjustHitboxX(
-        Component component,
-        int x
-    ) {
-        HitboxSpec spec = hitboxes.get(component.id);
-        return spec == null ? x : x + spec.xOffset;
-    }
-
-    public static synchronized int adjustHitboxY(
-        Component component,
-        int y
-    ) {
-        HitboxSpec spec = hitboxes.get(component.id);
-        return spec == null ? y : y + spec.yOffset;
-    }
-
-    public static synchronized int hitboxWidth(
-        Component component,
-        int fallback
-    ) {
-        HitboxSpec spec = hitboxes.get(component.id);
-        return spec == null || spec.width <= 0
-            ? fallback
-            : spec.width;
-    }
-
-    public static synchronized int hitboxHeight(
-        Component component,
-        int fallback
-    ) {
-        HitboxSpec spec = hitboxes.get(component.id);
-        return spec == null || spec.height <= 0
-            ? fallback
-            : spec.height;
-    }
-
-    public static synchronized int panelLeft(int fallback) {
-        return lastPanelBounds == null
-            ? fallback
-            : Math.max(0, lastPanelBounds.x);
-    }
-
-    public static synchronized int panelTop(int fallback) {
-        return lastPanelBounds == null
-            ? fallback
-            : Math.max(0, lastPanelBounds.y);
-    }
-
-    public static synchronized int panelRight(int fallback) {
-        return lastPanelBounds == null
-            ? fallback
-            : Math.min(
-                GameShell.canvasWidth,
-                lastPanelBounds.x + lastPanelBounds.width
-            );
-    }
-
-    public static synchronized int panelBottom(int fallback) {
-        return lastPanelBounds == null
-            ? fallback
-            : Math.min(
-                GameShell.canvasHeight,
-                lastPanelBounds.y + lastPanelBounds.height
-            );
-    }
-
-    private static Rect union(List<Rect> rects) {
+    private static LegacyRect union(List<LegacyRect> rects) {
         if (rects == null || rects.isEmpty()) {
             return null;
         }
@@ -814,14 +574,14 @@ public final class ModernAudioOptionsUi {
         int right = Integer.MIN_VALUE;
         int bottom = Integer.MIN_VALUE;
 
-        for (Rect rect : rects) {
+        for (LegacyRect rect : rects) {
             left = Math.min(left, rect.x);
             top = Math.min(top, rect.y);
             right = Math.max(right, rect.x + rect.width);
             bottom = Math.max(bottom, rect.y + rect.height);
         }
 
-        return new Rect(
+        return new LegacyRect(
             left,
             top,
             Math.max(1, right - left),
@@ -829,32 +589,24 @@ public final class ModernAudioOptionsUi {
         );
     }
 
-    private static int rectCenterX(Rect rect) {
+    private static boolean intersects(
+        LegacyRect a,
+        LegacyRect b
+    ) {
+        return a != null
+            && b != null
+            && a.x < b.x + b.width
+            && a.x + a.width > b.x
+            && a.y < b.y + b.height
+            && a.y + a.height > b.y;
+    }
+
+    private static int centerX(LegacyRect rect) {
         return rect.x + rect.width / 2;
     }
 
-    private static int rectCenterY(Rect rect) {
+    private static int centerY(LegacyRect rect) {
         return rect.y + rect.height / 2;
-    }
-
-    private static boolean contains(
-        Rect rect,
-        int x,
-        int y
-    ) {
-        return rect != null
-            && x >= rect.x
-            && x < rect.x + rect.width
-            && y >= rect.y
-            && y < rect.y + rect.height;
-    }
-
-    private static String rectString(Rect rect) {
-        if (rect == null) {
-            return "<none>";
-        }
-        return rect.x + "," + rect.y
-            + " " + rect.width + "x" + rect.height;
     }
 
     private static String display(String text) {
@@ -876,23 +628,23 @@ public final class ModernAudioOptionsUi {
                 continue;
             }
             if (!insideTag) {
-                out.append(ch == '\n' || ch == '\r' || ch == '\t' ? ' ' : ch);
+                out.append(
+                    ch == '\n' || ch == '\r' || ch == '\t'
+                        ? ' '
+                        : ch
+                );
             }
         }
         return out.toString().trim().replaceAll("\\s+", " ");
     }
 
     private static String normalize(String text) {
-        return display(text)
-            .toLowerCase(java.util.Locale.ROOT);
+        return display(text).toLowerCase(java.util.Locale.ROOT);
     }
 
     private static void drawCentered(
         String text,
-        int x,
-        int y,
-        int width,
-        int height,
+        ModernUiRect rect,
         String font,
         float size,
         int color,
@@ -901,10 +653,10 @@ public final class ModernAudioOptionsUi {
         ModernTrueTypeFont.drawInBox(
             font,
             text,
-            x,
-            y,
-            width,
-            height,
+            rect.x,
+            rect.y,
+            rect.width,
+            rect.height,
             color,
             1,
             1,
@@ -915,27 +667,62 @@ public final class ModernAudioOptionsUi {
 
     private static void drawAsset(
         String path,
-        int x,
-        int y,
-        int width,
-        int height
+        ModernUiRect rect
     ) {
         ModernUiImage image = ModernUiAssetResolver.get(
             path,
-            Math.max(1, width),
-            Math.max(1, height)
+            rect.width,
+            rect.height
         );
         if (image != null) {
-            image.render(x, y);
+            image.render(rect.x, rect.y);
         } else {
             ModernUiRenderer.drawMissing(
                 "asset:" + path,
-                x,
-                y,
-                Math.max(1, width),
-                Math.max(1, height)
+                rect.x,
+                rect.y,
+                rect.width,
+                rect.height
             );
         }
+    }
+
+    // Compatibility surface for the pre-rebuild input path. New bindings are
+    // supplied by ModernUiInputRouter, so these intentionally do nothing.
+    public static boolean hasHitboxOverride(Component component) {
+        return false;
+    }
+
+    public static int adjustHitboxX(Component component, int x) {
+        return x;
+    }
+
+    public static int adjustHitboxY(Component component, int y) {
+        return y;
+    }
+
+    public static int hitboxWidth(Component component, int fallback) {
+        return fallback;
+    }
+
+    public static int hitboxHeight(Component component, int fallback) {
+        return fallback;
+    }
+
+    public static int panelLeft(int fallback) {
+        return fallback;
+    }
+
+    public static int panelTop(int fallback) {
+        return fallback;
+    }
+
+    public static int panelRight(int fallback) {
+        return fallback;
+    }
+
+    public static int panelBottom(int fallback) {
+        return fallback;
     }
 
     private enum TextKind {
@@ -989,64 +776,61 @@ public final class ModernAudioOptionsUi {
         abstract boolean matches(String text);
     }
 
-    private static final class Layout {
-        private final Rect panel;
+    private static final class Backend {
         private final TextEntry title;
-        private final TextEntry musicLabel;
-        private final TextEntry effectsLabel;
-        private final TextEntry areaLabel;
-        private final TextEntry monoLabel;
-        private final TextEntry stereoLabel;
+        private final TextEntry music;
+        private final TextEntry effects;
+        private final TextEntry area;
+        private final TextEntry mono;
+        private final TextEntry stereo;
         private final TextEntry mainMenu;
-        private final Rect musicSlider;
-        private final Rect effectsSlider;
-        private final Rect areaSlider;
-        private final Rect monoToggle;
-        private final Rect stereoToggle;
-        private final Rect mainMenuButton;
+        private final List<ImageEntry> images;
+        private final LegacyRect musicRow;
+        private final LegacyRect effectsRow;
+        private final LegacyRect areaRow;
+        private final ImageEntry monoHit;
+        private final ImageEntry stereoHit;
 
-        private Layout(
-            Rect panel,
+        private Backend(
             TextEntry title,
-            TextEntry musicLabel,
-            TextEntry effectsLabel,
-            TextEntry areaLabel,
-            TextEntry monoLabel,
-            TextEntry stereoLabel,
+            TextEntry music,
+            TextEntry effects,
+            TextEntry area,
+            TextEntry mono,
+            TextEntry stereo,
             TextEntry mainMenu,
-            Rect musicSlider,
-            Rect effectsSlider,
-            Rect areaSlider,
-            Rect monoToggle,
-            Rect stereoToggle,
-            Rect mainMenuButton
+            List<ImageEntry> images,
+            LegacyRect musicRow,
+            LegacyRect effectsRow,
+            LegacyRect areaRow,
+            ImageEntry monoHit,
+            ImageEntry stereoHit
         ) {
-            this.panel = panel;
             this.title = title;
-            this.musicLabel = musicLabel;
-            this.effectsLabel = effectsLabel;
-            this.areaLabel = areaLabel;
-            this.monoLabel = monoLabel;
-            this.stereoLabel = stereoLabel;
+            this.music = music;
+            this.effects = effects;
+            this.area = area;
+            this.mono = mono;
+            this.stereo = stereo;
             this.mainMenu = mainMenu;
-            this.musicSlider = musicSlider;
-            this.effectsSlider = effectsSlider;
-            this.areaSlider = areaSlider;
-            this.monoToggle = monoToggle;
-            this.stereoToggle = stereoToggle;
-            this.mainMenuButton = mainMenuButton;
+            this.images = images;
+            this.musicRow = musicRow;
+            this.effectsRow = effectsRow;
+            this.areaRow = areaRow;
+            this.monoHit = monoHit;
+            this.stereoHit = stereoHit;
         }
     }
 
     private static final class TextEntry {
         private final Component component;
         private final String text;
-        private final Rect rect;
+        private final LegacyRect rect;
 
         private TextEntry(
             Component component,
             String text,
-            Rect rect
+            LegacyRect rect
         ) {
             this.component = component;
             this.text = text;
@@ -1056,56 +840,24 @@ public final class ModernAudioOptionsUi {
 
     private static final class ImageEntry {
         private final Component component;
-        private final Rect rect;
+        private final LegacyRect rect;
 
         private ImageEntry(
             Component component,
-            Rect rect
+            LegacyRect rect
         ) {
             this.component = component;
             this.rect = rect;
         }
     }
 
-    private static final class HitboxSpec {
-        private final int xOffset;
-        private final int yOffset;
-        private final int width;
-        private final int height;
-
-        private HitboxSpec(
-            int xOffset,
-            int yOffset,
-            int width,
-            int height
-        ) {
-            this.xOffset = xOffset;
-            this.yOffset = yOffset;
-            this.width = width;
-            this.height = height;
-        }
-
-        private static HitboxSpec offset(int x, int y) {
-            return new HitboxSpec(x, y, -1, -1);
-        }
-
-        private static HitboxSpec absolute(Rect source, Rect target) {
-            return new HitboxSpec(
-                target.x - source.x,
-                target.y - source.y,
-                target.width,
-                target.height
-            );
-        }
-    }
-
-    private static final class Rect {
+    private static final class LegacyRect {
         private final int x;
         private final int y;
         private final int width;
         private final int height;
 
-        private Rect(
+        private LegacyRect(
             int x,
             int y,
             int width,
