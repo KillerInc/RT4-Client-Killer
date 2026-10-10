@@ -109,32 +109,9 @@ public final class ModernUiRenderer {
         }
 
         if (graphicsOptions) {
-            GraphicsOptionsAnchor anchor = findGraphicsOptionsAnchor(
-                loadedComponents,
-                -1,
-                parentX,
-                parentY
-            );
-            if (anchor != null) {
-                graphicsOptionsTitleCenterX = anchor.centerX;
-                graphicsOptionsTitleY = anchor.y;
-            }
+            // Modern Graphics Options owns its full visual layout. The RT4
+            // component tree remains loaded only as a state/event backend.
             graphicsOptionsDepth++;
-            graphicsOptionsBrightnessRendered = false;
-            graphicsOptionsDropdownRects.clear();
-            graphicsOptionsBrightnessRect = null;
-            collectGraphicsOptionsReplacementRegions(
-                loadedComponents,
-                -1,
-                parentX,
-                parentY
-            );
-            renderGraphicsOptionsBackdrop(
-                clipLeft,
-                clipTop,
-                clipRight,
-                clipBottom
-            );
         }
 
         renderComponents(
@@ -482,6 +459,13 @@ public final class ModernUiRenderer {
     }
 
     private static void renderComponentVisual(Component component, int x, int y) {
+        if (graphicsOptionsDepth > 0) {
+            // No legacy component visuals are allowed through in Modern
+            // Graphics Options. The complete surface is drawn once by
+            // ModernGraphicsOptionsUi after the component state pass.
+            return;
+        }
+
         switch (component.type) {
             case 2:
                 renderInventory(component, x, y);
@@ -2576,34 +2560,10 @@ public final class ModernUiRenderer {
         int parentX,
         int parentY
     ) {
-        // As with the main menu, the entire Modern Graphics Options surface is
-        // a foreground layer. Any login-scene fade/transition has already been
-        // drawn by the legacy component pass before we reach this point.
-        graphicsOptionsBrightnessRendered = false;
-        renderGraphicsOptionsBackdrop(
-            0,
-            0,
-            GameShell.canvasWidth,
-            GameShell.canvasHeight
-        );
-
-        if (graphicsOptionsBrightnessRect != null) {
-            drawModernBrightness(
-                graphicsOptionsBrightnessRect.x,
-                graphicsOptionsBrightnessRect.y,
-                graphicsOptionsBrightnessRect.width,
-                graphicsOptionsBrightnessRect.height
-            );
-            graphicsOptionsBrightnessRendered = true;
-        }
-
+        // Full Modern-owned rendering. Components supply values, popup state
+        // and CS2 behavior only; none of their legacy visuals are painted.
         setClip(0, 0, GameShell.canvasWidth, GameShell.canvasHeight);
-        renderGraphicsOptionsForegroundComponents(
-            components,
-            -1,
-            parentX,
-            parentY
-        );
+        ModernGraphicsOptionsUi.render(components);
     }
 
     private static void renderGraphicsOptionsForegroundComponents(
