@@ -1,10 +1,8 @@
 package rt4;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -16,7 +14,6 @@ import java.util.Set;
  */
 public final class ModernAudioOptionsUi {
     private static final Set<Integer> loggedInterfaces = new HashSet<>();
-    private static final Map<Integer, HitboxSpec> hitboxes = new HashMap<>();
     private static Rect lastPanelBounds;
     private static String lastHitboxSignature = "";
 
@@ -619,75 +616,125 @@ public final class ModernAudioOptionsUi {
         ImageEntry monoHit,
         ImageEntry stereoHit
     ) {
-        hitboxes.clear();
         lastPanelBounds = layout.panel;
 
-        registerSliderHitboxes(images, musicRow, -4);
-        registerSliderHitboxes(images, effectsRow, 2);
-        registerSliderHitboxes(images, areaRow, 8);
+        int clipLeft = Math.max(0, layout.panel.x);
+        int clipTop = Math.max(0, layout.panel.y);
+        int clipRight = Math.min(
+            GameShell.canvasWidth,
+            layout.panel.x + layout.panel.width
+        );
+        int clipBottom = Math.min(
+            GameShell.canvasHeight,
+            layout.panel.y + layout.panel.height
+        );
 
+        registerSliderHitboxes(
+            images,
+            musicRow,
+            -4,
+            clipLeft,
+            clipTop,
+            clipRight,
+            clipBottom
+        );
+        registerSliderHitboxes(
+            images,
+            effectsRow,
+            2,
+            clipLeft,
+            clipTop,
+            clipRight,
+            clipBottom
+        );
+        registerSliderHitboxes(
+            images,
+            areaRow,
+            8,
+            clipLeft,
+            clipTop,
+            clipRight,
+            clipBottom
+        );
+
+        Rect monoTarget = null;
         if (monoHit != null) {
-            Rect target = new Rect(
+            monoTarget = new Rect(
                 layout.monoToggle.x,
                 layout.monoToggle.y + 24,
                 layout.monoToggle.width,
                 layout.monoToggle.height
             );
-            hitboxes.put(
-                monoHit.component.id,
-                HitboxSpec.absolute(monoHit.rect, target)
+            ModernUiHitboxRegistry.registerAbsolute(
+                monoHit.component,
+                monoHit.rect.x,
+                monoHit.rect.y,
+                monoTarget.x,
+                monoTarget.y,
+                monoTarget.width,
+                monoTarget.height,
+                clipLeft,
+                clipTop,
+                clipRight,
+                clipBottom
             );
         }
 
+        Rect stereoTarget = null;
         if (stereoHit != null) {
-            Rect target = new Rect(
+            stereoTarget = new Rect(
                 layout.stereoToggle.x,
                 layout.stereoToggle.y + 24,
                 layout.stereoToggle.width,
                 layout.stereoToggle.height
             );
-            hitboxes.put(
-                stereoHit.component.id,
-                HitboxSpec.absolute(stereoHit.rect, target)
+            ModernUiHitboxRegistry.registerAbsolute(
+                stereoHit.component,
+                stereoHit.rect.x,
+                stereoHit.rect.y,
+                stereoTarget.x,
+                stereoTarget.y,
+                stereoTarget.width,
+                stereoTarget.height,
+                clipLeft,
+                clipTop,
+                clipRight,
+                clipBottom
             );
         }
 
-        // The legacy Main Menu text owns the original click script. Give that
-        // component the entire visible Modern button so its interaction region
-        // follows the rendered control instead of remaining up by Mono/Stereo.
         Rect mainTarget = new Rect(
             layout.mainMenuButton.x,
             layout.mainMenuButton.y + 36,
             layout.mainMenuButton.width,
             layout.mainMenuButton.height
         );
-        hitboxes.put(
-            layout.mainMenu.component.id,
-            HitboxSpec.absolute(layout.mainMenu.rect, mainTarget)
+        ModernUiHitboxRegistry.registerAbsolute(
+            layout.mainMenu.component,
+            layout.mainMenu.rect.x,
+            layout.mainMenu.rect.y,
+            mainTarget.x,
+            mainTarget.y,
+            mainTarget.width,
+            mainTarget.height,
+            clipLeft,
+            clipTop,
+            clipRight,
+            clipBottom
         );
 
         String signature =
-            hitboxes.size()
-                + "|" + rectString(lastPanelBounds)
-                + "|" + rectString(
-                    monoHit == null ? null : monoHit.rect
-                )
-                + "|" + rectString(
-                    stereoHit == null ? null : stereoHit.rect
-                )
+            rectString(lastPanelBounds)
+                + "|" + rectString(monoTarget)
+                + "|" + rectString(stereoTarget)
                 + "|" + rectString(mainTarget);
         if (!signature.equals(lastHitboxSignature)) {
             lastHitboxSignature = signature;
             DisplayDebug.log(
-                "MODERN_UI audio hitboxes refreshed"
-                    + " count=" + hitboxes.size()
+                "MODERN_UI audio canonical hitboxes"
                     + " panel=" + rectString(lastPanelBounds)
-                    + " mono=" + rectString(
-                        monoHit == null ? null : monoHit.rect
-                    )
-                    + " stereo=" + rectString(
-                        stereoHit == null ? null : stereoHit.rect
-                    )
+                    + " mono=" + rectString(monoTarget)
+                    + " stereo=" + rectString(stereoTarget)
                     + " mainMenu=" + rectString(mainTarget)
             );
         }
@@ -696,7 +743,11 @@ public final class ModernAudioOptionsUi {
     private static void registerSliderHitboxes(
         List<ImageEntry> images,
         Rect row,
-        int yOffset
+        int yOffset,
+        int clipLeft,
+        int clipTop,
+        int clipRight,
+        int clipBottom
     ) {
         if (row == null) {
             return;
@@ -706,17 +757,20 @@ public final class ModernAudioOptionsUi {
             if (!intersects(image.rect, row)) {
                 continue;
             }
-
-            // Only the compact cache-sprite pieces that make up a legacy
-            // volume slider belong to this row. Large backgrounds must never
-            // inherit the slider offset.
             if (image.rect.width > 60 || image.rect.height > 50) {
                 continue;
             }
 
-            hitboxes.put(
-                image.component.id,
-                HitboxSpec.offset(0, yOffset)
+            ModernUiHitboxRegistry.registerOffset(
+                image.component,
+                0,
+                yOffset,
+                image.rect.width,
+                image.rect.height,
+                clipLeft,
+                clipTop,
+                clipRight,
+                clipBottom
             );
         }
     }
@@ -728,80 +782,6 @@ public final class ModernAudioOptionsUi {
             && a.x + a.width > b.x
             && a.y < b.y + b.height
             && a.y + a.height > b.y;
-    }
-
-    public static synchronized boolean hasHitboxOverride(
-        Component component
-    ) {
-        return component != null
-            && ModernUiManager.isEnabled()
-            && hitboxes.containsKey(component.id);
-    }
-
-    public static synchronized int adjustHitboxX(
-        Component component,
-        int x
-    ) {
-        HitboxSpec spec = hitboxes.get(component.id);
-        return spec == null ? x : x + spec.xOffset;
-    }
-
-    public static synchronized int adjustHitboxY(
-        Component component,
-        int y
-    ) {
-        HitboxSpec spec = hitboxes.get(component.id);
-        return spec == null ? y : y + spec.yOffset;
-    }
-
-    public static synchronized int hitboxWidth(
-        Component component,
-        int fallback
-    ) {
-        HitboxSpec spec = hitboxes.get(component.id);
-        return spec == null || spec.width <= 0
-            ? fallback
-            : spec.width;
-    }
-
-    public static synchronized int hitboxHeight(
-        Component component,
-        int fallback
-    ) {
-        HitboxSpec spec = hitboxes.get(component.id);
-        return spec == null || spec.height <= 0
-            ? fallback
-            : spec.height;
-    }
-
-    public static synchronized int panelLeft(int fallback) {
-        return lastPanelBounds == null
-            ? fallback
-            : Math.max(0, lastPanelBounds.x);
-    }
-
-    public static synchronized int panelTop(int fallback) {
-        return lastPanelBounds == null
-            ? fallback
-            : Math.max(0, lastPanelBounds.y);
-    }
-
-    public static synchronized int panelRight(int fallback) {
-        return lastPanelBounds == null
-            ? fallback
-            : Math.min(
-                GameShell.canvasWidth,
-                lastPanelBounds.x + lastPanelBounds.width
-            );
-    }
-
-    public static synchronized int panelBottom(int fallback) {
-        return lastPanelBounds == null
-            ? fallback
-            : Math.min(
-                GameShell.canvasHeight,
-                lastPanelBounds.y + lastPanelBounds.height
-            );
     }
 
     private static Rect union(List<Rect> rects) {
@@ -1064,38 +1044,6 @@ public final class ModernAudioOptionsUi {
         ) {
             this.component = component;
             this.rect = rect;
-        }
-    }
-
-    private static final class HitboxSpec {
-        private final int xOffset;
-        private final int yOffset;
-        private final int width;
-        private final int height;
-
-        private HitboxSpec(
-            int xOffset,
-            int yOffset,
-            int width,
-            int height
-        ) {
-            this.xOffset = xOffset;
-            this.yOffset = yOffset;
-            this.width = width;
-            this.height = height;
-        }
-
-        private static HitboxSpec offset(int x, int y) {
-            return new HitboxSpec(x, y, -1, -1);
-        }
-
-        private static HitboxSpec absolute(Rect source, Rect target) {
-            return new HitboxSpec(
-                target.x - source.x,
-                target.y - source.y,
-                target.width,
-                target.height
-            );
         }
     }
 
