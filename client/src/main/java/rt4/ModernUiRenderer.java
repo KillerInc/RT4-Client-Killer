@@ -642,9 +642,9 @@ public final class ModernUiRenderer {
                     buttonWidth,
                     buttonHeight,
                     ModernUiMetrics.TEXT_PRIMARY,
-                    0,
                     1,
-                    ModernUiMetrics.FONT_DROPDOWN,
+                    1,
+                    ModernUiMetrics.FONT_BUTTON,
                     false
                 );
                 return;
@@ -704,9 +704,9 @@ public final class ModernUiRenderer {
                     ),
                     controlHeight,
                     ModernUiMetrics.TEXT_PRIMARY,
-                    component.halign,
+                    0,
                     1,
-                    ModernUiMetrics.FONT_CONTROL,
+                    ModernUiMetrics.FONT_DROPDOWN,
                     false
                 );
                 return;
@@ -2705,11 +2705,13 @@ public final class ModernUiRenderer {
         if (divider != null) {
             divider.render(
                 x + ModernUiMetrics.GRAPHICS_PANEL_INSET,
-                graphicsOptionsTitleY + 114
+                graphicsOptionsTitleY
+                    + ModernUiMetrics.GRAPHICS_TOP_DIVIDER_Y_OFFSET
             );
             divider.render(
                 x + ModernUiMetrics.GRAPHICS_PANEL_INSET,
-                graphicsOptionsTitleY + 324
+                graphicsOptionsTitleY
+                    + ModernUiMetrics.GRAPHICS_BOTTOM_DIVIDER_Y_OFFSET
             );
         } else {
             drawMissing(
