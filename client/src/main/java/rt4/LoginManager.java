@@ -536,6 +536,7 @@ public class LoginManager {
 				Protocol.socket.read(0, Protocol.length, Protocol.inboundBuffer.data);
 				reply = 2;
 				step = 0;
+				ModernLoginScreenUi.onSuccessfulLogin();
 				client.resetGameSessionState();
 				SceneGraph.centralZoneX = -1;
 				Protocol.readRebuildPacket(false);
@@ -690,6 +691,7 @@ public class LoginManager {
 		Camera.resetCameraEffects();
 		Protocol.verifyId = 0;
 		VarpDomain.reset();
+		ModernLoginScreenUi.resetForLoginScreen();
 		InterfaceList.resetToLoginScreen(true);
 		PluginRepository.OnLogout();
 	}
