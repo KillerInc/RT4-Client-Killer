@@ -22,6 +22,7 @@ public final class ModernUiRenderer {
     private static boolean graphicsOptionsBrightnessRendered;
     private static final List<UiRect> graphicsOptionsDropdownRects = new ArrayList<>();
     private static UiRect graphicsOptionsBrightnessRect;
+    private static UiRect graphicsOptionsMainMenuRect;
 
     private static int mainMenuDepth;
     private static MainMenuLayout mainMenuLayout;
@@ -97,6 +98,7 @@ public final class ModernUiRenderer {
         boolean oldBrightnessRendered = graphicsOptionsBrightnessRendered;
         List<UiRect> oldDropdownRects = new ArrayList<>(graphicsOptionsDropdownRects);
         UiRect oldBrightnessRect = graphicsOptionsBrightnessRect;
+        UiRect oldMainMenuRect = graphicsOptionsMainMenuRect;
         MainMenuLayout oldMainMenuLayout = mainMenuLayout;
 
         if (suppressStartupDiagnostics) {
@@ -123,6 +125,7 @@ public final class ModernUiRenderer {
             graphicsOptionsBrightnessRendered = false;
             graphicsOptionsDropdownRects.clear();
             graphicsOptionsBrightnessRect = null;
+            graphicsOptionsMainMenuRect = null;
             collectGraphicsOptionsReplacementRegions(
                 loadedComponents,
                 -1,
@@ -172,6 +175,7 @@ public final class ModernUiRenderer {
             graphicsOptionsDropdownRects.clear();
             graphicsOptionsDropdownRects.addAll(oldDropdownRects);
             graphicsOptionsBrightnessRect = oldBrightnessRect;
+            graphicsOptionsMainMenuRect = oldMainMenuRect;
         }
 
         if (mainMenu) {
@@ -651,21 +655,27 @@ public final class ModernUiRenderer {
             }
 
             if (normalizeGraphicsOptionsText(text).equals("main menu")) {
-                int buttonX = ModernUiMetrics.centeredX(
-                    graphicsOptionsTitleCenterX,
-                    ModernUiMetrics.NAV_BUTTON_WIDTH
-                );
-                int buttonY =
-                    graphicsOptionsTitleY
-                        + ModernUiMetrics.NAV_BUTTON_Y_OFFSET;
+                UiRect buttonRect = graphicsOptionsMainMenuRect;
+                if (buttonRect == null) {
+                    buttonRect = new UiRect(
+                        ModernUiMetrics.centeredX(
+                            graphicsOptionsTitleCenterX,
+                            ModernUiMetrics.NAV_BUTTON_WIDTH
+                        ),
+                        graphicsOptionsTitleY
+                            + ModernUiMetrics.NAV_BUTTON_Y_OFFSET,
+                        ModernUiMetrics.NAV_BUTTON_WIDTH,
+                        ModernUiMetrics.NAV_BUTTON_HEIGHT
+                    );
+                }
 
                 ModernTrueTypeFont.drawInBox(
                     ModernUiFontRegistry.PLAIN_12,
                     text,
-                    buttonX,
-                    buttonY,
-                    ModernUiMetrics.NAV_BUTTON_WIDTH,
-                    ModernUiMetrics.NAV_BUTTON_HEIGHT,
+                    buttonRect.x,
+                    buttonRect.y,
+                    buttonRect.width,
+                    buttonRect.height,
                     ModernUiMetrics.TEXT_PRIMARY,
                     1,
                     1,
@@ -2413,6 +2423,19 @@ public final class ModernUiRenderer {
                         Math.max(140, component.width + 36),
                         ModernUiMetrics.SLIDER_HEIGHT
                     );
+                } else if (normalizeGraphicsOptionsText(text).equals("main menu")) {
+                    graphicsOptionsMainMenuRect = new UiRect(
+                        ModernUiMetrics.centeredX(
+                            x + component.width / 2,
+                            ModernUiMetrics.NAV_BUTTON_WIDTH
+                        ),
+                        ModernUiMetrics.centeredY(
+                            y + component.height / 2,
+                            ModernUiMetrics.NAV_BUTTON_HEIGHT
+                        ),
+                        ModernUiMetrics.NAV_BUTTON_WIDTH,
+                        ModernUiMetrics.NAV_BUTTON_HEIGHT
+                    );
                 }
             }
 
@@ -2771,16 +2794,26 @@ public final class ModernUiRenderer {
             );
         }
 
-        // Main Menu is text-driven in the cache, so give it Modern UI chrome
-        // without changing its click/script behavior.
+        // Main Menu is text-driven in the cache. Center Modern chrome on
+        // the actual cache text/click target so visual and input geometry stay
+        // together.
+        UiRect navRect = graphicsOptionsMainMenuRect;
+        if (navRect == null) {
+            navRect = new UiRect(
+                ModernUiMetrics.centeredX(
+                    graphicsOptionsTitleCenterX,
+                    ModernUiMetrics.NAV_BUTTON_WIDTH
+                ),
+                graphicsOptionsTitleY + ModernUiMetrics.NAV_BUTTON_Y_OFFSET,
+                ModernUiMetrics.NAV_BUTTON_WIDTH,
+                ModernUiMetrics.NAV_BUTTON_HEIGHT
+            );
+        }
         drawModernControlBox(
-            ModernUiMetrics.centeredX(
-                graphicsOptionsTitleCenterX,
-                ModernUiMetrics.NAV_BUTTON_WIDTH
-            ),
-            graphicsOptionsTitleY + ModernUiMetrics.NAV_BUTTON_Y_OFFSET,
-            ModernUiMetrics.NAV_BUTTON_WIDTH,
-            ModernUiMetrics.NAV_BUTTON_HEIGHT,
+            navRect.x,
+            navRect.y,
+            navRect.width,
+            navRect.height,
             false,
             false
         );
