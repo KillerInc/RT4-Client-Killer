@@ -127,7 +127,7 @@ public final class ModernAudioOptionsUi {
 
         Rect mainMenuVisual = new Rect(
             layout.mainMenuButton.x,
-            layout.mainMenuButton.y + 24,
+            layout.mainMenuButton.y + 36,
             layout.mainMenuButton.width,
             layout.mainMenuButton.height
         );
