@@ -694,9 +694,14 @@ public final class ModernUiRenderer {
                 ModernTrueTypeFont.drawInBox(
                     fontAsset,
                     text,
-                    controlX + 4,
+                    controlX + ModernUiMetrics.CONTROL_TEXT_PAD_X,
                     controlY,
-                    Math.max(1, controlWidth - 22),
+                    Math.max(
+                        1,
+                        controlWidth
+                            - ModernUiMetrics.CONTROL_ARROW_RESERVED
+                            - ModernUiMetrics.CONTROL_TEXT_PAD_X
+                    ),
                     controlHeight,
                     ModernUiMetrics.TEXT_PRIMARY,
                     component.halign,
@@ -1023,9 +1028,9 @@ public final class ModernUiRenderer {
             return ModernUiMetrics.FONT_CONTROL;
         }
         if (normalized.equals("main menu")) {
-            return 13.0F;
+            return ModernUiMetrics.FONT_BUTTON;
         }
-        return 12.0F;
+        return ModernUiMetrics.FONT_LABEL;
     }
 
     private static void renderImage(Component component, int x, int y) {
@@ -1815,7 +1820,10 @@ public final class ModernUiRenderer {
         }
 
         UiRect rect = mainMenuLayout.musicSlider;
-        int trackHeight = Math.min(18, Math.max(12, rect.height - 6));
+        int trackHeight = Math.min(
+            ModernUiMetrics.SLIDER_HEIGHT,
+            Math.max(12, rect.height - 6)
+        );
         int trackY = rect.y + (rect.height - trackHeight) / 2;
 
         ModernUiImage track = ModernUiAssetResolver.get(
