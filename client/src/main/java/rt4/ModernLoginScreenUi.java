@@ -321,6 +321,13 @@ public final class ModernLoginScreenUi {
 
         TextEntry world = find(entries, Kind.WORLD);
         TextEntry message = find(entries, Kind.MESSAGE);
+        if (message == null) {
+            message = findStatusMessage(
+                entries,
+                world == null ? title : world,
+                username
+            );
+        }
 
         Component usernameAction =
             findFieldAction(
@@ -352,6 +359,53 @@ public final class ModernLoginScreenUi {
             loginAction,
             mainMenuAction
         );
+    }
+
+    private static TextEntry findStatusMessage(
+        List<Entry> entries,
+        TextEntry above,
+        TextEntry below
+    ) {
+        int minY = above.rect.bottom() - 2;
+        int maxY = below.rect.y;
+        TextEntry best = null;
+        int bestDistance = Integer.MAX_VALUE;
+        int targetY = (minY + maxY) / 2;
+
+        for (Entry entry : entries) {
+            if (entry.text.isEmpty()
+                || entry.component == above.component
+                || entry.component == below.component) {
+                continue;
+            }
+
+            String normalized = normalize(entry.text);
+            if (Kind.TITLE.matches(normalized)
+                || Kind.WORLD.matches(normalized)
+                || Kind.USERNAME.matches(normalized)
+                || Kind.PASSWORD.matches(normalized)
+                || Kind.LOGIN.matches(normalized)
+                || Kind.MAIN_MENU.matches(normalized)) {
+                continue;
+            }
+
+            int cy = entry.rect.centerY();
+            if (cy < minY || cy >= maxY) {
+                continue;
+            }
+
+            int distance = Math.abs(cy - targetY);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                best = new TextEntry(
+                    entry.component,
+                    entry.rect,
+                    display(entry.text)
+                );
+            }
+        }
+
+        return best;
     }
 
     private static Component findFieldAction(
