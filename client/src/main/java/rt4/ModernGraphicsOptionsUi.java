@@ -14,6 +14,7 @@ import java.util.Set;
  * visual is used by this class.
  */
 public final class ModernGraphicsOptionsUi {
+    private static boolean hitboxesLogged;
     private static final int RESOLUTION_VALUE_CHILD = 283;
     private static final int RESOLUTION_POPUP_BODY_CHILD = 285;
 
@@ -383,11 +384,13 @@ public final class ModernGraphicsOptionsUi {
             registered++;
         }
 
-        DisplayDebug.logOnce(
-            "graphics-hitboxes",
-            "MODERN_UI Graphics Options canonical hitboxes active"
-                + " controls=" + registered
-        );
+        if (!hitboxesLogged) {
+            hitboxesLogged = true;
+            DisplayDebug.log(
+                "MODERN_UI Graphics Options canonical hitboxes active"
+                    + " controls=" + registered
+            );
+        }
     }
 
     private static int registerPopupHitboxes(
