@@ -539,6 +539,19 @@ public final class ModernGraphicsOptionsUi {
             Math.max(1, height)
         );
 
+        // Paint every row with an opaque fixed-height surface. This prevents
+        // the underlying Graphics Options controls/labels from showing
+        // through long dropdowns while keeping the outer popup frame intact.
+        for (Rect row : rows) {
+            drawAsset(
+                "controls/popup-row",
+                x + 1,
+                row.y,
+                Math.max(1, width - 2),
+                Math.max(1, row.height)
+            );
+        }
+
         for (int i = 1; i < rows.size(); i++) {
             Rect row = rows.get(i);
             drawAsset(
