@@ -78,7 +78,9 @@ public final class ModernVectorCacheManager {
     private static volatile int progressTotal;
     private static volatile int progressCompleted;
     private static volatile boolean progressActive;
+    private static volatile boolean progressPlanned;
     private static volatile long progressCompletedAt;
+    private static volatile String lastCompleteBuildSignature = "";
 
     private ModernVectorCacheManager() {
     }
@@ -121,7 +123,8 @@ public final class ModernVectorCacheManager {
     }
 
     /**
-     * Called when the actual RT4 3D viewport changes, not merely the AWT frame.
+     * Called when the scalable UI canvas changes. This is intentionally
+     * independent of whether Standard or Modern UI is currently selected.
      */
     public static void onViewportChanged(int width, int height) {
         if (width < 1 || height < 1) {
@@ -157,14 +160,6 @@ public final class ModernVectorCacheManager {
 
         if (initial) {
             scheduleViewportEvaluation(key, width, height, true, serial, 0L);
-            return;
-        }
-
-        if (!ModernUiPreferences.isEnabled()) {
-            DisplayDebug.log(
-                "VECTOR_CACHE viewport change deferred because Modern UI is disabled"
-                    + " viewport=" + key
-            );
             return;
         }
 
@@ -208,6 +203,37 @@ public final class ModernVectorCacheManager {
         int height,
         byte[] svgBytes
     ) {
+        return getOrQueueInternal(
+            logicalPath,
+            width,
+            height,
+            svgBytes,
+            false
+        );
+    }
+
+    static void queuePrebuildAsset(
+        String logicalPath,
+        int width,
+        int height,
+        byte[] svgBytes
+    ) {
+        getOrQueueInternal(
+            logicalPath,
+            width,
+            height,
+            svgBytes,
+            true
+        );
+    }
+
+    private static BufferedImage getOrQueueInternal(
+        String logicalPath,
+        int width,
+        int height,
+        byte[] svgBytes,
+        boolean plannedRequest
+    ) {
         if (logicalPath == null
             || logicalPath.isEmpty()
             || width < 1
@@ -226,8 +252,14 @@ public final class ModernVectorCacheManager {
             (viewport.isEmpty() ? "<transient>" : viewport)
                 + "|" + spec + "|" + assetHash;
 
-        BufferedImage ready = readyImages.remove(requestKey);
+        BufferedImage ready = plannedRequest
+            ? readyImages.get(requestKey)
+            : readyImages.remove(requestKey);
         if (ready != null) {
+            if (plannedRequest) {
+                registerProgressRequest(viewport, requestKey, false);
+                completeProgressRequest(viewport, requestKey);
+            }
             return ready;
         }
 
@@ -236,16 +268,20 @@ public final class ModernVectorCacheManager {
             return null;
         }
 
-        if (!inFlight.add(requestKey)) {
-            return null;
-        }
-
         boolean persistentRequest =
             !viewport.isEmpty()
                 && viewport.equals(persistentViewport)
                 && viewport.equals(currentViewport);
         if (persistentRequest) {
-            registerProgressRequest(viewport, requestKey);
+            registerProgressRequest(
+                viewport,
+                requestKey,
+                !plannedRequest
+            );
+        }
+
+        if (!inFlight.add(requestKey)) {
+            return null;
         }
 
         final byte[] svgCopy = svgBytes.clone();
@@ -386,23 +422,58 @@ public final class ModernVectorCacheManager {
             progressTotal = 0;
             progressCompleted = 0;
             progressActive = false;
+            progressPlanned = false;
             progressCompletedAt = 0L;
         }
     }
 
     private static void registerProgressRequest(
         String viewport,
-        String requestKey
+        String requestKey,
+        boolean allowTotalGrowth
     ) {
         synchronized (STATE_LOCK) {
             if (!viewport.equals(progressViewport)) {
                 resetProgressTracking(viewport);
             }
             if (progressRequests.add(requestKey)) {
-                progressTotal++;
+                if (allowTotalGrowth && !progressPlanned) {
+                    progressTotal++;
+                }
                 if (progressCompleted < progressTotal) {
                     progressCompletedAt = 0L;
                 }
+            }
+        }
+    }
+
+    static void beginPlannedBuild(
+        String viewport,
+        int total,
+        String reason
+    ) {
+        synchronized (STATE_LOCK) {
+            progressViewport = viewport == null ? "" : viewport;
+            progressRequests.clear();
+            progressTotal = Math.max(0, total);
+            progressCompleted = 0;
+            progressActive = total > 0;
+            progressPlanned = total > 0;
+            progressCompletedAt = 0L;
+        }
+
+        DisplayDebug.log(
+            "VECTOR_CACHE build-progress start viewport=" + viewport
+                + " completed=0 total=" + Math.max(0, total)
+                + " reason=" + reason
+        );
+    }
+
+    static void finishPlannedBuildOnFailure() {
+        synchronized (STATE_LOCK) {
+            progressPlanned = false;
+            if (progressTotal <= 0) {
+                progressActive = false;
             }
         }
     }
@@ -416,6 +487,7 @@ public final class ModernVectorCacheManager {
                 return;
             }
             progressActive = true;
+            progressPlanned = false;
             progressCompletedAt = 0L;
             DisplayDebug.log(
                 "VECTOR_CACHE build-progress start viewport=" + viewport
@@ -439,6 +511,7 @@ public final class ModernVectorCacheManager {
             progressCompleted++;
             if (progressCompleted >= progressTotal) {
                 progressCompletedAt = System.currentTimeMillis();
+                progressPlanned = false;
                 if (progressActive) {
                     DisplayDebug.log(
                         "VECTOR_CACHE build-progress complete viewport="
@@ -607,8 +680,7 @@ public final class ModernVectorCacheManager {
         int height = currentViewportHeight;
         if (key.isEmpty()
             || width < 1
-            || height < 1
-            || !ModernUiPreferences.isEnabled()) {
+            || height < 1) {
             return;
         }
 
@@ -677,6 +749,78 @@ public final class ModernVectorCacheManager {
                 + " reason=" + reason
                 + " thread=" + Thread.currentThread().getName()
         );
+
+        prebuildCompleteUiIfNeeded(key, width, height, reason);
+    }
+
+    private static void prebuildCompleteUiIfNeeded(
+        String key,
+        int width,
+        int height,
+        String reason
+    ) {
+        if (DisplayMode.getWindowMode() < 2
+            || !key.equals(currentViewport)
+            || !key.equals(persistentViewport)) {
+            return;
+        }
+
+        String signature = completeBuildSignature(key);
+        if (signature.equals(lastCompleteBuildSignature)) {
+            DisplayDebug.log(
+                "VECTOR_CACHE complete-plan reuse viewport=" + key
+                    + " reason=" + reason
+            );
+            return;
+        }
+        lastCompleteBuildSignature = signature;
+
+        // We are already on ModernVectorCache here. Asset discovery and
+        // prebuild queueing therefore remain off the game/render thread.
+        ModernUiAssetResolver.prebuildCompleteVectorCache(width, height);
+    }
+
+    private static String completeBuildSignature(String viewport) {
+        java.util.TreeSet<String> addons = new java.util.TreeSet<>(
+            ModernUiPreferences.getEnabledAddons()
+        );
+        return viewport
+            + "|style=" + ModernUiPreferences.getStyleId()
+            + "|addons=" + addons
+            + "|uiScale=" + ModernUiPreferences.getUiScale()
+            + "|textScale=" + ModernUiPreferences.getTextScale()
+            + "|iconScale=" + ModernUiPreferences.getIconScale();
+    }
+
+    public static void invalidateCompleteBuild(String reason) {
+        lastCompleteBuildSignature = "";
+        DisplayDebug.log(
+            "VECTOR_CACHE complete-plan invalidated reason=" + reason
+        );
+
+        final String key = currentViewport;
+        final int width = currentViewportWidth;
+        final int height = currentViewportHeight;
+        if (DisplayMode.getWindowMode() < 2
+            || key.isEmpty()
+            || !key.equals(persistentViewport)) {
+            return;
+        }
+
+        WORKER.execute(new Runnable() {
+            @Override
+            public void run() {
+                if (key.equals(currentViewport)
+                    && key.equals(persistentViewport)) {
+                    prebuildCompleteUiIfNeeded(
+                        key,
+                        width,
+                        height,
+                        "asset-configuration-change"
+                    );
+                }
+            }
+        });
     }
 
     private static CacheState inspectViewportCache(
