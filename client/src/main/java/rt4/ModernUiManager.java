@@ -27,6 +27,7 @@ public final class ModernUiManager {
         }
         initialized = true;
         ModernUiPreferences.load();
+        ModernVectorCacheManager.startup();
         ModernUiDevelopmentMirror.sync();
         UiStyleRepository.refresh();
         DisplayDebug.log(
@@ -69,6 +70,7 @@ public final class ModernUiManager {
         ModernUiPreferences.setEnabled(enabled);
         if (enabled) {
             UiStyleRepository.refresh();
+            ModernVectorCacheManager.onModernUiEnabled();
         } else {
             ModernUiStyleEditorOverlay.close();
         }
@@ -192,6 +194,7 @@ public final class ModernUiManager {
         }
         initialized = true;
         ModernUiPreferences.load();
+        ModernVectorCacheManager.startup();
         UiStyleRepository.refresh();
     }
 }
