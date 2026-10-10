@@ -279,40 +279,10 @@ public final class ModernUiSettingsOverlay {
 
         ModernUiManager.initialize();
 
-        // Modern Graphics Options now owns this selector visually as part of
-        // the same independent grid as every other control. This class keeps
-        // only its input/state behavior. Standard mode continues to use the
-        // native cache/runtime selector visuals.
-        if (ModernUiManager.isEnabled()) {
-            return;
-        }
-
-        int selectorW = selectorWidth();
-        int selectorH = selectorHeight();
-
-        drawModernClosedSelector(
-            selectorX,
-            selectorY,
-            selectorW,
-            selectorH
-        );
-
-        if (!dropdownOpen) {
-            return;
-        }
-
-        int popupX = selectorX;
-        int popupY = selectorBottom;
-        int popupW = selectorW;
-        int rowH = Math.max(
-            ModernUiMetrics.CONTROL_HEIGHT,
-            selectorH
-        );
-        int popupH = rowH * 2;
-
-        drawModernPopup(popupX, popupY, popupW, popupH);
-        drawModernChoice("Off", popupX, popupY, popupW, rowH, false);
-        drawModernChoice("On", popupX, popupY + rowH, popupW, rowH, true);
+        // Visual ownership is split cleanly:
+        // - Standard mode: native RT4 cache/runtime rendering.
+        // - Modern mode: ModernGraphicsOptionsUi.
+        // This class is input/state only.
     }
 
     private static void includeSelectorBounds(int x, int y, int width, int height) {
