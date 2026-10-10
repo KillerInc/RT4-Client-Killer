@@ -314,7 +314,7 @@ public final class DisplayMode {
 			+ ", canvas=" + GameShell.canvasWidth + "x" + GameShell.canvasHeight
 			+ ", fullscreenFrame=" + (GameShell.fullScreenFrame != null));
 		if (actualMode >= 2) {
-			ModernVectorCacheManager.onViewportChanged(
+			ModernUiManager.onScalableCanvasChanged(
 				GameShell.canvasWidth,
 				GameShell.canvasHeight
 			);
