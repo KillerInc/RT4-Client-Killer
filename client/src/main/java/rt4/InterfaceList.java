@@ -652,6 +652,10 @@ public class InterfaceList {
 				@Pc(50) int absX = component.x + parentX;
 				@Pc(55) int absY = component.y + parentY;
 				if (ModernUiRenderer.usesMainMenuContentBounds(component)) {
+					absX = ModernUiRenderer.adjustMainMenuComponentX(
+						component,
+						absX
+					);
 					absY = ModernUiRenderer.adjustMainMenuComponentY(
 						component,
 						absY
