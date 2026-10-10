@@ -10,9 +10,11 @@ import java.util.Set;
 /**
  * Independent Modern UI renderer.
  *
- * Existing Component objects are currently used only as UI state/layout input
- * while the migration is in progress. Visuals do not call Component.getSprite
- * or Component.getFont. Missing visual implementations use high-visibility pink diagnostics.
+ * Legacy Component objects are retained only as state/action backends for
+ * rebuilt screens. Modern layout, rendering and input geometry are owned by
+ * the Modern UI classes. Visuals do not call Component.getSprite or
+ * Component.getFont. Missing visual implementations use high-visibility pink
+ * diagnostics.
  */
 public final class ModernUiRenderer {
     private static final Set<String> loggedMissing = new HashSet<>();
@@ -217,10 +219,6 @@ public final class ModernUiRenderer {
 
             int x = parentX + component.x;
             int y = parentY + component.y;
-            if (mainMenuDepth > 0) {
-                x = adjustMainMenuComponentX(component, x);
-                y = adjustMainMenuComponentY(component, y);
-            }
             int rectangle = parentRectangle;
             if (rectangle == -1 && InterfaceList.rectangles < InterfaceList.rectangleX.length) {
                 rectangle = InterfaceList.rectangles++;
@@ -514,6 +512,13 @@ public final class ModernUiRenderer {
             // No legacy component visuals are allowed through in Modern
             // Graphics or Audio Options. Their complete surfaces are drawn
             // after the component state/input pass.
+            return;
+        }
+
+        if (mainMenuDepth > 0
+            && isManagedMainMenuComponent(component)) {
+            // Main Menu is also a permanent Modern-owned surface. The cache
+            // component is retained only as an action/state backend.
             return;
         }
 
@@ -1541,6 +1546,30 @@ public final class ModernUiRenderer {
             || normalized.contains("new user")
             || normalized.contains("click to switch")
             || normalized.startsWith("world ");
+    }
+
+    private static boolean isManagedMainMenuComponent(
+        Component component
+    ) {
+        if (component == null || mainMenuLayout == null) {
+            return false;
+        }
+
+        if ((component.type == 4 || component.type == 8)
+            && component.text != null) {
+            String normalized = normalizeGraphicsOptionsText(
+                component.text.toString()
+            );
+            return isManagedMainMenuText(normalized)
+                || normalized.equals("music volume");
+        }
+
+        int id = component.id;
+        return id == mainMenuLayout.bodyComponentId
+            || id == mainMenuLayout.logoComponentId
+            || mainMenuLayout.frameComponentIds.contains(id)
+            || mainMenuLayout.choiceComponentIds.contains(id)
+            || mainMenuLayout.musicSliderComponentIds.contains(id);
     }
 
     private static void renderMainMenuBackdrop(
