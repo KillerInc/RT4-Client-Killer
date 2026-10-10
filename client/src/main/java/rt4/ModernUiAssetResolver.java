@@ -241,21 +241,61 @@ public final class ModernUiAssetResolver {
         int canvasHeight
     ) {
         // Graphics Options - current exact renderer sizes.
-        addWarmupSpec(plan, "graphics-options/panel", 690, 385);
-        addWarmupSpec(plan, "graphics-options/divider", 654, 4);
+        addWarmupSpec(
+            plan,
+            "graphics-options/panel",
+            ModernUiMetrics.GRAPHICS_PANEL_WIDTH,
+            ModernUiMetrics.GRAPHICS_PANEL_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
+            "graphics-options/divider",
+            ModernUiMetrics.GRAPHICS_PANEL_WIDTH
+                - ModernUiMetrics.GRAPHICS_PANEL_INSET * 2,
+            4
+        );
 
-        addWarmupSpec(plan, "controls/button", 84, 40);
-        addWarmupSpec(plan, "controls/button", 156, 28);
-        addWarmupSpec(plan, "controls/button", 116, 20);
-        addWarmupSpec(plan, "controls/button-active", 84, 40);
-        addWarmupSpec(plan, "controls/button-active", 116, 20);
+        addWarmupSpec(
+            plan,
+            "controls/button",
+            ModernUiMetrics.DISPLAY_BUTTON_WIDTH,
+            ModernUiMetrics.DISPLAY_BUTTON_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
+            "controls/button",
+            ModernUiMetrics.NAV_BUTTON_WIDTH,
+            ModernUiMetrics.NAV_BUTTON_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
+            "controls/button",
+            ModernUiMetrics.CONTROL_WIDTH,
+            ModernUiMetrics.CONTROL_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
+            "controls/button-active",
+            ModernUiMetrics.DISPLAY_BUTTON_WIDTH,
+            ModernUiMetrics.DISPLAY_BUTTON_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
+            "controls/button-active",
+            ModernUiMetrics.CONTROL_WIDTH,
+            ModernUiMetrics.CONTROL_HEIGHT
+        );
         addWarmupSpec(plan, "controls/button-disabled", 116, 20);
 
-        addWarmupSpec(plan, "controls/dropdown", 92, 22);
-        addWarmupSpec(plan, "controls/dropdown", 110, 22);
-        addWarmupSpec(plan, "controls/dropdown", 128, 20);
-        addWarmupSpec(plan, "controls/dropdown", 92, 21);
-        addWarmupSpec(plan, "controls/dropdown", 116, 20);
+        addWarmupSpec(
+            plan,
+            "controls/dropdown",
+            ModernUiMetrics.CONTROL_WIDTH,
+            ModernUiMetrics.CONTROL_HEIGHT
+        );
+        // The injected Modern UI selector keeps its cache-defined width.
+        addWarmupSpec(plan, "controls/dropdown", 116, 22);
+        addWarmupSpec(plan, "controls/dropdown", 128, 22);
         addWarmupSpec(plan, "controls/dropdown-disabled", 116, 20);
 
         addWarmupSpec(plan, "controls/popup", 128, 40);
@@ -264,10 +304,30 @@ public final class ModernUiAssetResolver {
         addWarmupSpec(plan, "controls/choice-hover", 112, 18);
         addWarmupSpec(plan, "controls/choice-selected", 124, 18);
         addWarmupSpec(plan, "controls/choice-selected", 112, 18);
-        addWarmupSpec(plan, "controls/slider-track", 164, 24);
-        addWarmupSpec(plan, "controls/slider-track", 116, 20);
-        addWarmupSpec(plan, "controls/slider-knob", 13, 18);
-        addWarmupSpec(plan, "icons/dropdown", 9, 6);
+        addWarmupSpec(
+            plan,
+            "controls/slider-track",
+            164,
+            ModernUiMetrics.SLIDER_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
+            "controls/slider-track",
+            ModernUiMetrics.CONTROL_WIDTH,
+            ModernUiMetrics.SLIDER_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
+            "controls/slider-knob",
+            ModernUiMetrics.SLIDER_KNOB_WIDTH,
+            ModernUiMetrics.SLIDER_KNOB_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
+            "icons/dropdown",
+            ModernUiMetrics.DROPDOWN_ARROW_WIDTH,
+            ModernUiMetrics.DROPDOWN_ARROW_HEIGHT
+        );
         addWarmupSpec(plan, "icons/dropdown", 12, 8);
 
         // Main menu. Most cache components are fixed-size; the logo follows
@@ -287,9 +347,19 @@ public final class ModernUiAssetResolver {
 
         addWarmupSpec(plan, "main-menu/scroll", 552, 582);
         addWarmupSpec(plan, "main-menu/logo", logoWidth, logoHeight);
-        addWarmupSpec(plan, "main-menu/button", 180, 18);
+        addWarmupSpec(
+            plan,
+            "main-menu/button",
+            ModernUiMetrics.MAIN_MENU_BUTTON_WIDTH,
+            ModernUiMetrics.MAIN_MENU_BUTTON_HEIGHT
+        );
         addWarmupSpec(plan, "main-menu/button", 140, 24);
-        addWarmupSpec(plan, "main-menu/button-active", 180, 18);
+        addWarmupSpec(
+            plan,
+            "main-menu/button-active",
+            ModernUiMetrics.MAIN_MENU_BUTTON_WIDTH,
+            ModernUiMetrics.MAIN_MENU_BUTTON_HEIGHT
+        );
         addWarmupSpec(plan, "main-menu/button-active", 140, 24);
         addWarmupSpec(plan, "main-menu/choice", 95, 62);
         addWarmupSpec(plan, "main-menu/choice", 68, 38);
