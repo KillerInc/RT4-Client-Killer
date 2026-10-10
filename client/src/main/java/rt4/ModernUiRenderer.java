@@ -2409,9 +2409,9 @@ public final class ModernUiRenderer {
                 } else if (normalizeGraphicsOptionsText(text).equals("brightness")) {
                     graphicsOptionsBrightnessRect = new UiRect(
                         x - 18,
-                        y + 12,
-                        Math.max(90, component.width + 36),
-                        24
+                        y + 14,
+                        Math.max(140, component.width + 36),
+                        ModernUiMetrics.SLIDER_HEIGHT
                     );
                 }
             }
