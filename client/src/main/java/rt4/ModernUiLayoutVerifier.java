@@ -23,6 +23,7 @@ public final class ModernUiLayoutVerifier {
         for (int[] viewport : VIEWPORTS) {
             verifyAudio(viewport[0], viewport[1]);
             verifyGraphics(viewport[0], viewport[1]);
+            verifyLogin(viewport[0], viewport[1]);
             verifyMainMenu(viewport[0], viewport[1]);
         }
 
@@ -126,6 +127,39 @@ public final class ModernUiLayoutVerifier {
                 );
             }
         }
+    }
+
+    private static void verifyLogin(int width, int height) {
+        ModernLoginScreenLayout layout =
+            ModernLoginScreenLayout.create(width, height);
+
+        insideScreen(layout.panel, "login panel", width, height);
+        inside(layout.panel, layout.title, "login title", width, height);
+        inside(layout.panel, layout.world, "login world", width, height);
+        inside(layout.panel, layout.divider, "login divider", width, height);
+        inside(layout.panel, layout.message, "login message", width, height);
+        inside(layout.panel, layout.usernameLabel, "login username label", width, height);
+        inside(layout.panel, layout.usernameInput, "login username input", width, height);
+        inside(layout.panel, layout.passwordLabel, "login password label", width, height);
+        inside(layout.panel, layout.passwordInput, "login password input", width, height);
+        inside(layout.panel, layout.loginButton, "login button", width, height);
+        inside(layout.panel, layout.mainMenuButton, "login main menu", width, height);
+
+        separated(
+            layout.usernameInput,
+            layout.passwordLabel,
+            "login username/password"
+        );
+        separated(
+            layout.passwordInput,
+            layout.loginButton,
+            "login password/button"
+        );
+        separated(
+            layout.loginButton,
+            layout.mainMenuButton,
+            "login buttons"
+        );
     }
 
     private static void verifyMainMenu(int width, int height) {
