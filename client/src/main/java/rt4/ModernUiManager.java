@@ -27,15 +27,19 @@ public final class ModernUiManager {
         }
         initialized = true;
         ModernUiPreferences.load();
-        ModernVectorCacheManager.startup();
+        ModernUiDevelopmentMirror.sync();
+        UiStyleRepository.refresh();
+
+        // Build/validate the complete Modern UI cache in both Standard and
+        // Modern UI whenever a scalable HD mode is active. Fixed SD and
+        // fixed HD ("HD Small") intentionally do no vector-cache work.
         if (DisplayMode.getWindowMode() >= 2) {
+            ModernVectorCacheManager.startup();
             ModernVectorCacheManager.onViewportChanged(
                 GameShell.canvasWidth,
                 GameShell.canvasHeight
             );
         }
-        ModernUiDevelopmentMirror.sync();
-        UiStyleRepository.refresh();
         DisplayDebug.log(
             "MODERN_UI init savedEnabled=" + ModernUiPreferences.isEnabled()
                 + ", effectiveEnabled=" + isEnabled()
@@ -43,6 +47,21 @@ public final class ModernUiManager {
                 + ", savedStyle=" + ModernUiPreferences.getStyleId()
                 + ", effectiveStyle=" + getEffectiveStyle().id
         );
+    }
+
+    public static void onScalableCanvasChanged(
+        int width,
+        int height
+    ) {
+        if (DisplayMode.getWindowMode() < 2
+            || width < 1
+            || height < 1) {
+            return;
+        }
+
+        initialize();
+        ModernVectorCacheManager.startup();
+        ModernVectorCacheManager.onViewportChanged(width, height);
     }
 
     public static boolean isSupportedDisplayMode() {
@@ -91,6 +110,9 @@ public final class ModernUiManager {
     public static void refreshStyles() {
         initialize();
         UiStyleRepository.refresh();
+        ModernVectorCacheManager.invalidateCompleteBuild(
+            "styles-refreshed"
+        );
         requestReload("Reloading UI styles");
     }
 
@@ -103,6 +125,9 @@ public final class ModernUiManager {
         initialize();
         ModernUiPreferences.setStyleId(id);
         DisplayDebug.log("MODERN_UI requested style=" + id);
+        ModernVectorCacheManager.invalidateCompleteBuild(
+            "style-selected"
+        );
         requestReload("Loading UI style: " + id);
     }
 
@@ -110,21 +135,27 @@ public final class ModernUiManager {
         initialize();
         ModernUiPreferences.setAddonEnabled(id, enabled);
         DisplayDebug.log("MODERN_UI requested addon " + id + "=" + enabled);
+        ModernVectorCacheManager.invalidateCompleteBuild(
+            "addon-configuration"
+        );
         requestReload("Reloading UI add-ons");
     }
 
     public static void setUiScale(float scale) {
         ModernUiPreferences.setUiScale(scale);
+        ModernVectorCacheManager.invalidateCompleteBuild("ui-scale");
         requestReload("Applying UI scale");
     }
 
     public static void setTextScale(float scale) {
         ModernUiPreferences.setTextScale(scale);
+        ModernVectorCacheManager.invalidateCompleteBuild("text-scale");
         requestReload("Applying text scale");
     }
 
     public static void setIconScale(float scale) {
         ModernUiPreferences.setIconScale(scale);
+        ModernVectorCacheManager.invalidateCompleteBuild("icon-scale");
         requestReload("Applying icon scale");
     }
 
@@ -200,7 +231,13 @@ public final class ModernUiManager {
         }
         initialized = true;
         ModernUiPreferences.load();
-        ModernVectorCacheManager.startup();
         UiStyleRepository.refresh();
+        if (DisplayMode.getWindowMode() >= 2) {
+            ModernVectorCacheManager.startup();
+            ModernVectorCacheManager.onViewportChanged(
+                GameShell.canvasWidth,
+                GameShell.canvasHeight
+            );
+        }
     }
 }
