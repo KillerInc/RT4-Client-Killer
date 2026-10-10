@@ -224,6 +224,19 @@ public final class ScriptRunner {
 			width = viewportWidth;
 			height = viewportHeight;
 		}
+
+		// Capture the actual primary 3D scene rectangle after RT4 has applied
+		// its viewport/FOV adjustment. The 1403 auxiliary render path is not
+		// the main game viewport, so do not let it overwrite this value.
+		if (!minimapOnly) {
+			ClientPerformanceDiagnostics.recordGameRenderSize(
+				left,
+				top,
+				width,
+				height
+			);
+		}
+
 		@Pc(59) int savedRenderX;
 		@Pc(57) int savedRenderZ;
 		if (Camera.cameraType == 1) {
