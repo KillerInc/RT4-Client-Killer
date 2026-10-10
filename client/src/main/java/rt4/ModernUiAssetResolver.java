@@ -332,6 +332,18 @@ public final class ModernUiAssetResolver {
         );
         addWarmupSpec(
             plan,
+            "controls/popup-row",
+            ModernUiMetrics.CONTROL_WIDTH - 2,
+            ModernUiMetrics.DROPDOWN_POPUP_ROW_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
+            "controls/popup-row",
+            ModernUiMetrics.CONTROL_WIDTH - 2,
+            ModernUiMetrics.NATIVE_DROPDOWN_POPUP_ROW_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
             "controls/choice-hover",
             ModernUiMetrics.CONTROL_WIDTH - 4,
             ModernUiMetrics.DROPDOWN_POPUP_ROW_HEIGHT - 2
