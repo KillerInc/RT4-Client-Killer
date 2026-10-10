@@ -30,7 +30,6 @@ public final class ModernUiRenderer {
     private static MainMenuLayout mainMenuLayout;
     private static int suppressDiagnosticsDepth;
     private static boolean loginUiActivated;
-    private static UiRect lastMainMenuContentBounds;
 
     private ModernUiRenderer() {
     }
@@ -231,37 +230,14 @@ public final class ModernUiRenderer {
             component.rectangleLoop = client.loop;
             component.rectangle = rectangle;
 
-            int effectiveClipLeft = clipLeft;
-            int effectiveClipTop = clipTop;
-            int effectiveClipRight = clipRight;
-            int effectiveClipBottom = clipBottom;
-
-            if (mainMenuDepth > 0
-                && mainMenuLayout != null
-                && usesMainMenuContentBounds(component)) {
-                UiRect bounds = mainMenuLayout.contentBounds;
-                if (bounds != null) {
-                    effectiveClipLeft = Math.max(0, bounds.x);
-                    effectiveClipTop = Math.max(0, bounds.y);
-                    effectiveClipRight = Math.min(
-                        GameShell.canvasWidth,
-                        bounds.x + bounds.width
-                    );
-                    effectiveClipBottom = Math.min(
-                        GameShell.canvasHeight,
-                        bounds.y + bounds.height
-                    );
-                }
-            }
-
-            int left = Math.max(effectiveClipLeft, x);
-            int top = Math.max(effectiveClipTop, y);
+            int left = Math.max(clipLeft, x);
+            int top = Math.max(clipTop, y);
             int right = Math.min(
-                effectiveClipRight,
+                clipRight,
                 x + Math.max(1, component.width)
             );
             int bottom = Math.min(
-                effectiveClipBottom,
+                clipBottom,
                 y + Math.max(1, component.height)
             );
             if (right <= left || bottom <= top) {
@@ -308,145 +284,12 @@ public final class ModernUiRenderer {
                 continue;
             }
 
-            if (mainMenuDepth > 0
-                && mainMenuLayout != null
-                && usesMainMenuContentBounds(component)
-                && mainMenuLayout.contentBounds != null) {
-                UiRect bounds = mainMenuLayout.contentBounds;
-                setClip(
-                    Math.max(0, bounds.x),
-                    Math.max(0, bounds.y),
-                    Math.min(GameShell.canvasWidth, bounds.x + bounds.width),
-                    Math.min(GameShell.canvasHeight, bounds.y + bounds.height)
-                );
-            }
-
             renderComponentVisual(component, x, y);
-
-            if (mainMenuDepth > 0 && usesMainMenuContentBounds(component)) {
-                setClip(clipLeft, clipTop, clipRight, clipBottom);
-            }
 
             if (rectangle >= 0 && rectangle < InterfaceList.rectangleRedraw.length) {
                 InterfaceList.rectangleRedraw[rectangle] = true;
             }
         }
-    }
-
-    public static int adjustMainMenuComponentX(
-        Component component,
-        int x
-    ) {
-        if (!usesMainMenuContentBounds(component)
-            || mainMenuLayout == null) {
-            return x;
-        }
-
-        if (component.type == 4 && component.text != null) {
-            String normalized = normalizeGraphicsOptionsText(
-                component.text.toString()
-            );
-            if (normalized.equals("standard detail")) {
-                return x + 3;
-            }
-            if (normalized.equals("high detail")) {
-                return x - 3;
-            }
-            return x;
-        }
-
-        if (mainMenuLayout.choiceComponentIds.contains(component.id)) {
-            int center =
-                x + Math.max(1, component.width) / 2;
-            return center < mainMenuLayout.centerX ? x + 3 : x - 3;
-        }
-
-        return x;
-    }
-
-    public static int adjustMainMenuComponentY(
-        Component component,
-        int y
-    ) {
-        if (!usesMainMenuContentBounds(component)
-            || mainMenuLayout == null) {
-            return y;
-        }
-
-        if (component.type == 4 && component.text != null) {
-            String normalized = normalizeGraphicsOptionsText(
-                component.text.toString()
-            );
-            int targetY = mainMenuLayout.textTargetY(normalized);
-            return targetY == Integer.MIN_VALUE ? y : targetY;
-        }
-
-        if (mainMenuLayout.choiceComponentIds.contains(component.id)) {
-            return y + mainMenuLayout.choiceInputDeltaY;
-        }
-
-        if (mainMenuLayout.musicSliderComponentIds.contains(component.id)) {
-            return y + mainMenuLayout.musicSliderInputDeltaY;
-        }
-
-        return y;
-    }
-
-    public static boolean usesMainMenuContentBounds(Component component) {
-        if (component == null
-            || lastMainMenuContentBounds == null
-            || !ModernUiManager.isEnabled()) {
-            return false;
-        }
-
-        int interfaceId = component.id >>> 16;
-        if (interfaceId != LoginManager.loginScreenId) {
-            return false;
-        }
-
-        if (component.type == 4 && component.text != null) {
-            String normalized = normalizeGraphicsOptionsText(
-                component.text.toString()
-            );
-            return isManagedMainMenuText(normalized)
-                || normalized.equals("music volume");
-        }
-
-        return mainMenuLayout != null
-            && (mainMenuLayout.choiceComponentIds.contains(component.id)
-                || mainMenuLayout.musicSliderComponentIds.contains(component.id));
-    }
-
-    public static int getMainMenuContentLeft(int fallback) {
-        return lastMainMenuContentBounds == null
-            ? fallback
-            : Math.max(0, lastMainMenuContentBounds.x);
-    }
-
-    public static int getMainMenuContentTop(int fallback) {
-        return lastMainMenuContentBounds == null
-            ? fallback
-            : Math.max(0, lastMainMenuContentBounds.y);
-    }
-
-    public static int getMainMenuContentRight(int fallback) {
-        return lastMainMenuContentBounds == null
-            ? fallback
-            : Math.min(
-                GameShell.canvasWidth,
-                lastMainMenuContentBounds.x
-                    + lastMainMenuContentBounds.width
-            );
-    }
-
-    public static int getMainMenuContentBottom(int fallback) {
-        return lastMainMenuContentBounds == null
-            ? fallback
-            : Math.min(
-                GameShell.canvasHeight,
-                lastMainMenuContentBounds.y
-                    + lastMainMenuContentBounds.height
-            );
     }
 
     private static boolean renderClientComponent(
@@ -2295,7 +2138,6 @@ public final class ModernUiRenderer {
                 modernLayout.content.width,
                 modernLayout.content.height
             );
-            lastMainMenuContentBounds = contentBounds;
 
             MainMenuImageEntry bestBody = null;
             int bestBodyArea = 0;
@@ -3297,7 +3139,6 @@ public final class ModernUiRenderer {
 
     public static void clearCaches() {
         loggedMissing.clear();
-        lastMainMenuContentBounds = null;
         ModernUiInputRouter.clear();
         ModernUiAssetResolver.clear();
         ModernTrueTypeFont.clear();
