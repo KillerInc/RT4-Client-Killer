@@ -173,6 +173,25 @@ public final class ModernVectorCacheManager {
         );
     }
 
+    public static void onUnsupportedDisplayMode(int mode) {
+        String previous = currentViewport;
+        currentViewport = "";
+        currentViewportWidth = -1;
+        currentViewportHeight = -1;
+        persistentViewport = "";
+        viewportSerial++;
+        readyImages.clear();
+        failedUntil.clear();
+        resetProgressTracking("");
+        lastCompleteBuildSignature = "";
+
+        DisplayDebug.log(
+            "VECTOR_CACHE suspended mode=" + DisplayDebug.modeName(mode)
+                + " previousViewport="
+                + (previous.isEmpty() ? "<none>" : previous)
+        );
+    }
+
     /**
      * Re-evaluates the current viewport when Modern UI is switched on after a
      * size change that happened while Standard UI was active.
@@ -290,6 +309,11 @@ public final class ModernVectorCacheManager {
             public void run() {
                 long startedAt = System.nanoTime();
                 try {
+                    if (!viewport.isEmpty()
+                        && !viewport.equals(currentViewport)) {
+                        return;
+                    }
+
                     BufferedImage image = null;
                     boolean persistent =
                         !viewport.isEmpty()
