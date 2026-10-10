@@ -110,9 +110,10 @@ public final class ModernUiSettingsOverlay {
         int selectorW = selectorWidth();
         int selectorH = selectorHeight();
         boolean modernStyle = ModernUiManager.isEnabled();
-        int popupX = selectorX;
+        int popupInset = modernStyle ? 0 : 6;
+        int popupX = selectorX + popupInset;
         int popupY = modernStyle ? selectorBottom : selectorBottom - 3;
-        int popupW = selectorW;
+        int popupW = Math.max(1, selectorW - popupInset * 2);
         int rowH = modernStyle ? Math.max(18, selectorH) : 16;
 
         int mx = Mouse.clickX;
@@ -209,9 +210,10 @@ public final class ModernUiSettingsOverlay {
         }
 
         boolean modernStyle = ModernUiManager.isEnabled();
-        int popupX = selectorX;
+        int popupInset = modernStyle ? 0 : 6;
+        int popupX = selectorX + popupInset;
         int popupY = modernStyle ? selectorBottom : selectorBottom - 3;
-        int popupW = selectorW;
+        int popupW = Math.max(1, selectorW - popupInset * 2);
         int rowH = modernStyle ? Math.max(18, selectorH) : 16;
         int popupH = rowH * 2;
 
