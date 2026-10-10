@@ -376,7 +376,7 @@ public final class ModernUiSettingsOverlay {
             ModernUiMetrics.TEXT_PRIMARY,
             0,
             1,
-            ModernUiMetrics.FONT_CONTROL,
+            ModernUiMetrics.FONT_DROPDOWN,
             false
         );
     }
@@ -425,16 +425,19 @@ public final class ModernUiSettingsOverlay {
         ModernTrueTypeFont.drawInBox(
             ModernUiFontRegistry.PLAIN_12,
             text,
-            x,
+            x + ModernUiMetrics.CONTROL_TEXT_PAD_X,
             y,
-            width,
+            Math.max(
+                1,
+                width - ModernUiMetrics.CONTROL_TEXT_PAD_X * 2
+            ),
             height,
             selected
                 ? ModernUiMetrics.TEXT_ACCENT
                 : ModernUiMetrics.TEXT_PRIMARY,
+            0,
             1,
-            1,
-            ModernUiMetrics.FONT_LABEL,
+            ModernUiMetrics.FONT_DROPDOWN,
             false
         );
     }
