@@ -610,43 +610,74 @@ public final class ModernUiRenderer {
 
         if (graphicsOptionsDepth > 0) {
             if (component.clientCode == GraphicsOptionsUiInjector.CLIENT_CODE_STYLE_TEXT) {
+                int buttonWidth = Math.max(
+                    ModernUiMetrics.CONTROL_WIDTH,
+                    Math.max(1, component.width)
+                );
+                int buttonHeight = ModernUiMetrics.CONTROL_HEIGHT;
+                int buttonX = x + (component.width - buttonWidth) / 2;
+                int buttonY = y + (component.height - buttonHeight) / 2;
                 ModernUiImage button = ModernUiAssetResolver.get(
                     "controls/button",
-                    Math.max(1, component.width),
-                    Math.max(20, component.height)
+                    buttonWidth,
+                    buttonHeight
                 );
-                int buttonY = y - Math.max(0, (20 - component.height) / 2);
                 if (button != null) {
-                    button.render(x, buttonY);
+                    button.render(buttonX, buttonY);
                 } else {
                     drawMissing(
                         "asset:controls/button",
-                        x,
+                        buttonX,
                         buttonY,
-                        Math.max(1, component.width),
-                        Math.max(20, component.height)
+                        buttonWidth,
+                        buttonHeight
                     );
                 }
 
                 ModernTrueTypeFont.drawInBox(
                     fontAsset,
                     text,
-                    x,
+                    buttonX,
                     buttonY,
-                    component.width,
-                    Math.max(20, component.height),
-                    0xE8DDC4,
+                    buttonWidth,
+                    buttonHeight,
+                    ModernUiMetrics.TEXT_PRIMARY,
                     component.halign,
                     1,
-                    11.0F,
+                    ModernUiMetrics.FONT_CONTROL,
+                    false
+                );
+                return;
+            }
+
+            if (normalizeGraphicsOptionsText(text).equals("main menu")) {
+                int buttonX = ModernUiMetrics.centeredX(
+                    graphicsOptionsTitleCenterX,
+                    ModernUiMetrics.NAV_BUTTON_WIDTH
+                );
+                int buttonY =
+                    graphicsOptionsTitleY
+                        + ModernUiMetrics.NAV_BUTTON_Y_OFFSET;
+
+                ModernTrueTypeFont.drawInBox(
+                    ModernUiFontRegistry.PLAIN_12,
+                    text,
+                    buttonX,
+                    buttonY,
+                    ModernUiMetrics.NAV_BUTTON_WIDTH,
+                    ModernUiMetrics.NAV_BUTTON_HEIGHT,
+                    ModernUiMetrics.TEXT_PRIMARY,
+                    1,
+                    1,
+                    ModernUiMetrics.FONT_BUTTON,
                     false
                 );
                 return;
             }
 
             if (isGraphicsOptionsDropdownValue(component, text, y)) {
-                int controlHeight = Math.max(20, component.height + 6);
-                int controlY = y - Math.max(2, (controlHeight - component.height) / 2);
+                int controlHeight = ModernUiMetrics.CONTROL_HEIGHT;
+                int controlY = y + (component.height - controlHeight) / 2;
                 int controlWidth = graphicsOptionsControlWidth(component);
                 int controlX =
                     x + (component.width - controlWidth) / 2;
@@ -667,10 +698,10 @@ public final class ModernUiRenderer {
                     controlY,
                     Math.max(1, controlWidth - 22),
                     controlHeight,
-                    0xE8DDC4,
+                    ModernUiMetrics.TEXT_PRIMARY,
                     component.halign,
                     1,
-                    11.0F,
+                    ModernUiMetrics.FONT_CONTROL,
                     false
                 );
                 return;
@@ -683,7 +714,7 @@ public final class ModernUiRenderer {
                 y,
                 component.width,
                 component.height,
-                0xE8DDC4,
+                ModernUiMetrics.TEXT_PRIMARY,
                 component.halign,
                 component.valign,
                 graphicsOptionsFontSize(text),
@@ -735,10 +766,7 @@ public final class ModernUiRenderer {
     }
 
     private static int graphicsOptionsControlWidth(Component component) {
-        if (component == null) {
-            return 92;
-        }
-        return Math.min(118, Math.max(92, Math.max(1, component.width)));
+        return ModernUiMetrics.CONTROL_WIDTH;
     }
 
     private static boolean isGraphicsOptionsLabel(String text) {
@@ -982,17 +1010,17 @@ public final class ModernUiRenderer {
         String normalized = normalizeGraphicsOptionsText(text);
 
         if (normalized.equals("graphics options")) {
-            return 16.0F;
+            return ModernUiMetrics.FONT_TITLE;
         }
         if (normalized.equals("display modes")
             || normalized.equals("advanced options")) {
-            return 13.0F;
+            return ModernUiMetrics.FONT_SECTION;
         }
         if (normalized.equals("standard detail")
             || normalized.startsWith("high detail")
             || normalized.equals("(small)")
             || normalized.equals("(fullscreen)")) {
-            return 11.0F;
+            return ModernUiMetrics.FONT_CONTROL;
         }
         if (normalized.equals("main menu")) {
             return 13.0F;
@@ -1471,7 +1499,7 @@ public final class ModernUiRenderer {
             safeColor(color),
             component.halign,
             1,
-            20.0F,
+            ModernUiMetrics.FONT_LABEL,
             component.shadowed
         );
     }
@@ -1571,37 +1599,31 @@ public final class ModernUiRenderer {
 
         if (subtitle) {
             fontAsset = ModernUiFontRegistry.PLAIN_11;
-            size = 16.0F;
+            size = ModernUiMetrics.FONT_MAIN_MENU_SUBTITLE;
             color = 0x5A351C;
         } else if (detail) {
             fontAsset = ModernUiFontRegistry.PLAIN_11;
-            size = 16.0F;
+            size = ModernUiMetrics.FONT_MAIN_MENU_DETAIL;
             color = 0x5A351C;
         } else if (normalized.equals("log in")
             || normalized.equals("create account")
             || normalized.startsWith("world ")) {
             fontAsset = ModernUiFontRegistry.BOLD_12;
-            size = normalized.startsWith("world ") ? 13.0F : 14.0F;
+            size = normalized.startsWith("world ")
+                ? ModernUiMetrics.FONT_CONTROL
+                : ModernUiMetrics.FONT_MAIN_MENU_BUTTON;
             color = 0xF1D68A;
         } else {
             fontAsset = ModernUiFontRegistry.PLAIN_12;
-            size = 12.0F;
-            color = 0xE8DDC4;
+            size = ModernUiMetrics.FONT_LABEL;
+            color = ModernUiMetrics.TEXT_PRIMARY;
         }
 
         if (!subtitle && !detail) {
-            int textWidth = ModernTrueTypeFont.getWidth(
-                fontAsset,
-                text,
-                size
-            );
-            int buttonWidth = Math.max(
-                component.width,
-                Math.min(190, textWidth + 22)
-            );
-            int buttonHeight = Math.max(1, component.height);
+            int buttonWidth = ModernUiMetrics.MAIN_MENU_BUTTON_WIDTH;
+            int buttonHeight = ModernUiMetrics.MAIN_MENU_BUTTON_HEIGHT;
             int buttonX = x + (component.width - buttonWidth) / 2;
-            int buttonY = y;
+            int buttonY = y + (component.height - buttonHeight) / 2;
 
             boolean hover =
                 Mouse.lastMouseX >= x
@@ -2363,8 +2385,8 @@ public final class ModernUiRenderer {
 
                 String text = display == null ? "" : display.toString();
                 if (isGraphicsOptionsDropdownValue(component, text, y)) {
-                    int controlHeight = Math.max(20, component.height + 6);
-                    int controlY = y - Math.max(2, (controlHeight - component.height) / 2);
+                    int controlHeight = ModernUiMetrics.CONTROL_HEIGHT;
+                    int controlY = y + (component.height - controlHeight) / 2;
                     int controlWidth = graphicsOptionsControlWidth(component);
                     int controlX =
                         x + (component.width - controlWidth) / 2;
@@ -2646,10 +2668,13 @@ public final class ModernUiRenderer {
 
         setClip(clipLeft, clipTop, clipRight, clipBottom);
 
-        int x = graphicsOptionsTitleCenterX - 345;
+        int width = ModernUiMetrics.GRAPHICS_PANEL_WIDTH;
+        int height = ModernUiMetrics.GRAPHICS_PANEL_HEIGHT;
+        int x = ModernUiMetrics.centeredX(
+            graphicsOptionsTitleCenterX,
+            width
+        );
         int y = graphicsOptionsTitleY - 34;
-        int width = 690;
-        int height = 385;
 
         ModernUiImage panel = ModernUiAssetResolver.get(
             "graphics-options/panel",
@@ -2664,25 +2689,31 @@ public final class ModernUiRenderer {
 
         ModernUiImage divider = ModernUiAssetResolver.get(
             "graphics-options/divider",
-            width - 36,
+            width - ModernUiMetrics.GRAPHICS_PANEL_INSET * 2,
             4
         );
         if (divider != null) {
-            divider.render(x + 18, graphicsOptionsTitleY + 114);
-            divider.render(x + 18, graphicsOptionsTitleY + 324);
+            divider.render(
+                x + ModernUiMetrics.GRAPHICS_PANEL_INSET,
+                graphicsOptionsTitleY + 114
+            );
+            divider.render(
+                x + ModernUiMetrics.GRAPHICS_PANEL_INSET,
+                graphicsOptionsTitleY + 324
+            );
         } else {
             drawMissing(
                 "asset:graphics-options/divider",
-                x + 18,
+                x + ModernUiMetrics.GRAPHICS_PANEL_INSET,
                 graphicsOptionsTitleY + 114,
-                width - 36,
+                width - ModernUiMetrics.GRAPHICS_PANEL_INSET * 2,
                 4
             );
             drawMissing(
                 "asset:graphics-options/divider",
-                x + 18,
+                x + ModernUiMetrics.GRAPHICS_PANEL_INSET,
                 graphicsOptionsTitleY + 324,
-                width - 36,
+                width - ModernUiMetrics.GRAPHICS_PANEL_INSET * 2,
                 4
             );
         }
@@ -2696,20 +2727,34 @@ public final class ModernUiRenderer {
             graphicsOptionsTitleCenterX + 225
         };
         String[] labels = {"SD", "HD", "HD", "HD"};
-        int buttonY = graphicsOptionsTitleY + 20;
+        int buttonY =
+            graphicsOptionsTitleY
+                + ModernUiMetrics.DISPLAY_BUTTON_Y_OFFSET;
 
         int activeDisplayMode = DisplayMode.getWindowMode();
         for (int i = 0; i < centers.length; i++) {
-            int buttonX = centers[i] - 42;
+            int buttonX = ModernUiMetrics.centeredX(
+                centers[i],
+                ModernUiMetrics.DISPLAY_BUTTON_WIDTH
+            );
             boolean active = activeDisplayMode == i;
-            drawModernControlBox(buttonX, buttonY, 84, 40, false, active);
+            drawModernControlBox(
+                buttonX,
+                buttonY,
+                ModernUiMetrics.DISPLAY_BUTTON_WIDTH,
+                ModernUiMetrics.DISPLAY_BUTTON_HEIGHT,
+                false,
+                active
+            );
             ModernTrueTypeFont.drawCentered(
                 ModernUiFontRegistry.BOLD_12,
                 labels[i],
                 centers[i],
-                buttonY + 27,
-                active ? 0xFFF4D1 : 0xE8DDC4,
-                18.0F,
+                buttonY + 19,
+                active
+                    ? ModernUiMetrics.TEXT_ACCENT
+                    : ModernUiMetrics.TEXT_PRIMARY,
+                ModernUiMetrics.FONT_BUTTON,
                 true
             );
         }
@@ -2717,10 +2762,13 @@ public final class ModernUiRenderer {
         // Main Menu is text-driven in the cache, so give it Modern UI chrome
         // without changing its click/script behavior.
         drawModernControlBox(
-            graphicsOptionsTitleCenterX - 78,
-            graphicsOptionsTitleY + 318,
-            156,
-            28,
+            ModernUiMetrics.centeredX(
+                graphicsOptionsTitleCenterX,
+                ModernUiMetrics.NAV_BUTTON_WIDTH
+            ),
+            graphicsOptionsTitleY + ModernUiMetrics.NAV_BUTTON_Y_OFFSET,
+            ModernUiMetrics.NAV_BUTTON_WIDTH,
+            ModernUiMetrics.NAV_BUTTON_HEIGHT,
             false,
             false
         );
@@ -2757,15 +2805,26 @@ public final class ModernUiRenderer {
         if (dropdown && width >= 22) {
             ModernUiImage arrow = ModernUiAssetResolver.get(
                 "icons/dropdown",
-                9,
-                6
+                ModernUiMetrics.DROPDOWN_ARROW_WIDTH,
+                ModernUiMetrics.DROPDOWN_ARROW_HEIGHT
             );
-            int arrowX = x + width - 15;
-            int arrowY = y + Math.max(4, (height - 6) / 2);
+            int arrowX =
+                x + width - ModernUiMetrics.DROPDOWN_ARROW_WIDTH - 6;
+            int arrowY =
+                y + Math.max(
+                    4,
+                    (height - ModernUiMetrics.DROPDOWN_ARROW_HEIGHT) / 2
+                );
             if (arrow != null) {
                 arrow.render(arrowX, arrowY);
             } else {
-                drawMissing("asset:icons/dropdown", arrowX, arrowY, 9, 6);
+                drawMissing(
+                    "asset:icons/dropdown",
+                    arrowX,
+                    arrowY,
+                    ModernUiMetrics.DROPDOWN_ARROW_WIDTH,
+                    ModernUiMetrics.DROPDOWN_ARROW_HEIGHT
+                );
             }
         }
     }
@@ -2797,17 +2856,28 @@ public final class ModernUiRenderer {
         int left = x + 10;
         int right = x + width - 10;
         int centerY = y + height / 2;
-        int knobX = left + (right - left) * (selected - 1) / 3 - 6;
+        int knobX =
+            left + (right - left) * (selected - 1) / 3
+                - ModernUiMetrics.SLIDER_KNOB_WIDTH / 2;
 
         ModernUiImage knob = ModernUiAssetResolver.get(
             "controls/slider-knob",
-            13,
-            18
+            ModernUiMetrics.SLIDER_KNOB_WIDTH,
+            ModernUiMetrics.SLIDER_KNOB_HEIGHT
         );
         if (knob != null) {
-            knob.render(knobX, centerY - 9);
+            knob.render(
+                knobX,
+                centerY - ModernUiMetrics.SLIDER_KNOB_HEIGHT / 2
+            );
         } else {
-            drawMissing("asset:controls/slider-knob", knobX, centerY - 9, 13, 18);
+            drawMissing(
+                "asset:controls/slider-knob",
+                knobX,
+                centerY - ModernUiMetrics.SLIDER_KNOB_HEIGHT / 2,
+                ModernUiMetrics.SLIDER_KNOB_WIDTH,
+                ModernUiMetrics.SLIDER_KNOB_HEIGHT
+            );
         }
     }
 
