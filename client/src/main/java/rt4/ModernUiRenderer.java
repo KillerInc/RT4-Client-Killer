@@ -1393,6 +1393,18 @@ public final class ModernUiRenderer {
             || normalized.startsWith("world ");
     }
 
+    private static boolean isMainMenuInteractiveButtonText(String text) {
+        String normalized = normalizeGraphicsOptionsText(text);
+        return normalized.equals("log in")
+            || normalized.equals("login")
+            || normalized.equals("create account")
+            || normalized.equals("graphics options")
+            || normalized.equals("audio options")
+            || normalized.equals("music options")
+            || normalized.equals("quit")
+            || normalized.startsWith("world ");
+    }
+
     private static void renderMainMenuBackdrop(
         int clipLeft,
         int clipTop,
@@ -1670,10 +1682,10 @@ public final class ModernUiRenderer {
             int buttonY = y + (component.height - buttonHeight) / 2;
 
             boolean hover =
-                Mouse.lastMouseX >= x
-                    && Mouse.lastMouseX < x + component.width
-                    && Mouse.lastMouseY >= y
-                    && Mouse.lastMouseY < y + component.height;
+                Mouse.lastMouseX >= buttonX
+                    && Mouse.lastMouseX < buttonX + buttonWidth
+                    && Mouse.lastMouseY >= buttonY
+                    && Mouse.lastMouseY < buttonY + buttonHeight;
 
             String asset =
                 hover
@@ -2358,6 +2370,170 @@ public final class ModernUiRenderer {
             }
 
             applyModernVerticalLayout();
+            registerCanonicalHitboxes();
+        }
+
+        private void registerCanonicalHitboxes() {
+            if (contentBounds == null) {
+                return;
+            }
+
+            int clipLeft = Math.max(0, contentBounds.x);
+            int clipTop = Math.max(0, contentBounds.y);
+            int clipRight = Math.min(
+                GameShell.canvasWidth,
+                contentBounds.x + contentBounds.width
+            );
+            int clipBottom = Math.min(
+                GameShell.canvasHeight,
+                contentBounds.y + contentBounds.height
+            );
+
+            for (MainMenuTextEntry entry : texts) {
+                if (entry.component == null
+                    || !isMainMenuInteractiveButtonText(entry.text)) {
+                    continue;
+                }
+
+                int x = adjustMainMenuComponentX(
+                    entry.component,
+                    entry.rect.x
+                );
+                int y = adjustMainMenuComponentY(
+                    entry.component,
+                    entry.rect.y
+                );
+                int targetX =
+                    x + (entry.component.width
+                        - ModernUiMetrics.MAIN_MENU_BUTTON_WIDTH) / 2;
+                int targetY =
+                    y + (entry.component.height
+                        - ModernUiMetrics.MAIN_MENU_BUTTON_HEIGHT) / 2;
+
+                ModernUiHitboxRegistry.registerAbsolute(
+                    entry.component,
+                    entry.rect.x,
+                    entry.rect.y,
+                    targetX,
+                    targetY,
+                    ModernUiMetrics.MAIN_MENU_BUTTON_WIDTH,
+                    ModernUiMetrics.MAIN_MENU_BUTTON_HEIGHT,
+                    clipLeft,
+                    clipTop,
+                    clipRight,
+                    clipBottom
+                );
+            }
+
+            registerChoiceHitbox(
+                standardChoiceComponent,
+                findImageRect(standardChoiceComponent),
+                standardChoice,
+                clipLeft,
+                clipTop,
+                clipRight,
+                clipBottom
+            );
+            registerChoiceHitbox(
+                highChoiceComponent,
+                findImageRect(highChoiceComponent),
+                highChoice,
+                clipLeft,
+                clipTop,
+                clipRight,
+                clipBottom
+            );
+
+            if (musicSlider != null && !musicSliderComponentIds.isEmpty()) {
+                UiRect sourceUnion = null;
+                List<UiRect> sourceRects = new ArrayList<>();
+                for (MainMenuImageEntry image : images) {
+                    if (musicSliderComponentIds.contains(image.componentId)) {
+                        sourceRects.add(image.rect);
+                    }
+                }
+                sourceUnion = unionRects(sourceRects);
+
+                if (sourceUnion != null) {
+                    for (MainMenuImageEntry image : images) {
+                        if (!musicSliderComponentIds.contains(image.componentId)) {
+                            continue;
+                        }
+
+                        int relativeX = image.rect.x - sourceUnion.x;
+                        int relativeY = image.rect.y - sourceUnion.y;
+                        int targetX = musicSlider.x
+                            + relativeX * musicSlider.width
+                                / Math.max(1, sourceUnion.width);
+                        int targetY = musicSlider.y
+                            + relativeY * musicSlider.height
+                                / Math.max(1, sourceUnion.height);
+                        int targetWidth = Math.max(
+                            1,
+                            image.rect.width * musicSlider.width
+                                / Math.max(1, sourceUnion.width)
+                        );
+                        int targetHeight = Math.max(
+                            1,
+                            image.rect.height * musicSlider.height
+                                / Math.max(1, sourceUnion.height)
+                        );
+
+                        ModernUiHitboxRegistry.registerAbsolute(
+                            image.component,
+                            image.rect.x,
+                            image.rect.y,
+                            targetX,
+                            targetY,
+                            targetWidth,
+                            targetHeight,
+                            clipLeft,
+                            clipTop,
+                            clipRight,
+                            clipBottom
+                        );
+                    }
+                }
+            }
+        }
+
+        private UiRect findImageRect(Component component) {
+            if (component == null) {
+                return null;
+            }
+            for (MainMenuImageEntry image : images) {
+                if (image.component == component) {
+                    return image.rect;
+                }
+            }
+            return null;
+        }
+
+        private void registerChoiceHitbox(
+            Component component,
+            UiRect source,
+            UiRect target,
+            int clipLeft,
+            int clipTop,
+            int clipRight,
+            int clipBottom
+        ) {
+            if (component == null || source == null || target == null) {
+                return;
+            }
+            ModernUiHitboxRegistry.registerAbsolute(
+                component,
+                source.x,
+                source.y,
+                target.x,
+                target.y,
+                target.width,
+                target.height,
+                clipLeft,
+                clipTop,
+                clipRight,
+                clipBottom
+            );
         }
 
         private int textTargetY(String normalized) {
