@@ -304,17 +304,19 @@ public final class ModernUiAssetResolver {
         addWarmupSpec(plan, "controls/dropdown", 128, 22);
         addWarmupSpec(plan, "controls/dropdown-disabled", 116, 20);
 
+        for (int rows = 2; rows <= 8; rows++) {
+            addWarmupSpec(
+                plan,
+                "controls/popup",
+                ModernUiMetrics.CONTROL_WIDTH,
+                ModernUiMetrics.DROPDOWN_POPUP_ROW_HEIGHT * rows
+            );
+        }
         addWarmupSpec(
             plan,
-            "controls/popup",
-            ModernUiMetrics.CONTROL_WIDTH,
-            ModernUiMetrics.DROPDOWN_POPUP_ROW_HEIGHT * 2
-        );
-        addWarmupSpec(
-            plan,
-            "controls/popup",
-            ModernUiMetrics.CONTROL_WIDTH,
-            ModernUiMetrics.DROPDOWN_POPUP_ROW_HEIGHT * 3
+            "controls/popup-divider",
+            ModernUiMetrics.CONTROL_WIDTH - 4,
+            2
         );
         addWarmupSpec(
             plan,
