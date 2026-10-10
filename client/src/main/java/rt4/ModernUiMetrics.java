@@ -11,6 +11,13 @@ public final class ModernUiMetrics {
     public static final int TEXT_PRIMARY = 0xE8DDC4;
     public static final int TEXT_ACCENT = 0xFFF4D1;
     public static final int TEXT_MUTED = 0xAFA184;
+    public static final int TEXT_PARCHMENT = 0x5A351C;
+    public static final int TEXT_GOLD = 0xF1D68A;
+
+    public static final int SURFACE_DARK = 0x17130F;
+    public static final int SURFACE_TRACK = 0x332A20;
+    public static final int BORDER = 0xB59A68;
+    public static final int BORDER_LIGHT = 0xD8C08D;
 
     public static final float FONT_TITLE = 16.0F;
     public static final float FONT_SECTION = 13.0F;
@@ -20,6 +27,7 @@ public final class ModernUiMetrics {
     public static final float FONT_MAIN_MENU_BUTTON = 13.0F;
     public static final float FONT_MAIN_MENU_SUBTITLE = 13.0F;
     public static final float FONT_MAIN_MENU_DETAIL = 12.0F;
+    public static final float FONT_MAIN_MENU_EDITION = 33.0F;
 
     public static final int GRAPHICS_PANEL_WIDTH = 690;
     public static final int GRAPHICS_PANEL_HEIGHT = 385;
