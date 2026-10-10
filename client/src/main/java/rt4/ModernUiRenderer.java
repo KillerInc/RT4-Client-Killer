@@ -2395,14 +2395,11 @@ public final class ModernUiRenderer {
                     continue;
                 }
 
-                int x = adjustMainMenuComponentX(
-                    entry.component,
-                    entry.rect.x
-                );
-                int y = adjustMainMenuComponentY(
-                    entry.component,
-                    entry.rect.y
-                );
+                int x = entry.rect.x;
+                int targetTextY = textTargetY(entry.text);
+                int y = targetTextY == Integer.MIN_VALUE
+                    ? entry.rect.y
+                    : targetTextY;
                 int targetX =
                     x + (entry.component.width
                         - ModernUiMetrics.MAIN_MENU_BUTTON_WIDTH) / 2;
@@ -3258,6 +3255,7 @@ public final class ModernUiRenderer {
     public static void clearCaches() {
         loggedMissing.clear();
         lastMainMenuContentBounds = null;
+        ModernUiHitboxRegistry.clear();
         ModernUiAssetResolver.clear();
         ModernTrueTypeFont.clear();
     }
