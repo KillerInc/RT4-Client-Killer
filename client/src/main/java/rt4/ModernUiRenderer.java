@@ -196,6 +196,7 @@ public final class ModernUiRenderer {
             int x = parentX + component.x;
             int y = parentY + component.y;
             if (mainMenuDepth > 0) {
+                x = adjustMainMenuComponentX(component, x);
                 y = adjustMainMenuComponentY(component, y);
             }
             int rectangle = parentRectangle;
@@ -310,6 +311,37 @@ public final class ModernUiRenderer {
                 InterfaceList.rectangleRedraw[rectangle] = true;
             }
         }
+    }
+
+    public static int adjustMainMenuComponentX(
+        Component component,
+        int x
+    ) {
+        if (!usesMainMenuContentBounds(component)
+            || mainMenuLayout == null) {
+            return x;
+        }
+
+        if (component.type == 4 && component.text != null) {
+            String normalized = normalizeGraphicsOptionsText(
+                component.text.toString()
+            );
+            if (normalized.equals("standard detail")) {
+                return x + 3;
+            }
+            if (normalized.equals("high detail")) {
+                return x - 3;
+            }
+            return x;
+        }
+
+        if (mainMenuLayout.choiceComponentIds.contains(component.id)) {
+            int center =
+                x + Math.max(1, component.width) / 2;
+            return center < mainMenuLayout.centerX ? x + 3 : x - 3;
+        }
+
+        return x;
     }
 
     public static int adjustMainMenuComponentY(
@@ -1419,6 +1451,10 @@ public final class ModernUiRenderer {
 
             String text = getCurrentMainMenuText(entry.component);
             String normalized = normalizeGraphicsOptionsText(text);
+            int x = adjustMainMenuComponentX(
+                entry.component,
+                entry.rect.x
+            );
             int y = adjustMainMenuComponentY(
                 entry.component,
                 entry.rect.y
@@ -1428,7 +1464,7 @@ public final class ModernUiRenderer {
                 renderMainMenuMusicLabel(
                     entry.component,
                     text,
-                    entry.rect.x,
+                    x,
                     y,
                     entry.component.color
                 );
@@ -1436,7 +1472,7 @@ public final class ModernUiRenderer {
                 renderMainMenuText(
                     entry.component,
                     text,
-                    entry.rect.x,
+                    x,
                     y
                 );
             }
@@ -2310,26 +2346,26 @@ public final class ModernUiRenderer {
             int top = contentBounds.y;
             if (normalized.equals("log in")
                 || normalized.equals("login")) {
-                return top + 36;
+                return top + 42;
             }
             if (normalized.contains("existing user")) {
-                return top + 57;
+                return top + 63;
             }
             if (normalized.equals("create account")) {
-                return top + 86;
+                return top + 92;
             }
             if (normalized.contains("new user")) {
-                return top + 107;
+                return top + 113;
             }
             if (normalized.startsWith("world ")) {
-                return top + 136;
+                return top + 142;
             }
             if (normalized.contains("click to switch")) {
-                return top + 157;
+                return top + 163;
             }
             if (normalized.equals("standard detail")
                 || normalized.equals("high detail")) {
-                return top + 214;
+                return top + 220;
             }
             if (normalized.equals("graphics options")) {
                 return top + 252;
@@ -2362,12 +2398,12 @@ public final class ModernUiRenderer {
                 }
 
                 if (oldTop != Integer.MAX_VALUE) {
-                    int targetTop = contentBounds.y + 184;
+                    int targetTop = contentBounds.y + 190;
                     choiceInputDeltaY = targetTop - oldTop;
 
                     if (standardChoice != null) {
                         standardChoice = new UiRect(
-                            standardChoice.x,
+                            standardChoice.x + 3,
                             standardChoice.y + choiceInputDeltaY,
                             standardChoice.width,
                             standardChoice.height
@@ -2375,7 +2411,7 @@ public final class ModernUiRenderer {
                     }
                     if (highChoice != null) {
                         highChoice = new UiRect(
-                            highChoice.x,
+                            highChoice.x - 3,
                             highChoice.y + choiceInputDeltaY,
                             highChoice.width,
                             highChoice.height
