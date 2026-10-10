@@ -158,45 +158,27 @@ public final class ModernGraphicsOptionsUi {
 
         drawAsset(
             "graphics-options/panel",
-            layout.panelX,
-            layout.panelY,
-            layout.panelWidth,
-            layout.panelHeight
-        );
-
-        drawAsset(
-            "graphics-options/divider",
-            layout.panelX + ModernUiMetrics.GRAPHICS_PANEL_INSET,
-            layout.panelY + 146,
-            layout.panelWidth
-                - ModernUiMetrics.GRAPHICS_PANEL_INSET * 2,
-            4
+            layout.panel()
         );
         drawAsset(
             "graphics-options/divider",
-            layout.panelX + ModernUiMetrics.GRAPHICS_PANEL_INSET,
-            layout.panelY + 360,
-            layout.panelWidth
-                - ModernUiMetrics.GRAPHICS_PANEL_INSET * 2,
-            4
+            layout.topDivider()
+        );
+        drawAsset(
+            "graphics-options/divider",
+            layout.bottomDivider()
         );
 
         drawCenteredLabel(
             "Graphics Options",
-            layout.panelX,
-            layout.panelY + 22,
-            layout.panelWidth,
-            22,
+            layout.title(),
             ModernUiFontRegistry.PLAIN_12,
             ModernUiMetrics.FONT_TITLE
         );
 
         drawLeftLabel(
             "Display modes",
-            layout.panelX + 48,
-            layout.panelY + 40,
-            180,
-            18,
+            layout.displaySectionLabel(),
             ModernUiFontRegistry.BOLD_12,
             ModernUiMetrics.FONT_SECTION
         );
@@ -205,10 +187,7 @@ public final class ModernGraphicsOptionsUi {
 
         drawLeftLabel(
             "Advanced options",
-            layout.panelX + 48,
-            layout.panelY + 160,
-            180,
-            18,
+            layout.advancedSectionLabel(),
             ModernUiFontRegistry.BOLD_12,
             ModernUiMetrics.FONT_SECTION
         );
@@ -217,10 +196,7 @@ public final class ModernGraphicsOptionsUi {
             ModernUiRect rect = layout.control(spec.column, spec.row);
             drawCenteredLabel(
                 spec.label,
-                rect.x - 8,
-                layout.labelY(spec.row),
-                rect.width + 16,
-                16,
+                layout.controlLabel(spec.column, spec.row),
                 ModernUiFontRegistry.BOLD_12,
                 ModernUiMetrics.FONT_LABEL
             );
@@ -398,10 +374,10 @@ public final class ModernGraphicsOptionsUi {
         Component[] components
     ) {
         int[] centers = {
-            layout.centerX - 225,
-            layout.centerX - 75,
-            layout.centerX + 75,
-            layout.centerX + 225
+            layout.displayModeCenter(0),
+            layout.displayModeCenter(1),
+            layout.displayModeCenter(2),
+            layout.displayModeCenter(3)
         };
         String[] labels = {"SD", "HD", "HD", "HD"};
         String[] details = {
@@ -433,10 +409,7 @@ public final class ModernGraphicsOptionsUi {
 
             drawCenteredLabel(
                 details[i],
-                centers[i] - 65,
-                layout.panelY + 96,
-                130,
-                34,
+                layout.displayModeDetail(i),
                 ModernUiFontRegistry.PLAIN_11,
                 ModernUiMetrics.FONT_CONTROL
             );
@@ -860,6 +833,23 @@ public final class ModernGraphicsOptionsUi {
 
     private static void drawCenteredLabel(
         String text,
+        ModernUiRect rect,
+        String font,
+        float size
+    ) {
+        drawCenteredLabel(
+            text,
+            rect.x,
+            rect.y,
+            rect.width,
+            rect.height,
+            font,
+            size
+        );
+    }
+
+    private static void drawCenteredLabel(
+        String text,
         int x,
         int y,
         int width,
@@ -884,6 +874,23 @@ public final class ModernGraphicsOptionsUi {
 
     private static void drawLeftLabel(
         String text,
+        ModernUiRect rect,
+        String font,
+        float size
+    ) {
+        drawLeftLabel(
+            text,
+            rect.x,
+            rect.y,
+            rect.width,
+            rect.height,
+            font,
+            size
+        );
+    }
+
+    private static void drawLeftLabel(
+        String text,
         int x,
         int y,
         int width,
@@ -903,6 +910,19 @@ public final class ModernGraphicsOptionsUi {
             1,
             size,
             false
+        );
+    }
+
+    private static void drawAsset(
+        String asset,
+        ModernUiRect rect
+    ) {
+        drawAsset(
+            asset,
+            rect.x,
+            rect.y,
+            rect.width,
+            rect.height
         );
     }
 
