@@ -1,11 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="15" height="20" viewBox="0 0 15 20">
   <defs>
-    <linearGradient id="f" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#f0d98f"/>
-      <stop offset=".5" stop-color="#b18e52"/>
-      <stop offset="1" stop-color="#60492d"/>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c89a61"/>
+      <stop offset="1" stop-color="#68442d"/>
+    </linearGradient>
+    <linearGradient id="gem" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a54430"/>
+      <stop offset=".55" stop-color="#7c251d"/>
+      <stop offset="1" stop-color="#4a1714"/>
     </linearGradient>
   </defs>
-  <path d="M7.5 1 L14 5.5 V14.5 L7.5 19 L1 14.5 V5.5 Z" fill="url(#f)" stroke="#21180f" stroke-width="1.4"/>
-  <path d="M4 4.5 H11" stroke="#fff0b8" stroke-opacity=".5"/>
+  <path d="M7.5 1 L14 5 V13 L7.5 19 L1 13 V5 Z"
+        fill="url(#rim)" stroke="#3f291b" stroke-width="1.2"/>
+  <path d="M7.5 3.6 L11.2 6 V12 L7.5 15.8 L3.8 12 V6 Z"
+        fill="url(#gem)" stroke="#5a2018" stroke-width=".8"/>
+  <path d="M5.1 5.4 L8.9 4.4" stroke="#e79c7d" stroke-opacity=".45"/>
 </svg>
