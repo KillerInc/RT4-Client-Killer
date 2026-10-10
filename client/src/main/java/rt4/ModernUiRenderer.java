@@ -316,10 +316,28 @@ public final class ModernUiRenderer {
         Component component,
         int y
     ) {
-        if (!usesMainMenuContentBounds(component) || component.type != 4) {
+        if (!usesMainMenuContentBounds(component)
+            || mainMenuLayout == null) {
             return y;
         }
-        return y + mainMenuTextYOffset(component);
+
+        if (component.type == 4 && component.text != null) {
+            String normalized = normalizeGraphicsOptionsText(
+                component.text.toString()
+            );
+            int targetY = mainMenuLayout.textTargetY(normalized);
+            return targetY == Integer.MIN_VALUE ? y : targetY;
+        }
+
+        if (mainMenuLayout.choiceComponentIds.contains(component.id)) {
+            return y + mainMenuLayout.choiceInputDeltaY;
+        }
+
+        if (mainMenuLayout.musicSliderComponentIds.contains(component.id)) {
+            return y + mainMenuLayout.musicSliderInputDeltaY;
+        }
+
+        return y;
     }
 
     public static boolean usesMainMenuContentBounds(Component component) {
@@ -334,15 +352,17 @@ public final class ModernUiRenderer {
             return false;
         }
 
-        if (component.type != 4 || component.text == null) {
-            return false;
+        if (component.type == 4 && component.text != null) {
+            String normalized = normalizeGraphicsOptionsText(
+                component.text.toString()
+            );
+            return isManagedMainMenuText(normalized)
+                || normalized.equals("music volume");
         }
 
-        String normalized = normalizeGraphicsOptionsText(
-            component.text.toString()
-        );
-        return isManagedMainMenuText(normalized)
-            || normalized.equals("music volume");
+        return mainMenuLayout != null
+            && (mainMenuLayout.choiceComponentIds.contains(component.id)
+                || mainMenuLayout.musicSliderComponentIds.contains(component.id));
     }
 
     public static int getMainMenuContentLeft(int fallback) {
@@ -375,29 +395,6 @@ public final class ModernUiRenderer {
                 lastMainMenuContentBounds.y
                     + lastMainMenuContentBounds.height
             );
-    }
-
-    private static int mainMenuTextYOffset(Component component) {
-        if (component == null || component.text == null) {
-            return 0;
-        }
-
-        String normalized = normalizeGraphicsOptionsText(
-            component.text.toString()
-        );
-
-        // These offsets are part of the Modern main-menu layout, not cosmetic
-        // render-only nudges. InterfaceList uses the same transform for input.
-        if (normalized.equals("graphics options")) {
-            return -12;
-        }
-        if (normalized.equals("audio options")) {
-            return -6;
-        }
-        if (normalized.equals("quit")) {
-            return 14;
-        }
-        return 0;
     }
 
     private static boolean renderClientComponent(
@@ -1923,6 +1920,8 @@ public final class ModernUiRenderer {
         private Component standardChoiceComponent;
         private Component highChoiceComponent;
         private UiRect musicSlider;
+        private int choiceInputDeltaY;
+        private int musicSliderInputDeltaY;
 
         private int bodyComponentId = -1;
         private int logoComponentId = -1;
@@ -2298,6 +2297,102 @@ public final class ModernUiRenderer {
                         choiceComponentIds.add(image.componentId);
                     }
                 }
+            }
+
+            applyModernVerticalLayout();
+        }
+
+        private int textTargetY(String normalized) {
+            if (contentBounds == null || normalized == null) {
+                return Integer.MIN_VALUE;
+            }
+
+            int top = contentBounds.y;
+            if (normalized.equals("log in")
+                || normalized.equals("login")) {
+                return top + 26;
+            }
+            if (normalized.contains("existing user")) {
+                return top + 58;
+            }
+            if (normalized.equals("create account")) {
+                return top + 86;
+            }
+            if (normalized.contains("new user")) {
+                return top + 118;
+            }
+            if (normalized.startsWith("world ")) {
+                return top + 146;
+            }
+            if (normalized.contains("click to switch")) {
+                return top + 178;
+            }
+            if (normalized.equals("standard detail")
+                || normalized.equals("high detail")) {
+                return top + 250;
+            }
+            if (normalized.equals("graphics options")) {
+                return top + 282;
+            }
+            if (normalized.equals("audio options")
+                || normalized.equals("music options")) {
+                return top + 320;
+            }
+            if (normalized.equals("music volume")) {
+                return top + 356;
+            }
+            if (normalized.equals("quit")) {
+                return top + 416;
+            }
+            return Integer.MIN_VALUE;
+        }
+
+        private void applyModernVerticalLayout() {
+            if (contentBounds == null) {
+                return;
+            }
+
+            if (standardChoice != null || highChoice != null) {
+                int oldTop = Integer.MAX_VALUE;
+                if (standardChoice != null) {
+                    oldTop = Math.min(oldTop, standardChoice.y);
+                }
+                if (highChoice != null) {
+                    oldTop = Math.min(oldTop, highChoice.y);
+                }
+
+                if (oldTop != Integer.MAX_VALUE) {
+                    int targetTop = contentBounds.y + 198;
+                    choiceInputDeltaY = targetTop - oldTop;
+
+                    if (standardChoice != null) {
+                        standardChoice = new UiRect(
+                            standardChoice.x,
+                            standardChoice.y + choiceInputDeltaY,
+                            standardChoice.width,
+                            standardChoice.height
+                        );
+                    }
+                    if (highChoice != null) {
+                        highChoice = new UiRect(
+                            highChoice.x,
+                            highChoice.y + choiceInputDeltaY,
+                            highChoice.width,
+                            highChoice.height
+                        );
+                    }
+                }
+            }
+
+            if (musicSlider != null) {
+                int targetTop = contentBounds.y + 378;
+                musicSliderInputDeltaY = targetTop - musicSlider.y;
+                musicSlider = new UiRect(
+                    musicSlider.x,
+                    targetTop,
+                    musicSlider.width,
+                    musicSlider.height
+                );
             }
         }
     }
