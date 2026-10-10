@@ -68,7 +68,7 @@ public final class ModernAudioOptionsUi {
         int choiceDividerY = Math.min(
             layout.monoLabel.rect.y,
             layout.stereoLabel.rect.y
-        ) - 16;
+        ) - 4;
         drawAsset(
             "audio-options/divider",
             layout.panel.x + ModernUiMetrics.AUDIO_PANEL_INSET,
@@ -81,7 +81,7 @@ public final class ModernAudioOptionsUi {
         drawCentered(
             display(layout.title.text),
             layout.panel.x,
-            layout.panel.y + 18,
+            layout.panel.y + 28,
             layout.panel.width,
             28,
             ModernUiFontRegistry.PLAIN_12,
@@ -94,49 +94,60 @@ public final class ModernAudioOptionsUi {
             layout.musicLabel,
             layout.musicSlider,
             Preferences.musicVolume,
-            255
+            255,
+            -4
         );
         drawVolume(
             layout.effectsLabel,
             layout.effectsSlider,
             Preferences.soundEffectVolume,
-            127
+            127,
+            2
         );
         drawVolume(
             layout.areaLabel,
             layout.areaSlider,
             Preferences.ambientSoundsVolume,
-            127
+            127,
+            8
         );
 
         drawChoice(
             layout.monoLabel,
             layout.monoToggle,
-            !Preferences.stereo
+            !Preferences.stereo,
+            12
         );
         drawChoice(
             layout.stereoLabel,
             layout.stereoToggle,
-            Preferences.stereo
+            Preferences.stereo,
+            12
         );
 
+        Rect mainMenuVisual = new Rect(
+            layout.mainMenuButton.x,
+            layout.mainMenuButton.y + 12,
+            layout.mainMenuButton.width,
+            layout.mainMenuButton.height
+        );
         boolean mainMenuHover =
-            contains(layout.mainMenuButton, Mouse.lastMouseX, Mouse.lastMouseY);
+            contains(mainMenuVisual, Mouse.lastMouseX, Mouse.lastMouseY);
         drawAsset(
             mainMenuHover
                 ? "audio-options/button-active"
                 : "audio-options/button",
-            layout.mainMenuButton.x,
-            layout.mainMenuButton.y,
-            layout.mainMenuButton.width,
-            layout.mainMenuButton.height
+            mainMenuVisual.x,
+            mainMenuVisual.y,
+            mainMenuVisual.width,
+            mainMenuVisual.height
         );
         drawCentered(
             display(layout.mainMenu.text),
-            layout.mainMenuButton.x,
-            layout.mainMenuButton.y,
-            layout.mainMenuButton.width,
-            layout.mainMenuButton.height,
+            mainMenuVisual.x,
+            mainMenuVisual.y,
+            mainMenuVisual.width,
+            mainMenuVisual.height,
             ModernUiFontRegistry.PLAIN_12,
             ModernUiMetrics.FONT_BUTTON,
             ModernUiMetrics.TEXT_PRIMARY,
@@ -148,12 +159,13 @@ public final class ModernAudioOptionsUi {
         TextEntry label,
         Rect slider,
         int value,
-        int max
+        int max,
+        int yOffset
     ) {
         drawCentered(
             display(label.text),
             slider.x - 80,
-            label.rect.y - 5,
+            label.rect.y - 5 + yOffset,
             slider.width + 160,
             Math.max(18, label.rect.height),
             ModernUiFontRegistry.BOLD_12,
@@ -164,6 +176,7 @@ public final class ModernAudioOptionsUi {
 
         int trackY =
             slider.y
+                + yOffset
                 + (slider.height - ModernUiMetrics.AUDIO_SLIDER_HEIGHT) / 2;
         drawAsset(
             "audio-options/slider-track",
@@ -185,6 +198,7 @@ public final class ModernAudioOptionsUi {
                 - ModernUiMetrics.AUDIO_SLIDER_KNOB_WIDTH / 2;
         int knobY =
             slider.y
+                + yOffset
                 + (slider.height
                     - ModernUiMetrics.AUDIO_SLIDER_KNOB_HEIGHT) / 2;
 
@@ -200,12 +214,13 @@ public final class ModernAudioOptionsUi {
     private static void drawChoice(
         TextEntry label,
         Rect toggle,
-        boolean selected
+        boolean selected,
+        int yOffset
     ) {
         drawCentered(
             display(label.text),
             toggle.x - 42,
-            label.rect.y,
+            label.rect.y + yOffset,
             toggle.width + 84,
             Math.max(18, label.rect.height),
             ModernUiFontRegistry.BOLD_12,
@@ -221,7 +236,7 @@ public final class ModernAudioOptionsUi {
                 ? "audio-options/toggle-on"
                 : "audio-options/toggle-off",
             toggle.x,
-            toggle.y,
+            toggle.y + yOffset,
             toggle.width,
             toggle.height
         );
@@ -269,7 +284,7 @@ public final class ModernAudioOptionsUi {
         int panelWidth = ModernUiMetrics.AUDIO_PANEL_WIDTH;
         int panelHeight = ModernUiMetrics.AUDIO_PANEL_HEIGHT;
         int panelX = centerX - panelWidth / 2;
-        int panelY = title.rect.y - 30;
+        int panelY = title.rect.y - 40;
 
         panelX = Math.max(
             8,
