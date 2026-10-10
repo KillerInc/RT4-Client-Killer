@@ -32,7 +32,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          gradle --no-daemon --stacktrace :client:clean :client:jar :client:verifyModernSvgAssets :plugin-playground:classes 2>&1 | tee modern-client-build.log
+          gradle --no-daemon --stacktrace :client:clean :client:jar :client:verifyModernSvgAssets :client:verifyModernUiLayouts :plugin-playground:classes 2>&1 | tee modern-client-build.log
           status=${PIPESTATUS[0]}
           echo "exit_code=$status" >> "$GITHUB_OUTPUT"
           exit "$status"
