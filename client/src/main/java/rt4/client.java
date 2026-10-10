@@ -890,6 +890,11 @@ public final class client extends GameShell {
 		} else if (gameState == 40) {
 			Fonts.drawTextOnScreen(false, JagString.concatenate(new JagString[]{LocalizedText.CONLOST, JagString.LINE_BREAK, LocalizedText.ATTEMPT_TO_REESTABLISH}));
 		}
+
+		if (gameState != 0) {
+			ModernUiCacheProgressOverlay.render();
+		}
+
 		if (GlRenderer.enabled && gameState != 0) {
 			GlRenderer.swapBuffers();
 			for (w = 0; w < InterfaceList.rectangles; w++) {
