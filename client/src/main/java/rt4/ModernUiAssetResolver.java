@@ -366,20 +366,17 @@ public final class ModernUiAssetResolver {
 
         // Main menu. Most cache components are fixed-size; the logo follows
         // the same viewport-dependent formula as ModernUiRenderer.
-        int logoWidth = Math.min(
-            620,
-            Math.max(400, canvasWidth * 54 / 100)
-        );
-        logoWidth = Math.min(
-            logoWidth,
-            Math.max(240, canvasWidth - 40)
-        );
-        int logoHeight = Math.max(
-            90,
-            logoWidth * 500 / 1445
-        );
+        int logoWidth =
+            ModernMainMenuLayout.logoWidthForCanvas(canvasWidth);
+        int logoHeight =
+            ModernMainMenuLayout.logoHeightForWidth(logoWidth);
 
-        addWarmupSpec(plan, "main-menu/scroll", 552, 582);
+        addWarmupSpec(
+            plan,
+            "main-menu/scroll",
+            ModernMainMenuLayout.SCROLL_WIDTH,
+            ModernMainMenuLayout.SCROLL_HEIGHT
+        );
         addWarmupSpec(plan, "main-menu/logo", logoWidth, logoHeight);
         addWarmupSpec(
             plan,
