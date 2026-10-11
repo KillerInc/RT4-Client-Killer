@@ -37,6 +37,7 @@ public final class ModernUiLayoutVerifier {
             verifyTrade(viewport[0], viewport[1]);
             verifyWorldMap(viewport[0], viewport[1]);
             verifyGrandExchange(viewport[0], viewport[1]);
+            verifyGrandExchangeSearch(viewport[0], viewport[1]);
             verifyStatusOrbs(viewport[0], viewport[1]);
             verifyMainMenu(viewport[0], viewport[1]);
         }
@@ -620,7 +621,9 @@ public final class ModernUiLayoutVerifier {
         ModernInGameDialogLayout layout =
             ModernInGameDialogLayout.create(
                 width,
-                height
+                height,
+                width - 140,
+                height - 120
             );
 
         insideScreen(
@@ -1077,6 +1080,71 @@ public final class ModernUiLayoutVerifier {
             width,
             height
         );
+    }
+
+    private static void verifyGrandExchangeSearch(
+        int width,
+        int height
+    ) {
+        ModernGrandExchangeSearchLayout layout =
+            ModernGrandExchangeSearchLayout.create(
+                width,
+                height
+            );
+
+        insideScreen(
+            layout.panel,
+            "grand exchange search panel",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.title,
+            "grand exchange search title",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.divider,
+            "grand exchange search divider",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.searchField,
+            "grand exchange search field",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.results,
+            "grand exchange search results",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.closeButton,
+            "grand exchange search close",
+            width,
+            height
+        );
+
+        for (int i = 0;
+            i < layout.visibleResultCapacity();
+            i++) {
+            inside(
+                layout.results,
+                layout.resultRow(i),
+                "grand exchange search result " + i,
+                width,
+                height
+            );
+        }
     }
 
     private static void verifyStatusOrbs(
