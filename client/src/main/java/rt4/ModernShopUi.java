@@ -33,6 +33,7 @@ public final class ModernShopUi {
                 GameShell.canvasHeight,
                 interfaceId
             );
+        ModernUiInputRouter.blockWorldInput(layout.panel);
 
         ModernUiRect screen =
             new ModernUiRect(
