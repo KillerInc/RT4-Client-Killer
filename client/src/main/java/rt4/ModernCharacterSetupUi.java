@@ -399,6 +399,14 @@ public final class ModernCharacterSetupUi {
                 bounds
             );
 
+        if (!handled) {
+            handled =
+                dispatchCharacterSetupFallback(
+                    component,
+                    child
+                );
+        }
+
         DisplayDebug.log(
             "MODERN_UI CHARACTER_RECT_ATTEMPT"
                 + " child=" + child
@@ -1192,6 +1200,86 @@ public final class ModernCharacterSetupUi {
         return child >= 0 && child < components.length
             ? components[child]
             : null;
+    }
+
+    private static boolean dispatchCharacterSetupFallback(
+        Component component,
+        int child
+    ) {
+        int scriptId = -1;
+
+        switch (child) {
+            case 37:
+                scriptId = 1572;
+                break;
+            case 40:
+                scriptId = 1573;
+                break;
+            case 46:
+                scriptId = 1574;
+                break;
+            case 49:
+                scriptId = 1575;
+                break;
+            case 52:
+                scriptId = 1576;
+                break;
+            case 56:
+                scriptId = 1577;
+                break;
+            case 58:
+                scriptId = 1578;
+                break;
+            case 171:
+                scriptId = 1581;
+                break;
+            case 167:
+                scriptId = 1582;
+                break;
+            case 323:
+                scriptId = 1594;
+                break;
+            case 319:
+                scriptId = 1595;
+                break;
+            default:
+                break;
+        }
+
+        if (scriptId != -1) {
+            HookRequest request = new HookRequest();
+            request.arguments =
+                new Object[] { Integer.valueOf(scriptId) };
+            request.source = component;
+            request.op = 1;
+            ScriptRunner.run(request);
+
+            DisplayDebug.log(
+                "MODERN_UI CHARACTER_FALLBACK_SCRIPT"
+                    + " child=" + child
+                    + " script=" + scriptId
+            );
+            return true;
+        }
+
+        if (child == 169 || child == 321) {
+            JagString opBase =
+                JagString.parse("Select random");
+            ClientProt.sendButtonClick(
+                opBase,
+                component.createdComponentId,
+                1,
+                component.id
+            );
+            DisplayDebug.log(
+                "MODERN_UI CHARACTER_FALLBACK_PACKET"
+                    + " child=" + child
+                    + " op=1"
+            );
+            return true;
+        }
+
+        return false;
     }
 
     private static void bind(
