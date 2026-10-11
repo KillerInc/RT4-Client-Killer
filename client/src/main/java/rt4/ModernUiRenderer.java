@@ -78,6 +78,12 @@ public final class ModernUiRenderer {
         }
 
         Component[] loadedComponents = InterfaceList.components[interfaceId];
+        boolean inGameTopLevel =
+            ModernGameUi.isTopLevel(interfaceId);
+        if (inGameTopLevel) {
+            ModernGameUi.prepare(loadedComponents);
+        }
+
         boolean graphicsOptions =
             GraphicsOptionsUiInjector.isGraphicsOptionsActive(loadedComponents);
         boolean audioOptions =
@@ -254,6 +260,17 @@ public final class ModernUiRenderer {
             mainMenuLayout = oldMainMenuLayout;
         }
 
+        if (inGameTopLevel) {
+            setClip(
+                0,
+                0,
+                GameShell.canvasWidth,
+                GameShell.canvasHeight
+            );
+            ModernGameUi.renderChrome();
+            setClip(clipLeft, clipTop, clipRight, clipBottom);
+        }
+
         if (suppressStartupDiagnostics) {
             suppressDiagnosticsDepth--;
         }
@@ -293,6 +310,13 @@ public final class ModernUiRenderer {
 
             int x = parentX + component.x;
             int y = parentY + component.y;
+            ModernUiRect gameBounds =
+                ModernGameUi.bounds(component);
+            if (gameBounds != null) {
+                x = gameBounds.x;
+                y = gameBounds.y;
+            }
+
             int rectangle = parentRectangle;
             if (rectangle == -1 && InterfaceList.rectangles < InterfaceList.rectangleX.length) {
                 rectangle = InterfaceList.rectangles++;
@@ -307,13 +331,21 @@ public final class ModernUiRenderer {
 
             int left = Math.max(clipLeft, x);
             int top = Math.max(clipTop, y);
+            int renderWidth =
+                gameBounds == null
+                    ? Math.max(1, component.width)
+                    : gameBounds.width;
+            int renderHeight =
+                gameBounds == null
+                    ? Math.max(1, component.height)
+                    : gameBounds.height;
             int right = Math.min(
                 clipRight,
-                x + Math.max(1, component.width)
+                x + renderWidth
             );
             int bottom = Math.min(
                 clipBottom,
-                y + Math.max(1, component.height)
+                y + renderHeight
             );
             if (right <= left || bottom <= top) {
                 continue;
