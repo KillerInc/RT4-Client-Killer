@@ -60,8 +60,16 @@ public final class ModernCharacterSetupUi {
         Model model = discover(components);
         ModernCharacterSetupLayout layout = currentLayout();
 
+        ModernUiRect dragHandle =
+            new ModernUiRect(
+                layout.title.x,
+                layout.header.y,
+                layout.header.right() - layout.title.x,
+                layout.header.height
+            );
+
         if (Mouse.clickButton == 1
-            && layout.title.contains(Mouse.clickX, Mouse.clickY)) {
+            && dragHandle.contains(Mouse.clickX, Mouse.clickY)) {
             dragging = true;
             dragOffsetX = Mouse.clickX - layout.panel.x;
             dragOffsetY = Mouse.clickY - layout.panel.y;
