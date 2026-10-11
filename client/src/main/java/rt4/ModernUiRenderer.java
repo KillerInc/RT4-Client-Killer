@@ -429,20 +429,60 @@ public final class ModernUiRenderer {
             return true;
         }
 
-        if (component.clientCode == 1338) {
-            drawMissing("minimap", x, y, component.width, component.height);
-            return true;
-        }
-        if (component.clientCode == 1339) {
-            drawMissing("compass", x, y, component.width, component.height);
+        if (component.clientCode == 1338
+            || component.clientCode == 1339) {
+            if (ModernGameUi.renderClientComponent(
+                component,
+                rectangle
+            )) {
+                setClip(
+                    clipLeft,
+                    clipTop,
+                    clipRight,
+                    clipBottom
+                );
+                return true;
+            }
+
+            drawMissing(
+                component.clientCode == 1338
+                    ? "minimap"
+                    : "compass",
+                x,
+                y,
+                component.width,
+                component.height
+            );
             return true;
         }
         if (component.clientCode == 1400) {
-            drawMissing("world-map", x, y, component.width, component.height);
+            WorldMap.render(
+                x,
+                y,
+                component.height,
+                component.width
+            );
+            setClip(
+                clipLeft,
+                clipTop,
+                clipRight,
+                clipBottom
+            );
             return true;
         }
         if (component.clientCode == 1401) {
-            drawMissing("world-map-overview", x, y, component.width, component.height);
+            Cs1ScriptRunner.renderWorldMapOverview(
+                x,
+                component.height,
+                component.width,
+                y
+            );
+            setClip(
+                clipLeft,
+                clipTop,
+                clipRight,
+                clipBottom
+            );
             return true;
         }
         if (component.clientCode == 1402) {
