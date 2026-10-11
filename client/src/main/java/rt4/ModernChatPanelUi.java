@@ -40,6 +40,7 @@ public final class ModernChatPanelUi {
                 GameShell.canvasWidth,
                 GameShell.canvasHeight
             );
+        ModernUiInputRouter.blockWorldInput(layout.panel);
 
         ModernUiRect screen =
             new ModernUiRect(
