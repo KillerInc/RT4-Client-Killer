@@ -736,6 +736,7 @@ public class InterfaceList {
 					dragSourceY = inputOriginY;
 				}
 				if (!component.if3 || left < right && top < bottom) {
+					boolean modernDirectClick = false;
 					if (component.type == 0) {
 						if (!component.if3 && isHidden(component) && hoveredComponent != component) {
 							continue;
@@ -784,7 +785,6 @@ public class InterfaceList {
 								}
 							}
 						}
-						boolean modernDirectClick = false;
 						if (isClicked) {
 							ModernUiInputRouter.logDebugClick(component);
 							modernDirectClick =
