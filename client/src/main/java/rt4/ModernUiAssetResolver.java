@@ -411,60 +411,92 @@ public final class ModernUiAssetResolver {
         addWarmupSpec(plan, "main-menu/footer", 300, 32);
         addWarmupSpec(plan, "main-menu/edge", 12, 220);
 
-        // Remaining title/account/world menus.
+        // Independent title-screen menus. Each screen owns its own
+        // dimensions so an edit to World Select never changes Create Account.
         addWarmupSpec(
             plan,
             "audio-options/panel",
-            ModernTitleMenuLayout.PANEL_WIDTH,
-            ModernTitleMenuLayout.PANEL_HEIGHT
+            ModernAccountMenuLayout.PANEL_WIDTH,
+            ModernAccountMenuLayout.PANEL_HEIGHT
         );
         addWarmupSpec(
             plan,
+            "audio-options/panel",
+            ModernWorldSelectLayout.PANEL_WIDTH,
+            ModernWorldSelectLayout.PANEL_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
+            "audio-options/panel",
+            ModernTitleDialogLayout.PANEL_WIDTH,
+            ModernTitleDialogLayout.PANEL_HEIGHT
+        );
+
+        addWarmupSpec(
+            plan,
             "controls/button",
-            ModernTitleMenuLayout.FIELD_WIDTH,
-            ModernTitleMenuLayout.FIELD_HEIGHT
+            ModernAccountMenuLayout.FIELD_WIDTH,
+            ModernAccountMenuLayout.FIELD_HEIGHT
         );
         addWarmupSpec(
             plan,
             "controls/button-active",
-            ModernTitleMenuLayout.FIELD_WIDTH,
-            ModernTitleMenuLayout.FIELD_HEIGHT
+            ModernAccountMenuLayout.FIELD_WIDTH,
+            ModernAccountMenuLayout.FIELD_HEIGHT
         );
+
         addWarmupSpec(
             plan,
             "audio-options/button",
-            ModernTitleMenuLayout.BUTTON_WIDTH,
-            ModernTitleMenuLayout.BUTTON_HEIGHT
+            ModernAccountMenuLayout.ACTION_WIDTH,
+            ModernAccountMenuLayout.ACTION_HEIGHT
         );
         addWarmupSpec(
             plan,
             "audio-options/button-active",
-            ModernTitleMenuLayout.BUTTON_WIDTH,
-            ModernTitleMenuLayout.BUTTON_HEIGHT
+            ModernAccountMenuLayout.ACTION_WIDTH,
+            ModernAccountMenuLayout.ACTION_HEIGHT
         );
+
+        for (int width : new int[] {130, 170}) {
+            addWarmupSpec(
+                plan,
+                "audio-options/button",
+                width,
+                ModernWorldSelectLayout.ACTION_HEIGHT
+            );
+            addWarmupSpec(
+                plan,
+                "audio-options/button-active",
+                width,
+                ModernWorldSelectLayout.ACTION_HEIGHT
+            );
+        }
+
         addWarmupSpec(
             plan,
             "audio-options/button",
-            160,
-            ModernTitleMenuLayout.BUTTON_HEIGHT
+            ModernTitleDialogLayout.ACTION_WIDTH,
+            ModernTitleDialogLayout.ACTION_HEIGHT
         );
         addWarmupSpec(
             plan,
             "audio-options/button-active",
-            160,
-            ModernTitleMenuLayout.BUTTON_HEIGHT
+            ModernTitleDialogLayout.ACTION_WIDTH,
+            ModernTitleDialogLayout.ACTION_HEIGHT
         );
+
         addWarmupSpec(
             plan,
             "audio-options/button",
-            150,
-            30
+            ModernAccountMenuLayout.NAV_WIDTH,
+            ModernAccountMenuLayout.NAV_HEIGHT
         );
         addWarmupSpec(
             plan,
             "audio-options/button-active",
-            150,
-            30
+            ModernAccountMenuLayout.NAV_WIDTH,
+            ModernAccountMenuLayout.NAV_HEIGHT
         );
 
         // Post-login welcome/community menu.
