@@ -1197,9 +1197,21 @@ public class InterfaceList {
 						// Modern rendering is deliberately side-effect free, so move
 						// that behavior into the input pass and use the same Modern
 						// event origin as clicks/dragging.
+						int menuLocalX =
+							Mouse.lastMouseX - inputOriginX;
+						int menuLocalY =
+							Mouse.lastMouseY - inputOriginY;
+						if (ModernUiInputRouter.has(component)) {
+							menuLocalX =
+								menuLocalX * Math.max(1, component.width)
+									/ Math.max(1, inputWidth);
+							menuLocalY =
+								menuLocalY * Math.max(1, component.height)
+									/ Math.max(1, inputHeight);
+						}
 						MiniMenu.addComponentEntries(
-							Mouse.lastMouseY - inputOriginY,
-							Mouse.lastMouseX - inputOriginX,
+							menuLocalY,
+							menuLocalX,
 							component
 						);
 					}
