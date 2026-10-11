@@ -277,6 +277,205 @@ public final class ModernCharacterSetupUi {
         bind(model, 319, layout.footerButton(2, 3), screen);
     }
 
+    public static void processInput() {
+        if (!ModernUiManager.isEnabled()
+            || !ModernGameUi.isInGame()
+            || Mouse.clickButton != 1
+            || INTERFACE_ID < 0
+            || INTERFACE_ID >= InterfaceList.components.length) {
+            return;
+        }
+
+        Component[] components =
+            InterfaceList.components[INTERFACE_ID];
+        if (components == null || !handles(INTERFACE_ID)) {
+            return;
+        }
+
+        Model model = discover(components);
+        ModernCharacterSetupLayout layout = currentLayout();
+
+        // Tabs are fully Modern-owned hitboxes.
+        for (int i = 0; i < TAB_COMPONENTS.length; i++) {
+            if (activateAt(model, TAB_COMPONENTS[i], layout.tab(i))) {
+                consumeModernClick();
+                return;
+            }
+        }
+
+        if (model.overlay == 26) {
+            if (activateAt(model, 362, layout.footerButton(0, 2))
+                || activateAt(model, 360, layout.footerButton(1, 2))) {
+                consumeModernClick();
+            }
+            return;
+        }
+        if (model.overlay == 28) {
+            if (activateAt(model, 377, layout.footerButton(0, 2))
+                || activateAt(model, 378, layout.footerButton(1, 2))
+                || activateAt(model, 381, overlayToggle(layout))) {
+                consumeModernClick();
+            }
+            return;
+        }
+        if (model.overlay == 29) {
+            if (activateAt(model, 394, layout.footerButton(0, 2))
+                || activateAt(model, 395, layout.footerButton(1, 2))
+                || activateAt(model, 398, overlayToggle(layout))) {
+                consumeModernClick();
+            }
+            return;
+        }
+
+        boolean handled = false;
+        switch (model.tab) {
+            case 0:
+                handled =
+                    activateAt(model, 37, layout.choiceCard(0))
+                    || activateAt(model, 40, layout.choiceCard(1))
+                    || activateAt(model, 46, layout.footerButton(0, 1));
+                break;
+            case 1:
+                handled =
+                    activateAt(model, 49, layout.choiceCard(0))
+                    || activateAt(model, 52, layout.choiceCard(1))
+                    || activateAt(model, 56, layout.footerButton(0, 2))
+                    || activateAt(model, 58, layout.footerButton(1, 2));
+                break;
+            case 2:
+                handled = processHeadClick(model, layout);
+                break;
+            case 3:
+                handled = processBodyClick(model, layout);
+                break;
+            default:
+                break;
+        }
+
+        if (handled) {
+            consumeModernClick();
+        }
+    }
+
+    private static boolean processHeadClick(
+        Model model,
+        ModernCharacterSetupLayout layout
+    ) {
+        ModernUiRect hair = layout.headSelector(0);
+        ModernUiRect beard = layout.headSelector(1);
+
+        if (activateAt(model, 92, layout.selectorArrow(hair, false))
+            || activateAt(model, 93, layout.selectorArrow(hair, true))
+            || activateAt(model, 97, layout.selectorArrow(beard, false))
+            || activateAt(model, 98, layout.selectorArrow(beard, true))
+            || activateAt(model, 62, layout.paletteTab(0, 2))
+            || activateAt(model, 61, layout.paletteTab(1, 2))
+            || activateAt(model, 171, layout.footerButton(0, 3))
+            || activateAt(model, 169, layout.footerButton(1, 3))
+            || activateAt(model, 167, layout.footerButton(2, 3))) {
+            return true;
+        }
+
+        int[] palette =
+            isVisible(model, 150)
+                ? HEAD_SKIN_COLOURS
+                : HEAD_HAIR_COLOURS;
+        for (int i = 0; i < palette.length; i++) {
+            if (activateAt(
+                    model,
+                    palette[i],
+                    layout.swatch(i, palette.length)
+                )) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean processBodyClick(
+        Model model,
+        ModernCharacterSetupLayout layout
+    ) {
+        int[][] pairs = {
+            {341,342}, {345,346}, {349,350}, {353,354}, {357,358}
+        };
+        for (int i = 0; i < pairs.length; i++) {
+            ModernUiRect selector = layout.bodySelector(i);
+            if (activateAt(
+                    model,
+                    pairs[i][0],
+                    layout.selectorArrow(selector, false)
+                )
+                || activateAt(
+                    model,
+                    pairs[i][1],
+                    layout.selectorArrow(selector, true)
+                )) {
+                return true;
+            }
+        }
+
+        if (activateAt(model, 178, layout.paletteTab(0, 3))
+            || activateAt(model, 176, layout.paletteTab(1, 3))
+            || activateAt(model, 174, layout.paletteTab(2, 3))
+            || activateAt(model, 323, layout.footerButton(0, 3))
+            || activateAt(model, 321, layout.footerButton(1, 3))
+            || activateAt(model, 319, layout.footerButton(2, 3))) {
+            return true;
+        }
+
+        int[] palette = activeBodyPalette(model);
+        for (int i = 0; i < palette.length; i++) {
+            if (activateAt(
+                    model,
+                    palette[i],
+                    layout.swatch(i, palette.length)
+                )) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean activateAt(
+        Model model,
+        int child,
+        ModernUiRect bounds
+    ) {
+        if (bounds == null
+            || !bounds.contains(Mouse.clickX, Mouse.clickY)) {
+            return false;
+        }
+        Component component = model.get(child);
+        if (component == null) {
+            DisplayDebug.log(
+                "MODERN_CHARACTER_SETUP click missing component="
+                    + child
+            );
+            return false;
+        }
+
+        boolean handled =
+            ModernUiInputRouter.dispatchBoundPrimaryClick(
+                component,
+                bounds
+            );
+        if (!handled) {
+            DisplayDebug.log(
+                "MODERN_CHARACTER_SETUP click not-dispatched"
+                    + " component=" + child
+                    + " x=" + Mouse.clickX
+                    + " y=" + Mouse.clickY
+            );
+        }
+        return handled;
+    }
+
+    private static void consumeModernClick() {
+        Mouse.clickButton = 0;
+        MiniMenu.clickProcessingState = 0;
+    }
+
     public static void render(
         int interfaceId,
         Component[] components
@@ -352,8 +551,8 @@ public final class ModernCharacterSetupUi {
             boolean hover = tab.contains(Mouse.lastMouseX, Mouse.lastMouseY);
             drawAsset(
                 i == model.tab || hover
-                    ? "controls/button-active"
-                    : "controls/button",
+                    ? "controls/icon-button-active"
+                    : "controls/icon-button",
                 tab
             );
 
@@ -811,10 +1010,12 @@ public final class ModernCharacterSetupUi {
                 && VarpDomain.activeVarps[170] == 1;
         }
         if (child == 49) {
-            return !PlayerAppearance.DEFAULT.gender;
+            return VarcDomain.varcs.length > 196
+                && VarcDomain.varcs[196] != 1;
         }
         if (child == 52) {
-            return PlayerAppearance.DEFAULT.gender;
+            return VarcDomain.varcs.length > 196
+                && VarcDomain.varcs[196] == 1;
         }
         return false;
     }
