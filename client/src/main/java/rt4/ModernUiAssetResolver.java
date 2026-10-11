@@ -281,6 +281,24 @@ public final class ModernUiAssetResolver {
             ModernInventoryPanelLayout.PANEL_WIDTH,
             ModernInventoryPanelLayout.PANEL_HEIGHT
         );
+        addWarmupSpec(
+            plan,
+            "game-ui/panel",
+            ModernSidebarPanelLayout.PANEL_WIDTH,
+            ModernSidebarPanelLayout.PANEL_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
+            "game-ui/slot",
+            ModernSidebarPanelLayout.TILE_SIZE,
+            ModernSidebarPanelLayout.TILE_SIZE
+        );
+        addWarmupSpec(
+            plan,
+            "game-ui/slot-hover",
+            ModernSidebarPanelLayout.TILE_SIZE,
+            ModernSidebarPanelLayout.TILE_SIZE
+        );
 
         // Graphics Options - current exact renderer sizes.
         addWarmupSpec(
