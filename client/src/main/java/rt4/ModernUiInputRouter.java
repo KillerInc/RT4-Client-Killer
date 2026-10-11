@@ -1,6 +1,7 @@
 package rt4;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,10 @@ public final class ModernUiInputRouter {
         new ArrayList<>();
     private static final Map<Component, Integer> directHandledLoops =
         new IdentityHashMap<>();
+    private static final Map<Component, Integer> menuPreparedLoops =
+        new IdentityHashMap<>();
+    private static int prepareSerial;
+    private static int activePrepareSerial;
 
     private static final int DEBUG_FILL = 0x77CFFF;
     private static final int DEBUG_BORDER = 0xA8E4FF;
@@ -43,9 +48,18 @@ public final class ModernUiInputRouter {
             new Binding(
                 bounds,
                 clip == null ? bounds : clip,
-                client.loop
+                client.loop,
+                activePrepareSerial
             )
         );
+    }
+
+    public static synchronized void beginFrame() {
+        bindings.clear();
+        blockers.clear();
+        directHandledLoops.clear();
+        menuPreparedLoops.clear();
+        activePrepareSerial = 0;
     }
 
     public static synchronized void blockWorldInput(
@@ -160,6 +174,12 @@ public final class ModernUiInputRouter {
             return;
         }
 
+        final int serial;
+        synchronized (ModernUiInputRouter.class) {
+            serial = ++prepareSerial;
+            activePrepareSerial = serial;
+        }
+
         // Each screen adapter discovers only action/state components. Geometry
         // always comes from the corresponding Modern layout.
         ModernLoginScreenUi.prepareInput(
@@ -245,6 +265,161 @@ public final class ModernUiInputRouter {
             parentX,
             parentY
         );
+
+        processPreparedInput(serial);
+
+        synchronized (ModernUiInputRouter.class) {
+            if (activePrepareSerial == serial) {
+                activePrepareSerial = 0;
+            }
+        }
+    }
+
+    private static void processPreparedInput(
+        int serial
+    ) {
+        List<Map.Entry<Component, Binding>> prepared =
+            new ArrayList<>();
+
+        synchronized (ModernUiInputRouter.class) {
+            for (Map.Entry<Component, Binding> entry
+                    : bindings.entrySet()) {
+                Binding binding = entry.getValue();
+                if (binding != null
+                    && binding.loop == client.loop
+                    && binding.prepareSerial == serial) {
+                    prepared.add(entry);
+                }
+            }
+        }
+
+        // More specific Modern rectangles win when controls overlap.
+        prepared.sort(
+            Comparator.comparingInt(
+                entry -> area(effectiveBounds(entry.getValue()))
+            )
+        );
+
+        // Build component menus from Modern geometry too. Inventory/item
+        // actions, right-click menus and other multi-op controls must not need
+        // the cache-era component rectangle to be discoverable.
+        for (Map.Entry<Component, Binding> entry : prepared) {
+            Component component = entry.getKey();
+            Binding binding = entry.getValue();
+            ModernUiRect hit = effectiveBounds(binding);
+            if (component == null
+                || hit == null
+                || component.clientCode != 0
+                || !hit.contains(
+                    Mouse.lastMouseX,
+                    Mouse.lastMouseY
+                )) {
+                continue;
+            }
+
+            MiniMenu.addComponentEntries(
+                Mouse.lastMouseY - binding.bounds.y,
+                Mouse.lastMouseX - binding.bounds.x,
+                component
+            );
+            synchronized (ModernUiInputRouter.class) {
+                menuPreparedLoops.put(
+                    component,
+                    client.loop
+                );
+            }
+        }
+
+        if (Mouse.clickButton != 1) {
+            return;
+        }
+
+        for (Map.Entry<Component, Binding> entry : prepared) {
+            Component component = entry.getKey();
+            Binding binding = entry.getValue();
+            ModernUiRect hit = effectiveBounds(binding);
+            if (component == null
+                || hit == null
+                || !hit.contains(
+                    Mouse.clickX,
+                    Mouse.clickY
+                )) {
+                continue;
+            }
+
+            if (dispatchBoundPrimaryClick(
+                    component,
+                    hit
+                )) {
+                DisplayDebug.log(
+                    "MODERN_UI RECT_CLICK"
+                        + " interface="
+                            + (component.id >>> 16)
+                        + " component="
+                            + (component.id & 0xFFFF)
+                        + " rect="
+                            + hit.x + "," + hit.y
+                            + "," + hit.width + "x"
+                            + hit.height
+                );
+                Mouse.clickButton = 0;
+                MiniMenu.clickProcessingState = 0;
+                return;
+            }
+        }
+    }
+
+    public static synchronized boolean isMenuPrepared(
+        Component component
+    ) {
+        Integer loop = menuPreparedLoops.get(component);
+        return loop != null && loop == client.loop;
+    }
+
+    private static ModernUiRect effectiveBounds(
+        Binding binding
+    ) {
+        if (binding == null || binding.bounds == null) {
+            return null;
+        }
+
+        ModernUiRect bounds = binding.bounds;
+        ModernUiRect clip = binding.clip;
+        if (clip == null) {
+            return bounds;
+        }
+
+        int left = Math.max(bounds.x, clip.x);
+        int top = Math.max(bounds.y, clip.y);
+        int right = Math.min(
+            bounds.right(),
+            clip.right()
+        );
+        int bottom = Math.min(
+            bounds.bottom(),
+            clip.bottom()
+        );
+
+        if (right <= left || bottom <= top) {
+            return null;
+        }
+        return new ModernUiRect(
+            left,
+            top,
+            right - left,
+            bottom - top
+        );
+    }
+
+    private static int area(ModernUiRect rect) {
+        if (rect == null) {
+            return Integer.MAX_VALUE;
+        }
+        long area =
+            (long) rect.width * (long) rect.height;
+        return area > Integer.MAX_VALUE
+            ? Integer.MAX_VALUE
+            : (int) area;
     }
 
     private static int interfaceIdOf(
@@ -375,57 +550,14 @@ public final class ModernUiInputRouter {
     public static boolean dispatchPrimaryClick(
         Component component
     ) {
-        Integer handledLoop =
-            directHandledLoops.get(component);
-        if (handledLoop != null
-            && handledLoop == client.loop) {
-            return true;
-        }
-
-        if (component == null
-            || !has(component)
-            || component.onOptionClick == null
-            || component.ops == null) {
+        ModernUiRect modernBounds = bounds(component);
+        if (modernBounds == null) {
             return false;
         }
-
-        int opIndex = -1;
-        JagString opBase = JagString.EMPTY;
-        for (int i = 0; i < component.ops.length; i++) {
-            JagString op = component.ops[i];
-            if (op == null || op.trim().length() == 0) {
-                continue;
-            }
-            if (opIndex != -1) {
-                return false;
-            }
-            opIndex = i;
-            opBase = op;
-        }
-
-        if (opIndex == -1) {
-            return false;
-        }
-
-        ClientProt.sendButtonClick(
-            opBase,
-            component.createdComponentId,
-            opIndex + 1,
-            component.id
+        return dispatchBoundPrimaryClick(
+            component,
+            modernBounds
         );
-        MiniMenu.clickProcessingState = 0;
-
-        if (debugHitboxes) {
-            DisplayDebug.log(
-                "MODERN_UI DIRECT_CLICK"
-                    + " interface=" + (component.id >>> 16)
-                    + " component=" + (component.id & 0xFFFF)
-                    + " op=" + (opIndex + 1)
-                    + " text=" + opBase.toString()
-            );
-        }
-
-        return true;
     }
 
     public static void logDebugClick(Component component) {
@@ -579,6 +711,8 @@ public final class ModernUiInputRouter {
         bindings.clear();
         blockers.clear();
         directHandledLoops.clear();
+        menuPreparedLoops.clear();
+        activePrepareSerial = 0;
     }
 
     private static final class Blocker {
@@ -598,15 +732,18 @@ public final class ModernUiInputRouter {
         private final ModernUiRect bounds;
         private final ModernUiRect clip;
         private final int loop;
+        private final int prepareSerial;
 
         private Binding(
             ModernUiRect bounds,
             ModernUiRect clip,
-            int loop
+            int loop,
+            int prepareSerial
         ) {
             this.bounds = bounds;
             this.clip = clip;
             this.loop = loop;
+            this.prepareSerial = prepareSerial;
         }
     }
 }
