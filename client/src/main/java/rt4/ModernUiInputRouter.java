@@ -53,6 +53,13 @@ public final class ModernUiInputRouter {
             return;
         }
 
+        for (int i = blockers.size() - 1; i >= 0; i--) {
+            Blocker blocker = blockers.get(i);
+            if (blocker == null || blocker.loop != client.loop) {
+                blockers.remove(i);
+            }
+        }
+
         for (Blocker blocker : blockers) {
             if (blocker != null
                 && blocker.loop == client.loop
