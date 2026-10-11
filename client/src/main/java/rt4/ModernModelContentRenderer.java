@@ -47,7 +47,20 @@ public final class ModernModelContentRenderer {
         Model model = null;
         int verticalOffset = 0;
 
-        if (component.objId != -1) {
+        if (component.clientCode == 328) {
+            model =
+                PlayerAppearance.DEFAULT.getBodyModel(
+                    null,
+                    -1,
+                    null,
+                    null,
+                    0,
+                    -1,
+                    0,
+                    -1,
+                    -1
+                );
+        } else if (component.objId != -1) {
             ObjType obj = ObjTypeList.get(component.objId);
             if (obj != null) {
                 obj = obj.getCountVariant(component.objCount);
@@ -146,12 +159,12 @@ public final class ModernModelContentRenderer {
 
         int scaleX =
             component.modelViewportWidth > 0
-                ? component.width * 256
+                ? renderWidth * 256
                     / component.modelViewportWidth
                 : 256;
         int scaleY =
             component.modelViewportHeight > 0
-                ? component.height * 256
+                ? renderHeight * 256
                     / component.modelViewportHeight
                 : 256;
 
