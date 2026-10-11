@@ -208,7 +208,7 @@ public final class ModernGrandExchangeUi {
             );
 
             ModernTrueTypeFont.drawInBox(
-                ModernUiFontRegistry.BOLD_11,
+                ModernUiFontRegistry.BOLD_12,
                 interfaceId == 109
                     ? "Collection " + (i + 1)
                     : "Offer " + (i + 1),
@@ -354,7 +354,7 @@ public final class ModernGrandExchangeUi {
             rect
         );
         ModernTrueTypeFont.drawInBox(
-            ModernUiFontRegistry.BOLD_11,
+            ModernUiFontRegistry.BOLD_12,
             label,
             rect.x + 3,
             rect.y,
