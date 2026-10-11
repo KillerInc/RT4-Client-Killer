@@ -24,6 +24,8 @@ public final class ModernUiLayoutVerifier {
             verifyAudio(viewport[0], viewport[1]);
             verifyGraphics(viewport[0], viewport[1]);
             verifyLogin(viewport[0], viewport[1]);
+            verifyTitleMenus(viewport[0], viewport[1]);
+            verifyWelcome(viewport[0], viewport[1]);
             verifyMainMenu(viewport[0], viewport[1]);
         }
 
@@ -160,6 +162,83 @@ public final class ModernUiLayoutVerifier {
             layout.mainMenuButton,
             "login buttons"
         );
+    }
+
+    private static void verifyTitleMenus(int width, int height) {
+        ModernTitleMenuLayout layout =
+            ModernTitleMenuLayout.create(width, height);
+
+        insideScreen(layout.panel, "title-menu panel", width, height);
+        inside(layout.panel, layout.title, "title-menu title", width, height);
+        inside(layout.panel, layout.divider, "title-menu divider", width, height);
+        inside(layout.panel, layout.body, "title-menu body", width, height);
+
+        for (int i = 0; i < 5; i++) {
+            inside(
+                layout.panel,
+                layout.fieldRect(i, 5),
+                "title-menu field " + i,
+                width,
+                height
+            );
+            inside(
+                layout.panel,
+                layout.fieldLabelRect(i, 5),
+                "title-menu field label " + i,
+                width,
+                height
+            );
+        }
+
+        for (int i = 0; i < 6; i++) {
+            inside(
+                layout.panel,
+                layout.actionRect(i, 6, false),
+                "title-menu action " + i,
+                width,
+                height
+            );
+        }
+
+        for (int i = 0; i < 27; i++) {
+            inside(
+                layout.panel,
+                layout.actionRect(i, 27, true),
+                "title-menu world " + i,
+                width,
+                height
+            );
+        }
+
+        for (int i = 0; i < 3; i++) {
+            inside(
+                layout.panel,
+                layout.navigationRect(i, 3),
+                "title-menu navigation " + i,
+                width,
+                height
+            );
+        }
+    }
+
+    private static void verifyWelcome(int width, int height) {
+        ModernWelcomeLayout layout =
+            ModernWelcomeLayout.create(width, height);
+
+        insideScreen(layout.panel, "welcome panel", width, height);
+        inside(layout.panel, layout.title, "welcome title", width, height);
+        inside(layout.panel, layout.divider, "welcome divider", width, height);
+        inside(layout.panel, layout.messageArea, "welcome message", width, height);
+
+        for (int i = 0; i < 4; i++) {
+            inside(
+                layout.panel,
+                layout.actionRect(i, 4),
+                "welcome action " + i,
+                width,
+                height
+            );
+        }
     }
 
     private static void verifyMainMenu(int width, int height) {
