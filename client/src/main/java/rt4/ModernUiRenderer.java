@@ -551,7 +551,19 @@ public final class ModernUiRenderer {
                 renderImage(component, x, y);
                 break;
             case 6:
-                drawMissing("model:" + component.id, x, y, component.width, component.height);
+                if (!ModernModelContentRenderer.render(
+                    component,
+                    x,
+                    y
+                )) {
+                    drawMissing(
+                        "model:" + component.id,
+                        x,
+                        y,
+                        component.width,
+                        component.height
+                    );
+                }
                 break;
             case 7:
                 renderItemText(component, x, y);
