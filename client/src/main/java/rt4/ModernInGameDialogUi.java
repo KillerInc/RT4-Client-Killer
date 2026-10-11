@@ -11,6 +11,12 @@ import java.util.Map;
  * Vanilla components remain only as text/action/state backends.
  */
 public final class ModernInGameDialogUi {
+    private static int windowX = Integer.MIN_VALUE;
+    private static int windowY = Integer.MIN_VALUE;
+    private static boolean dragging;
+    private static int dragOffsetX;
+    private static int dragOffsetY;
+
     private ModernInGameDialogUi() {
     }
 
@@ -35,10 +41,31 @@ public final class ModernInGameDialogUi {
         }
 
         ModernInGameDialogLayout layout =
-            ModernInGameDialogLayout.create(
-                GameShell.canvasWidth,
-                GameShell.canvasHeight
-            );
+            currentLayout();
+
+        if (Mouse.clickButton == 1
+            && layout.title.contains(
+                Mouse.clickX,
+                Mouse.clickY
+            )) {
+            dragging = true;
+            dragOffsetX =
+                Mouse.clickX - layout.panel.x;
+            dragOffsetY =
+                Mouse.clickY - layout.panel.y;
+        }
+
+        if (dragging) {
+            if (Mouse.pressedButton == 1) {
+                windowX =
+                    Mouse.lastMouseX - dragOffsetX;
+                windowY =
+                    Mouse.lastMouseY - dragOffsetY;
+                layout = currentLayout();
+            } else {
+                dragging = false;
+            }
+        }
 
         ModernUiRect screen =
             new ModernUiRect(
@@ -67,13 +94,10 @@ public final class ModernInGameDialogUi {
             return;
         }
 
-        ModernInGameDialogLayout layout =
-            ModernInGameDialogLayout.create(
-                GameShell.canvasWidth,
-                GameShell.canvasHeight
-            );
-
         prepareInput(components);
+
+        ModernInGameDialogLayout layout =
+            currentLayout();
 
         drawAsset("game-ui/panel", layout.panel);
         drawAsset("audio-options/divider", layout.divider);
@@ -155,6 +179,25 @@ public final class ModernInGameDialogUi {
                 false
             );
         }
+    }
+
+    public static void resetPosition() {
+        windowX = Integer.MIN_VALUE;
+        windowY = Integer.MIN_VALUE;
+        dragging = false;
+    }
+
+    private static ModernInGameDialogLayout currentLayout() {
+        ModernInGameDialogLayout layout =
+            ModernInGameDialogLayout.create(
+                GameShell.canvasWidth,
+                GameShell.canvasHeight,
+                windowX,
+                windowY
+            );
+        windowX = layout.panel.x;
+        windowY = layout.panel.y;
+        return layout;
     }
 
     private static Model discover(
