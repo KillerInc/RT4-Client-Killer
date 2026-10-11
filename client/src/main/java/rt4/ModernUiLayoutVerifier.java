@@ -27,6 +27,7 @@ public final class ModernUiLayoutVerifier {
             verifyTitleMenus(viewport[0], viewport[1]);
             verifyWelcome(viewport[0], viewport[1]);
             verifyGameFrame(viewport[0], viewport[1]);
+            verifyInventoryPanel(viewport[0], viewport[1]);
             verifyMainMenu(viewport[0], viewport[1]);
         }
 
@@ -386,6 +387,45 @@ public final class ModernUiLayoutVerifier {
                     + width + "x" + height
             );
         }
+    }
+
+    private static void verifyInventoryPanel(
+        int width,
+        int height
+    ) {
+        Component inventory = new Component();
+        inventory.baseWidth = 4;
+        inventory.baseHeight = 7;
+        inventory.invMarginX = 4;
+        inventory.invMarginY = 4;
+
+        ModernInventoryPanelLayout layout =
+            ModernInventoryPanelLayout.create(
+                width,
+                height,
+                inventory
+            );
+
+        insideScreen(
+            layout.panel,
+            "inventory panel",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.title,
+            "inventory title",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.grid,
+            "inventory grid",
+            width,
+            height
+        );
     }
 
     private static void verifyMainMenu(int width, int height) {
