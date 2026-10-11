@@ -1132,6 +1132,25 @@ public class InterfaceList {
 							handleScrollbar(Mouse.lastMouseY, component.height, component, Mouse.lastMouseX, absX + component.width, absY, component.scrollMaxV);
 						}
 					}
+					if (ModernUiManager.isEnabled()
+						&& client.gameState == 30
+						&& !Cs1ScriptRunner.isMenuOpen
+						&& component.clientCode == 0
+						&& Mouse.lastMouseX >= left
+						&& Mouse.lastMouseY >= top
+						&& Mouse.lastMouseX < right
+						&& Mouse.lastMouseY < bottom) {
+						// Vanilla builds component menu entries during rendering.
+						// Modern rendering is deliberately side-effect free, so move
+						// that behavior into the input pass and use the same Modern
+						// event origin as clicks/dragging.
+						MiniMenu.addComponentEntries(
+							Mouse.lastMouseY - inputOriginY,
+							Mouse.lastMouseX - inputOriginX,
+							component
+						);
+					}
+
 					if (component.type == 0) {
 						processComponents(children, component.id, childLeft, childTop, childRight, childBottom, absX - component.scrollX, absY - component.scrollY);
 						if (component.createdComponents != null) {
