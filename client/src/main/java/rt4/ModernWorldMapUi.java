@@ -33,6 +33,7 @@ public final class ModernWorldMapUi {
                 GameShell.canvasWidth,
                 GameShell.canvasHeight
             );
+        ModernUiInputRouter.blockWorldInput(layout.panel);
         ModernUiRect screen =
             new ModernUiRect(
                 0,
