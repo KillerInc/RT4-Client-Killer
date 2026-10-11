@@ -498,6 +498,25 @@ public final class ModernUiInputRouter {
         return debugHitboxes;
     }
 
+    public static void sendModernButtonPacket(
+        Component component
+    ) {
+        if (component == null) {
+            return;
+        }
+
+        Protocol.outboundBuffer.p1isaac(155);
+        Protocol.outboundBuffer.p4(component.id);
+        Protocol.outboundBuffer.p2(component.createdComponentId);
+
+        DisplayDebug.log(
+            "MODERN_UI RAW_BUTTON_PACKET"
+                + " interface=" + (component.id >>> 16)
+                + " component=" + (component.id & 0xFFFF)
+                + " created=" + component.createdComponentId
+        );
+    }
+
     public static boolean dispatchBoundPrimaryClick(
         Component component,
         ModernUiRect bounds
