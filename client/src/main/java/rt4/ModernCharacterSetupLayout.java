@@ -86,9 +86,9 @@ public final class ModernCharacterSetupLayout {
         );
         ModernUiRect tabs = new ModernUiRect(
             header.x,
-            header.y,
-            188,
-            header.height
+            header.y + 3,
+            164,
+            header.height - 6
         );
         ModernUiRect title = new ModernUiRect(
             tabs.right() + 12,
@@ -162,12 +162,15 @@ public final class ModernCharacterSetupLayout {
 
     public ModernUiRect tab(int index) {
         int gap = 4;
-        int width = (tabs.width - gap * (TAB_COUNT - 1)) / TAB_COUNT;
+        int size = Math.min(
+            tabs.height,
+            (tabs.width - gap * (TAB_COUNT - 1)) / TAB_COUNT
+        );
         return new ModernUiRect(
-            tabs.x + Math.max(0, index) * (width + gap),
+            tabs.x + Math.max(0, index) * (size + gap),
             tabs.y,
-            width,
-            tabs.height
+            size,
+            size
         );
     }
 
