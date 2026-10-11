@@ -81,7 +81,6 @@ public final class ModernCharacterSetupUi {
 
         Model model = discover(components);
         ModernCharacterSetupLayout layout = currentLayout();
-        ModernUiInputRouter.blockWorldInput(layout.panel);
 
         ModernUiRect dragHandle =
             new ModernUiRect(
@@ -90,12 +89,6 @@ public final class ModernCharacterSetupUi {
                 layout.header.right() - layout.title.x,
                 layout.header.height
             );
-        ModernUiInputRouter.registerModernRegion(
-            "character-setup-drag",
-            dragHandle,
-            layout.panel
-        );
-
         if (Mouse.clickButton == 1
             && dragHandle.contains(Mouse.clickX, Mouse.clickY)) {
             dragging = true;
@@ -112,6 +105,20 @@ public final class ModernCharacterSetupUi {
                 dragging = false;
             }
         }
+
+        dragHandle =
+            new ModernUiRect(
+                layout.title.x,
+                layout.header.y,
+                layout.header.right() - layout.title.x,
+                layout.header.height
+            );
+        ModernUiInputRouter.blockWorldInput(layout.panel);
+        ModernUiInputRouter.registerModernRegion(
+            "character-setup-drag",
+            dragHandle,
+            layout.panel
+        );
 
         ModernUiRect screen = new ModernUiRect(
             0, 0, GameShell.canvasWidth, GameShell.canvasHeight
@@ -227,7 +234,6 @@ public final class ModernCharacterSetupUi {
         }
 
         Model model = discover(components);
-        prepareInput(interfaceId, components);
         ModernCharacterSetupLayout layout = currentLayout();
 
         drawAsset("game-ui/panel", layout.panel);
