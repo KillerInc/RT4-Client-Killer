@@ -41,21 +41,21 @@ public final class ModernAudioOptionsUi {
 
         ModernUiRect clip = layout.panel;
 
-        bindSliderRow(
-            backend.images,
-            backend.musicRow,
+        bindWholeControl(
+            components,
+            314,
             layout.musicSlider,
             clip
         );
-        bindSliderRow(
-            backend.images,
-            backend.effectsRow,
+        bindWholeControl(
+            components,
+            304,
             layout.effectsSlider,
             clip
         );
-        bindSliderRow(
-            backend.images,
-            backend.areaRow,
+        bindWholeControl(
+            components,
+            325,
             layout.areaSlider,
             clip
         );
@@ -255,6 +255,25 @@ public final class ModernAudioOptionsUi {
                 : "audio-options/toggle-off",
             toggle
         );
+    }
+
+    private static void bindWholeControl(
+        Component[] components,
+        int childId,
+        ModernUiRect target,
+        ModernUiRect clip
+    ) {
+        Component component =
+            childId >= 0 && childId < components.length
+                ? components[childId]
+                : null;
+        if (component != null) {
+            ModernUiInputRouter.bind(
+                component,
+                target,
+                clip
+            );
+        }
     }
 
     private static void bindSliderRow(
