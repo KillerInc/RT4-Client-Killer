@@ -784,9 +784,20 @@ public class InterfaceList {
 								}
 							}
 						}
+						boolean modernDirectClick = false;
 						if (isClicked) {
 							ModernUiInputRouter.logDebugClick(component);
-							Cs1ScriptRunner.startComponentDrag(Mouse.clickY - inputOriginY, Mouse.clickX - inputOriginX, component);
+							modernDirectClick =
+								ModernUiInputRouter.dispatchPrimaryClick(
+									component
+								);
+							if (!modernDirectClick) {
+								Cs1ScriptRunner.startComponentDrag(
+									Mouse.clickY - inputOriginY,
+									Mouse.clickX - inputOriginX,
+									component
+								);
+							}
 						}
 						if (Cs1ScriptRunner.draggedComponent != null && Cs1ScriptRunner.draggedComponent != component && isHovered && getServerActiveProperties(component).isDragTarget()) {
 							dragTargetComponent = component;
@@ -1171,6 +1182,7 @@ public class InterfaceList {
 					if (ModernUiManager.isEnabled()
 						&& client.gameState == 30
 						&& !Cs1ScriptRunner.isMenuOpen
+						&& !modernDirectClick
 						&& component.clientCode == 0
 						&& Mouse.lastMouseX >= left
 						&& Mouse.lastMouseY >= top
