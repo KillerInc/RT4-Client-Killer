@@ -11,7 +11,7 @@ import java.util.Map;
  * dedicated Main Menu, Login, Graphics Options or Audio Options screens.
  *
  * The legacy tree is used only to discover semantic text plus action/state
- * backends. Geometry is completely owned by ModernTitleMenuLayout.
+ * backends. Each screen type has its own declarative Modern layout.
  */
 public final class ModernTitleMenuUi {
     private static boolean logged;
@@ -55,9 +55,10 @@ public final class ModernTitleMenuUi {
             Action action = model.actions.get(i);
             ModernUiInputRouter.bind(
                 action.component,
-                layout.actionRect(
-                    i,
-                    model.actions.size()
+                actionRect(
+                    layout,
+                    model,
+                    i
                 ),
                 clip
             );
@@ -175,9 +176,10 @@ public final class ModernTitleMenuUi {
         for (int i = 0; i < model.actions.size(); i++) {
             Action action = model.actions.get(i);
             drawButton(
-                layout.actionRect(
-                    i,
-                    model.actions.size()
+                actionRect(
+                    layout,
+                    model,
+                    i
                 ),
                 action.label
             );
@@ -265,8 +267,13 @@ public final class ModernTitleMenuUi {
                 || normalized.contains("creating an account")
                 || normalized.contains("choose a username")
                 || normalized.contains("display name")
+                || normalized.contains("account name")
+                || normalized.contains("suggested name")
                 || normalized.contains("date of birth")
                 || normalized.contains("country")
+                || normalized.contains("password")
+                || normalized.contains("email")
+                || normalized.contains("age")
                 || normalized.contains("terms and conditions")
                 || normalized.contains("privacy policy")) {
                 accountKeyword = true;
@@ -371,7 +378,9 @@ public final class ModernTitleMenuUi {
                 );
                 claimed.put(text.component, Boolean.TRUE);
             } else if (isActionLabel(normalized)
-                || worldGrid && isWorldLabel(normalized)) {
+                || worldGrid && isWorldLabel(normalized)
+                || text.text.length() <= 28
+                    && !isFieldLabel(normalized)) {
                 actions.add(
                     new Action(
                         text.component,
@@ -438,6 +447,24 @@ public final class ModernTitleMenuUi {
             actions,
             navigation,
             worldGrid
+        );
+    }
+
+    private static ModernUiRect actionRect(
+        ModernTitleScreenLayout layout,
+        Model model,
+        int index
+    ) {
+        if (layout instanceof ModernAccountMenuLayout) {
+            return ((ModernAccountMenuLayout) layout).formActionRect(
+                index,
+                model.actions.size(),
+                model.fields.size()
+            );
+        }
+        return layout.actionRect(
+            index,
+            model.actions.size()
         );
     }
 
