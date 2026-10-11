@@ -1144,7 +1144,7 @@ public class InterfaceList {
 						if (component.type == 8 && Mouse.lastMouseX >= left && Mouse.lastMouseY >= top && Mouse.lastMouseX < right && Mouse.lastMouseY < bottom) {
 							Protocol.tooltipComponent = component;
 						}
-						if (component.scrollMaxV > component.height) {
+						if (component.scrollMaxV > inputHeight) {
 							ModernUiRect modernBounds =
 								ModernUiInputRouter.bounds(component);
 							if (ModernUiManager.isEnabled()
@@ -1369,7 +1369,12 @@ public class InterfaceList {
 		if (MouseWheel.wheelRotation == 0) {
 			return;
 		}
-		thumbSize = component.width;
+		ModernUiRect modernBounds =
+			ModernUiInputRouter.bounds(component);
+		thumbSize =
+			modernBounds == null
+				? component.width
+				: modernBounds.width;
 		if (barX - thumbSize <= mouseX && barY <= mouseY && mouseX < barX + 16 && scrollbarH + barY >= mouseY) {
 			component.scrollY += MouseWheel.wheelRotation * 45;
 			redraw(component);
