@@ -51,6 +51,7 @@ public final class ModernGrandExchangeUi {
                 GameShell.canvasHeight,
                 sidePanel
             );
+        ModernUiInputRouter.blockWorldInput(layout.panel);
         ModernUiRect screen = new ModernUiRect(
             0,
             0,
