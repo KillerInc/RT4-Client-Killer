@@ -53,6 +53,17 @@ public final class ModernUiInputRouter {
             return;
         }
 
+        for (Blocker blocker : blockers) {
+            if (blocker != null
+                && blocker.loop == client.loop
+                && blocker.bounds.x == bounds.x
+                && blocker.bounds.y == bounds.y
+                && blocker.bounds.width == bounds.width
+                && blocker.bounds.height == bounds.height) {
+                return;
+            }
+        }
+
         blockers.add(
             new Blocker(
                 bounds,
