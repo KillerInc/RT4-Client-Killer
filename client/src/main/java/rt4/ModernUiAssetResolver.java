@@ -260,6 +260,18 @@ public final class ModernUiAssetResolver {
         );
         addWarmupSpec(plan, "game-ui/slot", 32, 32);
         addWarmupSpec(plan, "game-ui/slot-hover", 32, 32);
+        addWarmupSpec(
+            plan,
+            "game-ui/orb",
+            ModernStatusOrbLayout.SIZE,
+            ModernStatusOrbLayout.SIZE
+        );
+        addWarmupSpec(
+            plan,
+            "game-ui/orb-active",
+            ModernStatusOrbLayout.SIZE,
+            ModernStatusOrbLayout.SIZE
+        );
         addWarmupSpec(plan, "game-ui/scrollbar-track", 12, 120);
         addWarmupSpec(plan, "game-ui/scrollbar-thumb", 10, 28);
         addWarmupSpec(plan, "game-ui/context-menu", 180, 120);
