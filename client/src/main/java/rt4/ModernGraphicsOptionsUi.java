@@ -1196,7 +1196,7 @@ public final class ModernGraphicsOptionsUi {
                     "MODERN_UI GRAPHICS_MODE_BIND"
                         + " index=" + i
                         + " component=" + children[i]
-                        + " onClick=" + (action.onClick != null)
+                        + " onClick=" + (action.onOptionClick != null)
                         + " rect="
                         + layout.displayModeButton(i).x + ","
                         + layout.displayModeButton(i).y + ","
