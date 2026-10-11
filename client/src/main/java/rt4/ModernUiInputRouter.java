@@ -138,6 +138,10 @@ public final class ModernUiInputRouter {
             interfaceId,
             components
         );
+        ModernGrandExchangeSearchUi.prepareInput(
+            interfaceId,
+            components
+        );
         ModernGrandExchangeUi.prepareInput(
             interfaceId,
             components
