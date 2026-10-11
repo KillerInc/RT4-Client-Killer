@@ -28,6 +28,7 @@ public final class ModernUiLayoutVerifier {
             verifyWelcome(viewport[0], viewport[1]);
             verifyGameFrame(viewport[0], viewport[1]);
             verifyInventoryPanel(viewport[0], viewport[1]);
+            verifyStatusOrbs(viewport[0], viewport[1]);
             verifyMainMenu(viewport[0], viewport[1]);
         }
 
@@ -426,6 +427,35 @@ public final class ModernUiLayoutVerifier {
             width,
             height
         );
+    }
+
+    private static void verifyStatusOrbs(
+        int width,
+        int height
+    ) {
+        ModernUiRect previous = null;
+        for (int i = 0; i < 3; i++) {
+            ModernUiRect orb =
+                ModernStatusOrbLayout.create(
+                    width,
+                    height,
+                    i
+                ).orb;
+            insideScreen(
+                orb,
+                "status orb " + i,
+                width,
+                height
+            );
+            if (previous != null
+                && previous.bottom() > orb.y) {
+                fail(
+                    "status orbs overlap at "
+                        + width + "x" + height
+                );
+            }
+            previous = orb;
+        }
     }
 
     private static void verifyMainMenu(int width, int height) {
