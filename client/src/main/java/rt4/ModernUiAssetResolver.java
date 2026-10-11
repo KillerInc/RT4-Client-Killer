@@ -443,9 +443,17 @@ public final class ModernUiAssetResolver {
             addWarmupSpec(plan, "controls/button-active", tab.width, tab.height);
         }
         addWarmupSpec(plan, "game-ui/setup-mouse", 72, 72);
+        addWarmupSpec(plan, "game-ui/setup-mouse-one", 72, 72);
+        addWarmupSpec(plan, "game-ui/setup-mouse-two", 72, 72);
         addWarmupSpec(plan, "game-ui/setup-gender", 72, 72);
+        addWarmupSpec(plan, "game-ui/setup-male", 72, 72);
+        addWarmupSpec(plan, "game-ui/setup-female", 72, 72);
         addWarmupSpec(plan, "game-ui/setup-head", 32, 32);
         addWarmupSpec(plan, "game-ui/setup-body", 32, 32);
+        addWarmupSpec(plan, "game-ui/setup-arrow-left", 16, 16);
+        addWarmupSpec(plan, "game-ui/setup-arrow-right", 16, 16);
+        addWarmupSpec(plan, "game-ui/tile", setupLayout.choiceCard(0).width, setupLayout.choiceCard(0).height);
+        addWarmupSpec(plan, "game-ui/tile-hover", setupLayout.choiceCard(0).width, setupLayout.choiceCard(0).height);
 
         // Bank, shop and trade windows. Their layout classes are
         // independent; cache exact current-viewport sizes for each surface.
