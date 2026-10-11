@@ -1206,23 +1206,21 @@ public final class ModernCharacterSetupUi {
         Component component,
         int child
     ) {
-        int scriptId = -1;
+        if (isServerOwnedCharacterAction(child)) {
+            ModernUiInputRouter.sendModernButtonPacket(
+                component
+            );
+            DisplayDebug.log(
+                "MODERN_UI CHARACTER_SERVER_ACTION"
+                    + " child=" + child
+            );
+            return true;
+        }
 
+        int scriptId = -1;
         switch (child) {
-            case 37:
-                scriptId = 1572;
-                break;
-            case 40:
-                scriptId = 1573;
-                break;
             case 46:
                 scriptId = 1574;
-                break;
-            case 49:
-                scriptId = 1575;
-                break;
-            case 52:
-                scriptId = 1576;
                 break;
             case 56:
                 scriptId = 1577;
@@ -1246,40 +1244,50 @@ public final class ModernCharacterSetupUi {
                 break;
         }
 
-        if (scriptId != -1) {
-            HookRequest request = new HookRequest();
-            request.arguments =
-                new Object[] { Integer.valueOf(scriptId) };
-            request.source = component;
-            request.op = 1;
-            ScriptRunner.run(request);
+        if (scriptId == -1) {
+            return false;
+        }
 
-            DisplayDebug.log(
-                "MODERN_UI CHARACTER_FALLBACK_SCRIPT"
-                    + " child=" + child
-                    + " script=" + scriptId
-            );
+        HookRequest request = new HookRequest();
+        request.arguments =
+            new Object[] { Integer.valueOf(scriptId) };
+        request.source = component;
+        request.op = 1;
+        ScriptRunner.run(request);
+
+        DisplayDebug.log(
+            "MODERN_UI CHARACTER_NAV_SCRIPT"
+                + " child=" + child
+                + " script=" + scriptId
+        );
+        return true;
+    }
+
+    private static boolean isServerOwnedCharacterAction(
+        int child
+    ) {
+        if (child == 37 || child == 40
+            || child == 49 || child == 52
+            || child == 92 || child == 93
+            || child == 97 || child == 98
+            || child == 321 || child == 169
+            || child == 362) {
             return true;
         }
 
-        if (child == 169 || child == 321) {
-            JagString opBase =
-                JagString.parse("Select random");
-            ClientProt.sendButtonClick(
-                opBase,
-                component.createdComponentId,
-                1,
-                component.id
-            );
-            DisplayDebug.log(
-                "MODERN_UI CHARACTER_FALLBACK_PACKET"
-                    + " child=" + child
-                    + " op=1"
-            );
+        if (child == 341 || child == 342
+            || child == 345 || child == 346
+            || child == 349 || child == 350
+            || child == 353 || child == 354
+            || child == 357 || child == 358) {
             return true;
         }
 
-        return false;
+        return child >= 100 && child <= 124
+            || child >= 151 && child <= 158
+            || child >= 189 && child <= 217
+            || child >= 248 && child <= 276
+            || child >= 307 && child <= 312;
     }
 
     private static void bind(
