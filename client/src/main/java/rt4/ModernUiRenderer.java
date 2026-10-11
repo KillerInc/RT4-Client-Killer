@@ -387,6 +387,15 @@ public final class ModernUiRenderer {
                     renderInterface(open.interfaceId, left, right, x, rectangle, bottom, top, y);
                 }
 
+                if (client.gameState == 30
+                    && component.scrollMaxV > component.height) {
+                    renderModernScrollbar(
+                        component,
+                        x,
+                        y
+                    );
+                }
+
                 setClip(clipLeft, clipTop, clipRight, clipBottom);
                 continue;
             }
@@ -646,8 +655,18 @@ public final class ModernUiRenderer {
             && graphicsOptionsDepth <= 0
             && component.font != -1
             && fontAsset == null) {
-            drawMissingLegacyGlyphs(component, text, x, y, 12.0F);
-            return;
+            if (client.gameState == 30) {
+                fontAsset = ModernUiFontRegistry.DEFAULT;
+            } else {
+                drawMissingLegacyGlyphs(
+                    component,
+                    text,
+                    x,
+                    y,
+                    12.0F
+                );
+                return;
+            }
         }
 
         if (fontAsset == null) {
@@ -1135,7 +1154,24 @@ public final class ModernUiRenderer {
                     slotY += component.invOffsetY[index];
                 }
 
-                drawOutline(slotX, slotY, 32, 32, 0x5B5140);
+                ModernUiRect slotRect =
+                    new ModernUiRect(
+                        slotX,
+                        slotY,
+                        32,
+                        32
+                    );
+                boolean hover =
+                    Mouse.lastMouseX >= slotX
+                        && Mouse.lastMouseX < slotX + 32
+                        && Mouse.lastMouseY >= slotY
+                        && Mouse.lastMouseY < slotY + 32;
+                drawAsset(
+                    hover
+                        ? "game-ui/slot-hover"
+                        : "game-ui/slot",
+                    slotRect
+                );
                 if (index < component.objTypes.length && component.objTypes[index] > 0) {
                     int objectId = component.objTypes[index] - 1;
                     int count = index < component.objCounts.length ? component.objCounts[index] : 1;
@@ -1189,6 +1225,81 @@ public final class ModernUiRenderer {
                 }
                 index++;
             }
+        }
+    }
+
+    private static void renderModernScrollbar(
+        Component component,
+        int x,
+        int y
+    ) {
+        int trackHeight = Math.max(24, component.height);
+        ModernUiRect track = new ModernUiRect(
+            x + component.width - 12,
+            y,
+            12,
+            trackHeight
+        );
+        drawAsset(
+            "game-ui/scrollbar-track",
+            track
+        );
+
+        int thumbHeight =
+            component.scrollMaxV <= 0
+                ? trackHeight
+                : component.height
+                    * Math.max(1, component.height - 4)
+                    / component.scrollMaxV;
+        thumbHeight = Math.max(
+            18,
+            Math.min(trackHeight, thumbHeight)
+        );
+
+        int travel =
+            Math.max(0, trackHeight - thumbHeight - 4);
+        int maxScroll =
+            Math.max(
+                1,
+                component.scrollMaxV - component.height
+            );
+        int thumbY =
+            y + 2
+                + travel
+                    * Math.max(0, component.scrollY)
+                    / maxScroll;
+
+        drawAsset(
+            "game-ui/scrollbar-thumb",
+            new ModernUiRect(
+                track.x + 1,
+                thumbY,
+                10,
+                thumbHeight
+            )
+        );
+    }
+
+    private static void drawAsset(
+        String path,
+        ModernUiRect rect
+    ) {
+        ModernUiImage image =
+            ModernUiAssetResolver.get(
+                path,
+                rect.width,
+                rect.height
+            );
+        if (image != null) {
+            image.render(rect.x, rect.y);
+        } else {
+            drawMissing(
+                "asset:" + path,
+                rect.x,
+                rect.y,
+                rect.width,
+                rect.height
+            );
         }
     }
 
