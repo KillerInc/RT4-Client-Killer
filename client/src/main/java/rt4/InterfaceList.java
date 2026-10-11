@@ -1129,7 +1129,42 @@ public class InterfaceList {
 							Protocol.tooltipComponent = component;
 						}
 						if (component.scrollMaxV > component.height) {
-							handleScrollbar(Mouse.lastMouseY, component.height, component, Mouse.lastMouseX, absX + component.width, absY, component.scrollMaxV);
+							ModernUiRect modernBounds =
+								ModernUiInputRouter.bounds(component);
+							if (ModernUiManager.isEnabled()
+								&& client.gameState == 30) {
+								int scrollbarHeight =
+									modernBounds == null
+										? component.height
+										: modernBounds.height;
+								int scrollbarX =
+									modernBounds == null
+										? absX + component.width - 12
+										: modernBounds.right() - 12;
+								int scrollbarY =
+									modernBounds == null
+										? absY
+										: modernBounds.y;
+								handleScrollbar(
+									Mouse.lastMouseY,
+									scrollbarHeight,
+									component,
+									Mouse.lastMouseX,
+									scrollbarX,
+									scrollbarY,
+									component.scrollMaxV
+								);
+							} else {
+								handleScrollbar(
+									Mouse.lastMouseY,
+									component.height,
+									component,
+									Mouse.lastMouseX,
+									absX + component.width,
+									absY,
+									component.scrollMaxV
+								);
+							}
 						}
 					}
 					if (ModernUiManager.isEnabled()
