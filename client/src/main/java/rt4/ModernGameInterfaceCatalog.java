@@ -26,6 +26,7 @@ public final class ModernGameInterfaceCatalog {
         DIALOG,
         WORLD_MAP,
         GRAND_EXCHANGE,
+        GRAND_EXCHANGE_SEARCH,
         OTHER
     }
 
@@ -110,7 +111,7 @@ public final class ModernGameInterfaceCatalog {
             case 248:
             case 314:
             case 389:
-                return Kind.GRAND_EXCHANGE;
+                return Kind.GRAND_EXCHANGE_SEARCH;
             case 771:
                 return Kind.DIALOG;
             case 755:
