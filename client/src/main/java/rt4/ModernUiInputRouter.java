@@ -117,6 +117,10 @@ public final class ModernUiInputRouter {
         ModernQuestChatUi.prepareInput(
             components
         );
+        ModernCharacterSetupUi.prepareInput(
+            interfaceIdOf(components),
+            components
+        );
         ModernInGameDialogUi.prepareInput(
             components
         );
