@@ -454,6 +454,7 @@ public final class ModernUiAssetResolver {
         addWarmupSpec(plan, "game-ui/setup-arrow-right", 16, 16);
         addWarmupSpec(plan, "game-ui/tile", setupLayout.choiceCard(0).width, setupLayout.choiceCard(0).height);
         addWarmupSpec(plan, "game-ui/tile-hover", setupLayout.choiceCard(0).width, setupLayout.choiceCard(0).height);
+        addWarmupSpec(plan, "game-ui/tile-selected", setupLayout.choiceCard(0).width, setupLayout.choiceCard(0).height);
 
         // Bank, shop and trade windows. Their layout classes are
         // independent; cache exact current-viewport sizes for each surface.
