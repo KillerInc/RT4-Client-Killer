@@ -80,15 +80,15 @@ public final class ModernCharacterSetupLayout {
         ModernUiRect panel = new ModernUiRect(x, y, width, height);
         ModernUiRect header = new ModernUiRect(
             panel.x + 14,
-            panel.y + 10,
+            panel.y + 8,
             panel.width - 28,
-            42
+            50
         );
         ModernUiRect tabs = new ModernUiRect(
             header.x,
             header.y + 3,
-            164,
-            header.height - 6
+            188,
+            44
         );
         ModernUiRect title = new ModernUiRect(
             tabs.right() + 12,
