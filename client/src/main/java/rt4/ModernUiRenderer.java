@@ -78,6 +78,26 @@ public final class ModernUiRenderer {
         }
 
         Component[] loadedComponents = InterfaceList.components[interfaceId];
+
+        if (ModernInventoryPanelUi.handles(interfaceId)) {
+            setClip(
+                0,
+                0,
+                GameShell.canvasWidth,
+                GameShell.canvasHeight
+            );
+            ModernInventoryPanelUi.render(
+                loadedComponents
+            );
+            setClip(
+                clipLeft,
+                clipTop,
+                clipRight,
+                clipBottom
+            );
+            return;
+        }
+
         boolean inGameTopLevel =
             ModernGameUi.isTopLevel(interfaceId);
         if (inGameTopLevel) {
