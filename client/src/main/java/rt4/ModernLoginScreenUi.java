@@ -48,6 +48,17 @@ public final class ModernLoginScreenUi {
 
         ModernUiRect clip = layout.panel;
 
+        ModernUiInputRouter.registerModernRegion(
+            "login-username",
+            layout.usernameInput,
+            clip
+        );
+        ModernUiInputRouter.registerModernRegion(
+            "login-password",
+            layout.passwordInput,
+            clip
+        );
+
         // Username/password editing is owned directly by Modern UI. We do not
         // bind the old field widgets because their focus model is tied to
         // cache-era component geometry.
