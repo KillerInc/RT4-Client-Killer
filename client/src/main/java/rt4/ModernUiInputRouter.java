@@ -120,8 +120,18 @@ public final class ModernUiInputRouter {
         ModernInGameDialogUi.prepareInput(
             components
         );
+        int interfaceId =
+            interfaceIdOf(components);
         ModernBankUi.prepareInput(
-            interfaceIdOf(components),
+            interfaceId,
+            components
+        );
+        ModernShopUi.prepareInput(
+            interfaceId,
+            components
+        );
+        ModernTradeUi.prepareInput(
+            interfaceId,
             components
         );
         ModernStatusOrbUi.prepareInput(
