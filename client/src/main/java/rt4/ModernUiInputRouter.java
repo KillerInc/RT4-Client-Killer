@@ -80,6 +80,11 @@ public final class ModernUiInputRouter {
             parentX,
             parentY
         );
+        ModernTitleMenuUi.prepareInput(
+            components,
+            parentX,
+            parentY
+        );
         ModernAudioOptionsUi.prepareInput(
             components,
             parentX,
