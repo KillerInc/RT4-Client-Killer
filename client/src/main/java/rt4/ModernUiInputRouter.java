@@ -95,6 +95,11 @@ public final class ModernUiInputRouter {
             parentX,
             parentY
         );
+        ModernWelcomeUi.prepareInput(
+            components,
+            parentX,
+            parentY
+        );
         ModernUiRenderer.prepareMainMenuInput(
             components,
             parentX,
