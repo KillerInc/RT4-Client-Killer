@@ -81,6 +81,7 @@ public final class ModernCharacterSetupUi {
 
         Model model = discover(components);
         ModernCharacterSetupLayout layout = currentLayout();
+        ModernUiInputRouter.blockWorldInput(layout.panel);
 
         ModernUiRect dragHandle =
             new ModernUiRect(
