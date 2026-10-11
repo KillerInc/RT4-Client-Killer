@@ -224,6 +224,46 @@ public final class ModernUiRenderer {
             return;
         }
 
+        if (ModernShopUi.handles(interfaceId)) {
+            setClip(
+                0,
+                0,
+                GameShell.canvasWidth,
+                GameShell.canvasHeight
+            );
+            ModernShopUi.render(
+                interfaceId,
+                loadedComponents
+            );
+            setClip(
+                clipLeft,
+                clipTop,
+                clipRight,
+                clipBottom
+            );
+            return;
+        }
+
+        if (ModernTradeUi.handles(interfaceId)) {
+            setClip(
+                0,
+                0,
+                GameShell.canvasWidth,
+                GameShell.canvasHeight
+            );
+            ModernTradeUi.render(
+                interfaceId,
+                loadedComponents
+            );
+            setClip(
+                clipLeft,
+                clipTop,
+                clipRight,
+                clipBottom
+            );
+            return;
+        }
+
         boolean inGameTopLevel =
             ModernGameUi.isTopLevel(interfaceId);
         if (inGameTopLevel) {
