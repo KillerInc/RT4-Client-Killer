@@ -240,6 +240,30 @@ public final class ModernUiAssetResolver {
         int canvasWidth,
         int canvasHeight
     ) {
+        // Permanent in-game HUD.
+        ModernGameFrameLayout gameLayout =
+            ModernGameFrameLayout.create(
+                canvasWidth,
+                canvasHeight
+            );
+        addWarmupSpec(
+            plan,
+            "game-ui/minimap-frame",
+            gameLayout.minimapFrame.width,
+            gameLayout.minimapFrame.height
+        );
+        addWarmupSpec(
+            plan,
+            "game-ui/compass-frame",
+            gameLayout.compass.width,
+            gameLayout.compass.height
+        );
+        addWarmupSpec(plan, "game-ui/slot", 32, 32);
+        addWarmupSpec(plan, "game-ui/slot-hover", 32, 32);
+        addWarmupSpec(plan, "game-ui/scrollbar-track", 12, 120);
+        addWarmupSpec(plan, "game-ui/scrollbar-thumb", 10, 28);
+        addWarmupSpec(plan, "game-ui/context-menu", 180, 120);
+
         // Graphics Options - current exact renderer sizes.
         addWarmupSpec(
             plan,
