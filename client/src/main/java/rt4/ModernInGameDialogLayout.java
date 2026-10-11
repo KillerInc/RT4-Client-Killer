@@ -34,6 +34,20 @@ public final class ModernInGameDialogLayout {
         int canvasWidth,
         int canvasHeight
     ) {
+        return create(
+            canvasWidth,
+            canvasHeight,
+            Integer.MIN_VALUE,
+            Integer.MIN_VALUE
+        );
+    }
+
+    public static ModernInGameDialogLayout create(
+        int canvasWidth,
+        int canvasHeight,
+        int preferredX,
+        int preferredY
+    ) {
         int width = Math.min(
             PANEL_WIDTH,
             Math.max(380, canvasWidth - 24)
@@ -43,10 +57,36 @@ public final class ModernInGameDialogLayout {
             Math.max(280, canvasHeight - 24)
         );
 
+        int defaultX = Math.max(8, (canvasWidth - width) / 2);
+        int defaultY = Math.max(8, (canvasHeight - height) / 2);
+        int x =
+            preferredX == Integer.MIN_VALUE
+                ? defaultX
+                : preferredX;
+        int y =
+            preferredY == Integer.MIN_VALUE
+                ? defaultY
+                : preferredY;
+
+        x = Math.max(
+            8,
+            Math.min(
+                x,
+                Math.max(8, canvasWidth - width - 8)
+            )
+        );
+        y = Math.max(
+            8,
+            Math.min(
+                y,
+                Math.max(8, canvasHeight - height - 8)
+            )
+        );
+
         ModernUiRect panel =
             new ModernUiRect(
-                Math.max(8, (canvasWidth - width) / 2),
-                Math.max(8, (canvasHeight - height) / 2),
+                x,
+                y,
                 width,
                 height
             );
