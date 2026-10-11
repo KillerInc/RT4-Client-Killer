@@ -32,6 +32,7 @@ public final class ModernTradeUi {
                 GameShell.canvasWidth,
                 GameShell.canvasHeight
             );
+        ModernUiInputRouter.blockWorldInput(layout.panel);
 
         ModernUiRect screen =
             new ModernUiRect(
