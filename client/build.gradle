@@ -123,7 +123,11 @@ tasks.register('verifyModernSvgAssets', JavaExec) {
         '/ui/killer-modern/game-ui/panel.svg',
         '/ui/killer-modern/game-ui/orb.svg',
         '/ui/killer-modern/game-ui/slot.svg',
-        '/ui/killer-modern/game-ui/context-menu.svg'
+        '/ui/killer-modern/game-ui/context-menu.svg',
+        '/ui/killer-modern/game-ui/setup-mouse.svg',
+        '/ui/killer-modern/game-ui/setup-gender.svg',
+        '/ui/killer-modern/game-ui/setup-head.svg',
+        '/ui/killer-modern/game-ui/setup-body.svg'
 }
 
 
