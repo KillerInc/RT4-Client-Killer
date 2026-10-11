@@ -29,6 +29,9 @@ public final class ModernUiLayoutVerifier {
             verifyGameFrame(viewport[0], viewport[1]);
             verifyInventoryPanel(viewport[0], viewport[1]);
             verifySidebarPanel(viewport[0], viewport[1]);
+            verifyChatPanel(viewport[0], viewport[1]);
+            verifyQuestChat(viewport[0], viewport[1]);
+            verifyInGameDialog(viewport[0], viewport[1]);
             verifyStatusOrbs(viewport[0], viewport[1]);
             verifyMainMenu(viewport[0], viewport[1]);
         }
@@ -379,6 +382,23 @@ public final class ModernUiLayoutVerifier {
             width,
             height
         );
+        insideScreen(
+            layout.tabBar,
+            "game tab bar",
+            width,
+            height
+        );
+        for (int i = 0;
+            i < ModernGameFrameLayout.TAB_COUNT;
+            i++) {
+            inside(
+                layout.tabBar,
+                layout.tabSlot(i),
+                "game tab " + i,
+                width,
+                height
+            );
+        }
 
         if (!layout.minimapFrame.contains(
             layout.minimap.centerX(),
@@ -471,6 +491,173 @@ public final class ModernUiLayoutVerifier {
                 layout.content,
                 layout.tile(i),
                 "sidebar tile " + i,
+                width,
+                height
+            );
+        }
+    }
+
+    private static void verifyChatPanel(
+        int width,
+        int height
+    ) {
+        ModernChatPanelLayout layout =
+            ModernChatPanelLayout.create(width, height);
+
+        insideScreen(
+            layout.panel,
+            "chat panel",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.title,
+            "chat title",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.divider,
+            "chat divider",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.messages,
+            "chat messages",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.actions,
+            "chat actions",
+            width,
+            height
+        );
+
+        for (int i = 0; i < 8; i++) {
+            inside(
+                layout.actions,
+                layout.actionRect(i, 8),
+                "chat action " + i,
+                width,
+                height
+            );
+        }
+    }
+
+    private static void verifyQuestChat(
+        int width,
+        int height
+    ) {
+        ModernQuestChatLayout layout =
+            ModernQuestChatLayout.create(
+                width,
+                height,
+                Integer.MIN_VALUE,
+                Integer.MIN_VALUE
+            );
+
+        insideScreen(
+            layout.panel,
+            "quest chat panel",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.header,
+            "quest chat header",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.divider,
+            "quest chat divider",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.body,
+            "quest chat body",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.actions,
+            "quest chat actions",
+            width,
+            height
+        );
+
+        for (int i = 0; i < 5; i++) {
+            inside(
+                layout.actions,
+                layout.actionRect(i, 5),
+                "quest chat action " + i,
+                width,
+                height
+            );
+        }
+    }
+
+    private static void verifyInGameDialog(
+        int width,
+        int height
+    ) {
+        ModernInGameDialogLayout layout =
+            ModernInGameDialogLayout.create(
+                width,
+                height
+            );
+
+        insideScreen(
+            layout.panel,
+            "in-game dialog panel",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.title,
+            "in-game dialog title",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.divider,
+            "in-game dialog divider",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.body,
+            "in-game dialog body",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.actionArea,
+            "in-game dialog actions",
+            width,
+            height
+        );
+
+        for (int i = 0; i < 6; i++) {
+            inside(
+                layout.actionArea,
+                layout.actionRect(i, 6),
+                "in-game dialog action " + i,
                 width,
                 height
             );
