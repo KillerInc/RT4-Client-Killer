@@ -8,6 +8,7 @@ public final class ModernWorldSelectLayout
 
     public static final int PANEL_WIDTH = 620;
     public static final int PANEL_HEIGHT = 500;
+    public static final int ACTION_HEIGHT = 28;
 
     private final ModernUiRect panel;
     private final ModernUiRect logo;
@@ -151,7 +152,7 @@ public final class ModernWorldSelectLayout
             startX + column * (width + gap),
             panel.y + 122 + row * 36,
             width,
-            28
+            ACTION_HEIGHT
         );
     }
 
