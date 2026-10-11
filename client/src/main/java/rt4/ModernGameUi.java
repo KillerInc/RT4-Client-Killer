@@ -40,6 +40,7 @@ public final class ModernGameUi {
     ) {
         if (!isInGame()
             || components == null
+            || !isTopLevelComponents(components)
             || preparedLoop == client.loop) {
             return;
         }
@@ -69,7 +70,9 @@ public final class ModernGameUi {
         int parentX,
         int parentY
     ) {
-        if (!isInGame() || components == null) {
+        if (!isInGame()
+            || components == null
+            || !isTopLevelComponents(components)) {
             return;
         }
 
@@ -102,6 +105,25 @@ public final class ModernGameUi {
                 screen
             );
         }
+    }
+
+    private static boolean isTopLevelComponents(
+        Component[] components
+    ) {
+        if (components == null
+            || InterfaceList.topLevelInterface < 0) {
+            return false;
+        }
+
+        for (Component component : components) {
+            if (component != null
+                && component.id != -1
+                && component.id >>> 16
+                    == InterfaceList.topLevelInterface) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static ModernUiRect bounds(Component component) {
