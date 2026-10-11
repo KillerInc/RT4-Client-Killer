@@ -204,7 +204,8 @@ public final class ModernTitleMenuUi {
     ) {
         if (!ModernUiManager.isEnabled()
             || client.gameState != 10
-            || components == null) {
+            || components == null
+            || !belongsToLoginInterface(components)) {
             return null;
         }
 
@@ -487,6 +488,24 @@ public final class ModernTitleMenuUi {
             GameShell.canvasWidth,
             GameShell.canvasHeight
         );
+    }
+
+    private static boolean belongsToLoginInterface(
+        Component[] components
+    ) {
+        if (components == null) {
+            return false;
+        }
+
+        for (Component component : components) {
+            if (component != null
+                && component.id != -1
+                && component.id >>> 16
+                    == LoginManager.loginScreenId) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean isMainMenu(List<TextEntry> texts) {
