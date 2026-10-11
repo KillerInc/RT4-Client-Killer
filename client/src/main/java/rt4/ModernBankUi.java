@@ -42,6 +42,7 @@ public final class ModernBankUi {
                 GameShell.canvasHeight,
                 interfaceId
             );
+        ModernUiInputRouter.blockWorldInput(layout.panel);
 
         ModernUiRect screen =
             new ModernUiRect(
