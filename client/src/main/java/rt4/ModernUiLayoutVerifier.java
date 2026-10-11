@@ -35,6 +35,7 @@ public final class ModernUiLayoutVerifier {
             verifyBank(viewport[0], viewport[1]);
             verifyShop(viewport[0], viewport[1]);
             verifyTrade(viewport[0], viewport[1]);
+            verifyWorldMap(viewport[0], viewport[1]);
             verifyStatusOrbs(viewport[0], viewport[1]);
             verifyMainMenu(viewport[0], viewport[1]);
         }
@@ -861,6 +862,66 @@ public final class ModernUiLayoutVerifier {
                 layout.actions,
                 layout.actionRect(i, 6),
                 "trade action " + i,
+                width,
+                height
+            );
+        }
+    }
+
+    private static void verifyWorldMap(
+        int width,
+        int height
+    ) {
+        ModernWorldMapLayout layout =
+            ModernWorldMapLayout.create(width, height);
+
+        insideScreen(
+            layout.panel,
+            "world map panel",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.title,
+            "world map title",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.divider,
+            "world map divider",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.toolbar,
+            "world map toolbar",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.mapViewport,
+            "world map viewport",
+            width,
+            height
+        );
+        inside(
+            layout.mapViewport,
+            layout.overview,
+            "world map overview",
+            width,
+            height
+        );
+
+        for (int i = 0; i < 8; i++) {
+            inside(
+                layout.toolbar,
+                layout.actionRect(i, 8),
+                "world map action " + i,
                 width,
                 height
             );
