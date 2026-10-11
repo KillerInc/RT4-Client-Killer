@@ -26,6 +26,9 @@ public final class Keyboard implements KeyListener, FocusListener {
 	public static final int KEY_UP = 98;
 	public static final int KEY_DOWN = 99;
 
+	private static volatile boolean modernF8Down = false;
+	private static volatile boolean modernF8ToggleRequested = false;
+
 	@OriginalMember(owner = "client!bg", name = "A", descriptor = "[I")
 	public static final int[] eventQueue = new int[128];
 
@@ -291,6 +294,14 @@ public final class Keyboard implements KeyListener, FocusListener {
 		}
 	}
 
+	public static boolean consumeModernF8ToggleRequest() {
+		if (!modernF8ToggleRequested) {
+			return false;
+		}
+		modernF8ToggleRequested = false;
+		return true;
+	}
+
 	@OriginalMember(owner = "client!pk", name = "f", descriptor = "(B)I")
 	public static int getIdleLoops() {
 		return idleLoops;
@@ -301,6 +312,13 @@ public final class Keyboard implements KeyListener, FocusListener {
 	public final synchronized void keyPressed(@OriginalArg(0) KeyEvent event) {
 		if (instance == null) {
 			return;
+		}
+
+		if (event.getKeyCode() == KeyEvent.VK_F8) {
+			if (!modernF8Down) {
+				modernF8ToggleRequested = true;
+			}
+			modernF8Down = true;
 		}
 
 		idleLoops = 0;
@@ -365,6 +383,9 @@ public final class Keyboard implements KeyListener, FocusListener {
 	@OriginalMember(owner = "client!uf", name = "keyReleased", descriptor = "(Ljava/awt/event/KeyEvent;)V")
 	@Override
 	public final synchronized void keyReleased(@OriginalArg(0) KeyEvent event) {
+		if (event.getKeyCode() == KeyEvent.VK_F8) {
+			modernF8Down = false;
+		}
 		if (instance != null) {
 			idleLoops = 0;
 			@Pc(11) int c = event.getKeyCode();
