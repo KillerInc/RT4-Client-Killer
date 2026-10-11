@@ -46,6 +46,11 @@ public final class ModernQuestChatUi {
         ModernQuestChatLayout layout =
             currentLayout();
         ModernUiInputRouter.blockWorldInput(layout.panel);
+        ModernUiInputRouter.registerModernRegion(
+            "quest-chat-drag",
+            layout.header,
+            layout.panel
+        );
 
         if (Mouse.clickButton == 1
             && layout.header.contains(
