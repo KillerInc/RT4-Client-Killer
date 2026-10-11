@@ -225,9 +225,9 @@ public final class ModernCharacterSetupUi {
             layout.notice.y,
             layout.notice.width,
             layout.notice.height,
-            ModernUiMetrics.TEXT_PARCHMENT,
+            ModernUiMetrics.TEXT_PRIMARY,
             1, 1,
-            ModernUiMetrics.FONT_CONTROL,
+            7.5F,
             false
         );
 
@@ -286,13 +286,13 @@ public final class ModernCharacterSetupUi {
 
         renderChoiceCard(
             layout.choiceCard(0),
-            "game-ui/setup-mouse",
+            "game-ui/setup-mouse-two",
             "2 Button",
             "For a mouse with at least 2 buttons."
         );
         renderChoiceCard(
             layout.choiceCard(1),
-            "game-ui/setup-mouse",
+            "game-ui/setup-mouse-one",
             "1 Button",
             "For a mouse with only 1 button."
         );
@@ -306,13 +306,13 @@ public final class ModernCharacterSetupUi {
         drawPrompt("Please select your character gender.", layout);
         renderChoiceCard(
             layout.choiceCard(0),
-            "game-ui/setup-gender",
+            "game-ui/setup-male",
             "Male",
             "Use a male character appearance."
         );
         renderChoiceCard(
             layout.choiceCard(1),
-            "game-ui/setup-gender",
+            "game-ui/setup-female",
             "Female",
             "Use a female character appearance."
         );
@@ -332,6 +332,7 @@ public final class ModernCharacterSetupUi {
 
         Component modelComponent = model.get(79);
         if (modelComponent != null) {
+            setClip(preview);
             ModernModelContentRenderer.render(
                 modelComponent,
                 new ModernUiRect(
@@ -341,6 +342,7 @@ public final class ModernCharacterSetupUi {
                     preview.height - 16
                 )
             );
+            resetClip();
         }
 
         drawSelector(layout.headSelector(0), "Hair");
@@ -377,6 +379,7 @@ public final class ModernCharacterSetupUi {
         drawAsset("game-ui/tile", preview);
         Component modelComponent = model.get(339);
         if (modelComponent != null) {
+            setClip(preview);
             ModernModelContentRenderer.render(
                 modelComponent,
                 new ModernUiRect(
@@ -386,6 +389,7 @@ public final class ModernCharacterSetupUi {
                     preview.height - 16
                 )
             );
+            resetClip();
         }
 
         int active =
@@ -555,13 +559,14 @@ public final class ModernCharacterSetupUi {
         ModernUiRect right =
             currentLayout().selectorArrow(rect, true);
 
-        ModernTrueTypeFont.drawInBox(
-            ModernUiFontRegistry.BOLD_12,
-            "‹",
-            left.x, left.y, left.width, left.height,
-            ModernUiMetrics.TEXT_PRIMARY,
-            1, 1, 13.0F, false
-        );
+        ModernUiRect leftIcon =
+            new ModernUiRect(
+                left.centerX() - 8,
+                left.centerY() - 8,
+                16,
+                16
+            );
+        drawAsset("game-ui/setup-arrow-left", leftIcon);
         ModernTrueTypeFont.drawInBox(
             ModernUiFontRegistry.PLAIN_11,
             label,
@@ -572,13 +577,14 @@ public final class ModernCharacterSetupUi {
             ModernUiMetrics.TEXT_GOLD,
             1, 1, 8.5F, false
         );
-        ModernTrueTypeFont.drawInBox(
-            ModernUiFontRegistry.BOLD_12,
-            "›",
-            right.x, right.y, right.width, right.height,
-            ModernUiMetrics.TEXT_PRIMARY,
-            1, 1, 13.0F, false
-        );
+        ModernUiRect rightIcon =
+            new ModernUiRect(
+                right.centerX() - 8,
+                right.centerY() - 8,
+                16,
+                16
+            );
+        drawAsset("game-ui/setup-arrow-right", rightIcon);
     }
 
     private static void drawPaletteTabs(
@@ -803,6 +809,44 @@ public final class ModernCharacterSetupUi {
             GlRaster.fillRect(x, y, width, height, color);
         } else {
             SoftwareRaster.fillRect(x, y, width, height, color);
+        }
+    }
+
+    private static void setClip(ModernUiRect rect) {
+        if (GlRenderer.enabled) {
+            GlRaster.setClip(
+                rect.x,
+                rect.y,
+                rect.right(),
+                rect.bottom()
+            );
+        } else {
+            SoftwareRaster.setClip(
+                rect.x,
+                rect.y,
+                rect.right(),
+                rect.bottom()
+            );
+            Rasteriser.prepare();
+        }
+    }
+
+    private static void resetClip() {
+        if (GlRenderer.enabled) {
+            GlRaster.setClip(
+                0,
+                0,
+                GameShell.canvasWidth,
+                GameShell.canvasHeight
+            );
+        } else {
+            SoftwareRaster.setClip(
+                0,
+                0,
+                GameShell.canvasWidth,
+                GameShell.canvasHeight
+            );
+            Rasteriser.prepare();
         }
     }
 
