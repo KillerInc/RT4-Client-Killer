@@ -239,7 +239,24 @@ public final class ModernLoginScreenUi {
             );
 
         if (Mouse.clickButton == 1) {
-            if (layout.usernameInput.contains(
+            if (layout.loginButton.contains(
+                Mouse.clickX,
+                Mouse.clickY
+            )) {
+                DisplayDebug.log(
+                    "MODERN_UI LOGIN_DIRECT_CLICK"
+                        + " click=" + Mouse.clickX + "," + Mouse.clickY
+                        + " rect="
+                        + layout.loginButton.x + ","
+                        + layout.loginButton.y + ","
+                        + layout.loginButton.width + "x"
+                        + layout.loginButton.height
+                );
+                submitLogin();
+                Mouse.clickButton = 0;
+                MiniMenu.clickProcessingState = 0;
+                return;
+            } else if (layout.usernameInput.contains(
                 Mouse.clickX,
                 Mouse.clickY
             )) {
