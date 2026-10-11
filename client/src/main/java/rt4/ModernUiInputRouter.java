@@ -341,9 +341,20 @@ public final class ModernUiInputRouter {
                     continue;
                 }
 
+                int modernLocalX =
+                    Mouse.lastMouseX - binding.bounds.x;
+                int modernLocalY =
+                    Mouse.lastMouseY - binding.bounds.y;
+                int backendLocalX =
+                    modernLocalX * Math.max(1, component.width)
+                        / Math.max(1, binding.bounds.width);
+                int backendLocalY =
+                    modernLocalY * Math.max(1, component.height)
+                        / Math.max(1, binding.bounds.height);
+
                 MiniMenu.addComponentEntries(
-                    Mouse.lastMouseY - binding.bounds.y,
-                    Mouse.lastMouseX - binding.bounds.x,
+                    backendLocalY,
+                    backendLocalX,
                     component
                 );
                 synchronized (ModernUiInputRouter.class) {
@@ -545,7 +556,9 @@ public final class ModernUiInputRouter {
         // Use the original button dispatcher for normal ops. It already runs
         // onOptionClick scripts, handles special client actions, validates
         // server-active properties and sends the correct packet where needed.
-        if (opIndex != -1) {
+        if (opIndex != -1
+            && (component.onClickRepeat == null
+                || component.onOptionClick != null)) {
             ClientProt.sendButtonClick(
                 opBase,
                 component.createdComponentId,
