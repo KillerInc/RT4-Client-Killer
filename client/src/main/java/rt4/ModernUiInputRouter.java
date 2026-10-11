@@ -105,6 +105,9 @@ public final class ModernUiInputRouter {
             parentX,
             parentY
         );
+        ModernInventoryPanelUi.prepareInput(
+            components
+        );
         ModernUiRenderer.prepareMainMenuInput(
             components,
             parentX,
