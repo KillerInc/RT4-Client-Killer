@@ -60,6 +60,7 @@ public final class ModernCharacterSetupUi {
     private static boolean dragging;
     private static int dragOffsetX;
     private static int dragOffsetY;
+    private static int lastRenderedLoop = -1000;
 
     private ModernCharacterSetupUi() {
     }
@@ -69,6 +70,345 @@ public final class ModernCharacterSetupUi {
             && interfaceId == INTERFACE_ID
             && ModernGameInterfaceCatalog.kind(interfaceId)
                 == ModernGameInterfaceCatalog.Kind.CHARACTER_SETUP;
+    }
+
+    public static void processModernInputEarly() {
+        if (!ModernUiManager.isEnabled()
+            || client.gameState != 30
+            || client.loop - lastRenderedLoop > 2
+            || INTERFACE_ID < 0
+            || INTERFACE_ID >= InterfaceList.components.length) {
+            dragging = false;
+            return;
+        }
+
+        Component[] components =
+            InterfaceList.components[INTERFACE_ID];
+        if (components == null) {
+            dragging = false;
+            return;
+        }
+
+        Model model = discover(components);
+        ModernCharacterSetupLayout layout = currentLayout();
+
+        ModernUiRect dragHandle =
+            new ModernUiRect(
+                layout.title.x,
+                layout.header.y,
+                layout.header.right() - layout.title.x,
+                layout.header.height
+            );
+
+        if (Mouse.clickButton == 1
+            && dragHandle.contains(Mouse.clickX, Mouse.clickY)) {
+            dragging = true;
+            dragOffsetX = Mouse.clickX - layout.panel.x;
+            dragOffsetY = Mouse.clickY - layout.panel.y;
+            Mouse.clickButton = 0;
+            MiniMenu.clickProcessingState = 0;
+        }
+
+        if (dragging) {
+            if (Mouse.pressedButton == 1) {
+                windowX = Mouse.lastMouseX - dragOffsetX;
+                windowY = Mouse.lastMouseY - dragOffsetY;
+                layout = currentLayout();
+            } else {
+                dragging = false;
+            }
+        }
+
+        if (Mouse.clickButton != 1) {
+            return;
+        }
+
+        boolean handled = false;
+
+        for (int i = 0; i < TAB_COMPONENTS.length && !handled; i++) {
+            handled =
+                activateModernRect(
+                    model,
+                    TAB_COMPONENTS[i],
+                    layout.tab(i)
+                );
+        }
+
+        if (!handled) {
+            if (model.overlay == 26) {
+                handled =
+                    activateModernRect(
+                        model, 362,
+                        layout.footerButton(0, 2)
+                    )
+                    || activateModernRect(
+                        model, 360,
+                        layout.footerButton(1, 2)
+                    );
+            } else if (model.overlay == 28) {
+                handled =
+                    activateModernRect(
+                        model, 377,
+                        layout.footerButton(0, 2)
+                    )
+                    || activateModernRect(
+                        model, 378,
+                        layout.footerButton(1, 2)
+                    )
+                    || activateModernRect(
+                        model, 381,
+                        overlayToggle(layout)
+                    );
+            } else if (model.overlay == 29) {
+                handled =
+                    activateModernRect(
+                        model, 394,
+                        layout.footerButton(0, 2)
+                    )
+                    || activateModernRect(
+                        model, 395,
+                        layout.footerButton(1, 2)
+                    )
+                    || activateModernRect(
+                        model, 398,
+                        overlayToggle(layout)
+                    );
+            } else {
+                switch (model.tab) {
+                    case 0:
+                        handled =
+                            activateModernRect(
+                                model, 37,
+                                layout.choiceCard(0)
+                            )
+                            || activateModernRect(
+                                model, 40,
+                                layout.choiceCard(1)
+                            )
+                            || activateModernRect(
+                                model, 46,
+                                layout.footerButton(0, 1)
+                            );
+                        break;
+                    case 1:
+                        handled =
+                            activateModernRect(
+                                model, 49,
+                                layout.choiceCard(0)
+                            )
+                            || activateModernRect(
+                                model, 52,
+                                layout.choiceCard(1)
+                            )
+                            || activateModernRect(
+                                model, 56,
+                                layout.footerButton(0, 2)
+                            )
+                            || activateModernRect(
+                                model, 58,
+                                layout.footerButton(1, 2)
+                            );
+                        break;
+                    case 2:
+                        handled =
+                            processHeadModernClick(model, layout);
+                        break;
+                    case 3:
+                        handled =
+                            processBodyModernClick(model, layout);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
+        if (handled) {
+            Mouse.clickButton = 0;
+            MiniMenu.clickProcessingState = 0;
+            return;
+        }
+
+        if (layout.panel.contains(Mouse.clickX, Mouse.clickY)) {
+            DisplayDebug.log(
+                "MODERN_UI CHARACTER_UNMATCHED_CLICK"
+                    + " tab=" + model.tab
+                    + " overlay=" + model.overlay
+                    + " click=" + Mouse.clickX + "," + Mouse.clickY
+                    + " panel="
+                    + layout.panel.x + "," + layout.panel.y
+                    + "," + layout.panel.width + "x"
+                    + layout.panel.height
+            );
+            Mouse.clickButton = 0;
+            MiniMenu.clickProcessingState = 0;
+        }
+    }
+
+    private static boolean processHeadModernClick(
+        Model model,
+        ModernCharacterSetupLayout layout
+    ) {
+        ModernUiRect hair = layout.headSelector(0);
+        ModernUiRect beard = layout.headSelector(1);
+
+        if (activateModernRect(
+                model, 92,
+                layout.selectorArrow(hair, false)
+            )
+            || activateModernRect(
+                model, 93,
+                layout.selectorArrow(hair, true)
+            )
+            || activateModernRect(
+                model, 97,
+                layout.selectorArrow(beard, false)
+            )
+            || activateModernRect(
+                model, 98,
+                layout.selectorArrow(beard, true)
+            )
+            || activateModernRect(
+                model, 62,
+                layout.paletteTab(0, 2)
+            )
+            || activateModernRect(
+                model, 61,
+                layout.paletteTab(1, 2)
+            )
+            || activateModernRect(
+                model, 171,
+                layout.footerButton(0, 3)
+            )
+            || activateModernRect(
+                model, 169,
+                layout.footerButton(1, 3)
+            )
+            || activateModernRect(
+                model, 167,
+                layout.footerButton(2, 3)
+            )) {
+            return true;
+        }
+
+        int[] palette =
+            isVisible(model, 150)
+                ? HEAD_SKIN_COLOURS
+                : HEAD_HAIR_COLOURS;
+        for (int i = 0; i < palette.length; i++) {
+            if (activateModernRect(
+                    model,
+                    palette[i],
+                    layout.swatch(i, palette.length)
+                )) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean processBodyModernClick(
+        Model model,
+        ModernCharacterSetupLayout layout
+    ) {
+        int[][] pairs = {
+            {341,342}, {345,346}, {349,350}, {353,354}, {357,358}
+        };
+        for (int i = 0; i < pairs.length; i++) {
+            ModernUiRect selector = layout.bodySelector(i);
+            if (activateModernRect(
+                    model,
+                    pairs[i][0],
+                    layout.selectorArrow(selector, false)
+                )
+                || activateModernRect(
+                    model,
+                    pairs[i][1],
+                    layout.selectorArrow(selector, true)
+                )) {
+                return true;
+            }
+        }
+
+        if (activateModernRect(
+                model, 178,
+                layout.paletteTab(0, 3)
+            )
+            || activateModernRect(
+                model, 176,
+                layout.paletteTab(1, 3)
+            )
+            || activateModernRect(
+                model, 174,
+                layout.paletteTab(2, 3)
+            )
+            || activateModernRect(
+                model, 323,
+                layout.footerButton(0, 3)
+            )
+            || activateModernRect(
+                model, 321,
+                layout.footerButton(1, 3)
+            )
+            || activateModernRect(
+                model, 319,
+                layout.footerButton(2, 3)
+            )) {
+            return true;
+        }
+
+        int[] palette = activeBodyPalette(model);
+        for (int i = 0; i < palette.length; i++) {
+            if (activateModernRect(
+                    model,
+                    palette[i],
+                    layout.swatch(i, palette.length)
+                )) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean activateModernRect(
+        Model model,
+        int child,
+        ModernUiRect bounds
+    ) {
+        if (bounds == null
+            || !bounds.contains(Mouse.clickX, Mouse.clickY)) {
+            return false;
+        }
+
+        Component component = model.get(child);
+        if (component == null) {
+            DisplayDebug.log(
+                "MODERN_UI CHARACTER_CLICK_NO_COMPONENT"
+                    + " child=" + child
+                    + " click=" + Mouse.clickX + "," + Mouse.clickY
+                    + " rect="
+                    + bounds.x + "," + bounds.y
+                    + "," + bounds.width + "x" + bounds.height
+            );
+            return false;
+        }
+
+        boolean handled =
+            ModernUiInputRouter.dispatchBoundPrimaryClick(
+                component,
+                bounds
+            );
+
+        DisplayDebug.log(
+            "MODERN_UI CHARACTER_RECT_ATTEMPT"
+                + " child=" + child
+                + " handled=" + handled
+                + " click=" + Mouse.clickX + "," + Mouse.clickY
+                + " rect="
+                + bounds.x + "," + bounds.y
+                + "," + bounds.width + "x" + bounds.height
+        );
+        return handled;
     }
 
     public static void prepareInput(
@@ -232,6 +572,8 @@ public final class ModernCharacterSetupUi {
         if (!handles(interfaceId) || components == null) {
             return;
         }
+
+        lastRenderedLoop = client.loop;
 
         Model model = discover(components);
         ModernCharacterSetupLayout layout = currentLayout();
