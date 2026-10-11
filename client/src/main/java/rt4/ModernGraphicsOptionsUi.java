@@ -1214,88 +1214,11 @@ public final class ModernGraphicsOptionsUi {
         ModernUiRect target,
         ModernUiRect clip
     ) {
-        List<ComponentEntry> entries = new ArrayList<>();
-        collectComponentEntries(
-            components,
-            -1,
-            parentX,
-            parentY,
-            entries
-        );
-        ComponentEntry label =
-            findTextEntry(entries, "brightness");
-        if (label == null) {
-            return;
-        }
-
-        List<ComponentEntry> sliderParts = new ArrayList<>();
-        for (ComponentEntry entry : entries) {
-            Component component = entry.component;
-            if (!isInteractive(component)
-                || component.type == 0
-                || component.width > 60
-                || component.height > 50) {
-                continue;
-            }
-
-            int cx = entry.x + Math.max(1, component.width) / 2;
-            int cy = entry.y + Math.max(1, component.height) / 2;
-            int labelCx =
-                label.x
-                    + Math.max(1, label.component.width) / 2;
-            if (Math.abs(cx - labelCx) <= 100
-                && cy >= label.y + 8
-                && cy <= label.y + 55) {
-                sliderParts.add(entry);
-            }
-        }
-
-        if (sliderParts.isEmpty()) {
-            return;
-        }
-
-        int sourceLeft = Integer.MAX_VALUE;
-        int sourceTop = Integer.MAX_VALUE;
-        int sourceRight = Integer.MIN_VALUE;
-        int sourceBottom = Integer.MIN_VALUE;
-        for (ComponentEntry entry : sliderParts) {
-            sourceLeft = Math.min(sourceLeft, entry.x);
-            sourceTop = Math.min(sourceTop, entry.y);
-            sourceRight = Math.max(
-                sourceRight,
-                entry.x + Math.max(1, entry.component.width)
-            );
-            sourceBottom = Math.max(
-                sourceBottom,
-                entry.y + Math.max(1, entry.component.height)
-            );
-        }
-
-        int sourceWidth = Math.max(1, sourceRight - sourceLeft);
-        int sourceHeight = Math.max(1, sourceBottom - sourceTop);
-
-        for (ComponentEntry entry : sliderParts) {
-            int x =
-                target.x
-                    + (entry.x - sourceLeft) * target.width
-                        / sourceWidth;
-            int y =
-                target.y
-                    + (entry.y - sourceTop) * target.height
-                        / sourceHeight;
-            int width = Math.max(
-                1,
-                Math.max(1, entry.component.width)
-                    * target.width / sourceWidth
-            );
-            int height = Math.max(
-                1,
-                Math.max(1, entry.component.height)
-                    * target.height / sourceHeight
-            );
+        Component action = directChild(components, 28);
+        if (action != null) {
             ModernUiInputRouter.bind(
-                entry.component,
-                new ModernUiRect(x, y, width, height),
+                action,
+                target,
                 clip
             );
         }
