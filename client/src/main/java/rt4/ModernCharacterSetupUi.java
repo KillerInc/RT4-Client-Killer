@@ -119,18 +119,24 @@ public final class ModernCharacterSetupUi {
         if (model.overlay == 26) {
             bind(model, 362, layout.footerButton(0, 2), screen);
             bind(model, 360, layout.footerButton(1, 2), screen);
+            dispatchFooterClick(model, 362, layout.footerButton(0, 2));
+            dispatchFooterClick(model, 360, layout.footerButton(1, 2));
             return;
         }
         if (model.overlay == 28) {
             bind(model, 377, layout.footerButton(0, 2), screen);
             bind(model, 378, layout.footerButton(1, 2), screen);
             bind(model, 381, overlayToggle(layout), screen);
+            dispatchFooterClick(model, 377, layout.footerButton(0, 2));
+            dispatchFooterClick(model, 378, layout.footerButton(1, 2));
             return;
         }
         if (model.overlay == 29) {
             bind(model, 394, layout.footerButton(0, 2), screen);
             bind(model, 395, layout.footerButton(1, 2), screen);
             bind(model, 398, overlayToggle(layout), screen);
+            dispatchFooterClick(model, 394, layout.footerButton(0, 2));
+            dispatchFooterClick(model, 395, layout.footerButton(1, 2));
             return;
         }
 
@@ -151,6 +157,64 @@ public final class ModernCharacterSetupUi {
                 break;
             case 3:
                 bindBodyInput(model, layout, screen);
+                break;
+            default:
+                break;
+        }
+
+        switch (model.tab) {
+            case 0:
+                dispatchFooterClick(
+                    model,
+                    46,
+                    layout.footerButton(0, 1)
+                );
+                break;
+            case 1:
+                dispatchFooterClick(
+                    model,
+                    56,
+                    layout.footerButton(0, 2)
+                );
+                dispatchFooterClick(
+                    model,
+                    58,
+                    layout.footerButton(1, 2)
+                );
+                break;
+            case 2:
+                dispatchFooterClick(
+                    model,
+                    171,
+                    layout.footerButton(0, 3)
+                );
+                dispatchFooterClick(
+                    model,
+                    169,
+                    layout.footerButton(1, 3)
+                );
+                dispatchFooterClick(
+                    model,
+                    167,
+                    layout.footerButton(2, 3)
+                );
+                break;
+            case 3:
+                dispatchFooterClick(
+                    model,
+                    323,
+                    layout.footerButton(0, 3)
+                );
+                dispatchFooterClick(
+                    model,
+                    321,
+                    layout.footerButton(1, 3)
+                );
+                dispatchFooterClick(
+                    model,
+                    319,
+                    layout.footerButton(2, 3)
+                );
                 break;
             default:
                 break;
@@ -313,13 +377,15 @@ public final class ModernCharacterSetupUi {
             layout.choiceCard(0),
             "game-ui/setup-mouse-two",
             "2 Button",
-            "For a mouse with at least 2 buttons."
+            "For a mouse with at least 2 buttons.",
+            isSelectedChoice(model, 37)
         );
         renderChoiceCard(
             layout.choiceCard(1),
             "game-ui/setup-mouse-one",
             "1 Button",
-            "For a mouse with only 1 button."
+            "For a mouse with only 1 button.",
+            isSelectedChoice(model, 40)
         );
         drawFooterButton(layout.footerButton(0, 1), "Next");
     }
@@ -333,13 +399,15 @@ public final class ModernCharacterSetupUi {
             layout.choiceCard(0),
             "game-ui/setup-male",
             "Male",
-            "Use a male character appearance."
+            "Use a male character appearance.",
+            isSelectedChoice(model, 49)
         );
         renderChoiceCard(
             layout.choiceCard(1),
             "game-ui/setup-female",
             "Female",
-            "Use a female character appearance."
+            "Use a female character appearance.",
+            isSelectedChoice(model, 52)
         );
         drawFooterButton(layout.footerButton(0, 2), "Back");
         drawFooterButton(layout.footerButton(1, 2), "Next");
@@ -552,11 +620,16 @@ public final class ModernCharacterSetupUi {
         ModernUiRect rect,
         String iconAsset,
         String title,
-        String description
+        String description,
+        boolean selected
     ) {
         boolean hover = rect.contains(Mouse.lastMouseX, Mouse.lastMouseY);
         drawAsset(
-            hover ? "game-ui/tile-hover" : "game-ui/tile",
+            selected
+                ? "game-ui/tile-selected"
+                : hover
+                    ? "game-ui/tile-hover"
+                    : "game-ui/tile",
             rect
         );
 
@@ -721,7 +794,31 @@ public final class ModernCharacterSetupUi {
             hover
                 ? ModernUiMetrics.TEXT_GOLD
                 : ModernUiMetrics.TEXT_PRIMARY,
-            1, 1, 9.0F, false
+            1, 1, 15.0F, false
+        );
+    }
+
+    private static boolean isSelectedChoice(
+        Model model,
+        int child
+    ) {
+        Component component = model.get(child);
+        return component != null
+            && component.onMouseOver == null;
+    }
+
+    private static void dispatchFooterClick(
+        Model model,
+        int child,
+        ModernUiRect bounds
+    ) {
+        Component component = model.get(child);
+        if (component == null) {
+            return;
+        }
+        ModernUiInputRouter.dispatchBoundPrimaryClick(
+            component,
+            bounds
         );
     }
 
