@@ -103,6 +103,26 @@ public final class ModernUiRenderer {
             return;
         }
 
+        if (ModernStatusOrbUi.handles(interfaceId)) {
+            setClip(
+                0,
+                0,
+                GameShell.canvasWidth,
+                GameShell.canvasHeight
+            );
+            ModernStatusOrbUi.render(
+                interfaceId,
+                loadedComponents
+            );
+            setClip(
+                clipLeft,
+                clipTop,
+                clipRight,
+                clipBottom
+            );
+            return;
+        }
+
         boolean inGameTopLevel =
             ModernGameUi.isTopLevel(interfaceId);
         if (inGameTopLevel) {
