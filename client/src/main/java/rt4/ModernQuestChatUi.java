@@ -45,12 +45,6 @@ public final class ModernQuestChatUi {
 
         ModernQuestChatLayout layout =
             currentLayout();
-        ModernUiInputRouter.blockWorldInput(layout.panel);
-        ModernUiInputRouter.registerModernRegion(
-            "quest-chat-drag",
-            layout.header,
-            layout.panel
-        );
 
         if (Mouse.clickButton == 1
             && layout.header.contains(
@@ -75,6 +69,13 @@ public final class ModernQuestChatUi {
                 dragging = false;
             }
         }
+
+        ModernUiInputRouter.blockWorldInput(layout.panel);
+        ModernUiInputRouter.registerModernRegion(
+            "quest-chat-drag",
+            layout.header,
+            layout.panel
+        );
 
         ModernUiRect screen =
             new ModernUiRect(
@@ -102,8 +103,6 @@ public final class ModernQuestChatUi {
         if (model == null) {
             return;
         }
-
-        prepareInput(components);
 
         ModernQuestChatLayout layout =
             currentLayout();
