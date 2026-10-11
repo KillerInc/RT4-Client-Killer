@@ -203,6 +203,58 @@ public final class ModernUiInputRouter {
         return debugHitboxes;
     }
 
+    public static void logDebugClick(Component component) {
+        if (!debugHitboxes
+            || component == null
+            || !has(component)) {
+            return;
+        }
+
+        StringBuilder ops = new StringBuilder();
+        if (component.ops != null) {
+            for (int i = 0; i < component.ops.length; i++) {
+                JagString op = component.ops[i];
+                if (op == null || op.length() == 0) {
+                    continue;
+                }
+                if (ops.length() > 0) {
+                    ops.append(" | ");
+                }
+                ops.append(i + 1)
+                    .append(":")
+                    .append(op.toString());
+            }
+        }
+
+        ModernUiRect bounds = bounds(component);
+        ModernUiRect clip = clip(component);
+
+        DisplayDebug.log(
+            "MODERN_UI HITBOX_CLICK"
+                + " interface=" + (component.id >>> 16)
+                + " component=" + (component.id & 0xFFFF)
+                + " id=" + component.id
+                + " type=" + component.type
+                + " clientCode=" + component.clientCode
+                + " buttonType=" + component.buttonType
+                + " ops=[" + ops + "]"
+                + " onOptionClick=" + (component.onOptionClick != null)
+                + " onClickRepeat=" + (component.onClickRepeat != null)
+                + " onHold=" + (component.onHold != null)
+                + " hasEventHandlers=" + component.hasEventHandlers
+                + (bounds == null
+                    ? ""
+                    : " bounds="
+                        + bounds.x + "," + bounds.y
+                        + "," + bounds.width + "x" + bounds.height)
+                + (clip == null
+                    ? ""
+                    : " clip="
+                        + clip.x + "," + clip.y
+                        + "," + clip.width + "x" + clip.height)
+        );
+    }
+
     public static synchronized void renderDebugOverlay() {
         if (!debugHitboxes || !ModernUiManager.isEnabled()) {
             return;
