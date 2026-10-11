@@ -44,6 +44,8 @@ public class MiniMap {
 	@OriginalMember(owner = "client!sd", name = "R", descriptor = "I")
 	public static int selectedComponentId;
 
+	private static boolean modernRendering;
+
 	@OriginalMember(owner = "client!ma", name = "a", descriptor = "([IIIIII)V")
 	public static void renderTile(@OriginalArg(0) int[] pixels, @OriginalArg(1) int index, @OriginalArg(3) int plane, @OriginalArg(4) int tileX, @OriginalArg(5) int tileY) {
 		@Pc(7) Tile tile = SceneGraph.tiles[plane][tileX][tileY];
@@ -226,6 +228,40 @@ public class MiniMap {
 		return true;
 	}
 
+	/**
+	 * Modern UI minimap content path. The cache component remains a behavior
+	 * backend only; a temporary geometry-only component provides a rectangular
+	 * mask so no vanilla minimap frame/mask sprite is rendered.
+	 */
+	public static void renderModern(
+		int rectangle,
+		int y,
+		int x,
+		int width,
+		int height,
+		Component backend
+	) {
+		Component geometry = new Component();
+		geometry.id = backend == null ? -1 : backend.id;
+		geometry.width = Math.max(1, width);
+		geometry.height = Math.max(1, height);
+
+		int[][] mask =
+			ModernMinimapMask.full(
+				geometry.width,
+				geometry.height
+			);
+		geometry.clickMaskStart = mask[0];
+		geometry.clickMaskWidth = mask[1];
+
+		modernRendering = true;
+		try {
+			render(rectangle, y, x, geometry);
+		} finally {
+			modernRendering = false;
+		}
+	}
+
 	@OriginalMember(owner = "client!ed", name = "a", descriptor = "(IBIILclient!be;)V")
 	public static void render(@OriginalArg(0) int mapAngle, @OriginalArg(2) int y, @OriginalArg(3) int x, @OriginalArg(4) Component component) {
 		client.audioLoop();
@@ -239,7 +275,30 @@ public class MiniMap {
 			@Pc(57) int playerMapX = PlayerList.self.xFine / 32 + 48;
 			@Pc(67) int playerMapY = 464 - PlayerList.self.yFine / 32;
 			if (GlRenderer.enabled) {
-				((GlSprite) sprite).renderRotatedTransparent(x, y, component.width, component.height, playerMapX, playerMapY, totalAngle, zoomOffset + 256, (GlSprite) component.getSprite(false));
+				if (modernRendering) {
+					((GlSprite) sprite).renderRotatedRect(
+						x,
+						y,
+						component.width,
+						component.height,
+						playerMapX,
+						playerMapY,
+						totalAngle,
+						zoomOffset + 256
+					);
+				} else {
+					((GlSprite) sprite).renderRotatedTransparent(
+						x,
+						y,
+						component.width,
+						component.height,
+						playerMapX,
+						playerMapY,
+						totalAngle,
+						zoomOffset + 256,
+						(GlSprite) component.getSprite(false)
+					);
+				}
 			} else {
 				((SoftwareSprite) sprite).renderRotated(x, y, component.width, component.height, playerMapX, playerMapY, totalAngle, zoomOffset + 256, component.clickMaskStart, component.clickMaskWidth);
 			}
@@ -277,13 +336,22 @@ public class MiniMap {
 								labelColor = LoginManager.mapElementList.colors[k];
 							}
 							if (GlRenderer.enabled) {
-								GlFont.setLineMask((GlSprite) component.getSprite(false));
+								if (!modernRendering) {
+									GlFont.setLineMask(
+										(GlSprite) component.getSprite(false)
+									);
+								}
 							} else {
-								SoftwareRaster.setLineMasks(component.clickMaskStart, component.clickMaskWidth);
+								SoftwareRaster.setLineMasks(
+									component.clickMaskStart,
+									component.clickMaskWidth
+								);
 							}
 							labelFont.renderParagraphAlpha(LoginManager.mapElementList.names[k], x + labelX + component.width / 2, y + component.height / 2 + -screenDY, labelWidth, 50, labelColor, 0, 1, 0, 0);
 							if (GlRenderer.enabled) {
-								GlFont.clearLineMask();
+								if (!modernRendering) {
+									GlFont.clearLineMask();
+								}
 							} else {
 								SoftwareRaster.clearLineMasks();
 							}
@@ -401,9 +469,11 @@ public class MiniMap {
 				SoftwareRaster.fillRect(component.width / 2 + x - 1, component.height / 2 + -1 + y, 3, 3, 16777215);
 			}
 		} else if (GlRenderer.enabled) {
-			@Pc(1041) Sprite bgSprite = component.getSprite(false);
-			if (bgSprite != null) {
-				bgSprite.render(x, y);
+			if (!modernRendering) {
+				@Pc(1041) Sprite bgSprite = component.getSprite(false);
+				if (bgSprite != null) {
+					bgSprite.render(x, y);
+				}
 			}
 		} else {
 			SoftwareRaster.clearMaskedRegion(x, y, component.clickMaskStart, component.clickMaskWidth);
@@ -429,7 +499,24 @@ public class MiniMap {
 		@Pc(81) int screenX = scaledSin * dx + dy * scaledCos >> 16;
 		@Pc(92) int screenY = scaledCos * dx - dy * scaledSin >> 16;
 		if (GlRenderer.enabled) {
-			((GlSprite) icon).renderClipped(component.width / 2 + offsetX + screenX - icon.innerWidth / 2, component.height / 2 + offsetY - (screenY + icon.innerHeight / 2), (GlSprite) component.getSprite(false));
+			int drawX =
+				component.width / 2
+					+ offsetX
+					+ screenX
+					- icon.innerWidth / 2;
+			int drawY =
+				component.height / 2
+					+ offsetY
+					- (screenY + icon.innerHeight / 2);
+			if (modernRendering) {
+				icon.render(drawX, drawY);
+			} else {
+				((GlSprite) icon).renderClipped(
+					drawX,
+					drawY,
+					(GlSprite) component.getSprite(false)
+				);
+			}
 		} else {
 			((SoftwareSprite) icon).drawClipped(component.width / 2 + offsetX + screenX - icon.innerWidth / 2, -(icon.innerHeight / 2) + component.height / 2 + offsetY + -screenY, component.clickMaskStart, component.clickMaskWidth);
 		}
