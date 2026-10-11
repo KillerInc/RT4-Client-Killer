@@ -416,6 +416,37 @@ public final class ModernUiAssetResolver {
             );
         }
 
+        // Four-page character setup wizard. Its frame and tab icons are
+        // fully Modern-owned while live appearance models stay game content.
+        ModernCharacterSetupLayout setupLayout =
+            ModernCharacterSetupLayout.create(
+                canvasWidth,
+                canvasHeight,
+                Integer.MIN_VALUE,
+                Integer.MIN_VALUE
+            );
+        addWarmupSpec(
+            plan,
+            "game-ui/panel",
+            setupLayout.panel.width,
+            setupLayout.panel.height
+        );
+        addWarmupSpec(
+            plan,
+            "audio-options/divider",
+            setupLayout.divider.width,
+            setupLayout.divider.height
+        );
+        for (int i = 0; i < ModernCharacterSetupLayout.TAB_COUNT; i++) {
+            ModernUiRect tab = setupLayout.tab(i);
+            addWarmupSpec(plan, "controls/button", tab.width, tab.height);
+            addWarmupSpec(plan, "controls/button-active", tab.width, tab.height);
+        }
+        addWarmupSpec(plan, "game-ui/setup-mouse", 72, 72);
+        addWarmupSpec(plan, "game-ui/setup-gender", 72, 72);
+        addWarmupSpec(plan, "game-ui/setup-head", 32, 32);
+        addWarmupSpec(plan, "game-ui/setup-body", 32, 32);
+
         // Bank, shop and trade windows. Their layout classes are
         // independent; cache exact current-viewport sizes for each surface.
         for (int interfaceId : new int[] {762, 763, 767}) {
