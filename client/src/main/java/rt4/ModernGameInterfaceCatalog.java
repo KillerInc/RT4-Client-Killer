@@ -25,6 +25,7 @@ public final class ModernGameInterfaceCatalog {
         QUEST_CHAT,
         DIALOG,
         WORLD_MAP,
+        GRAND_EXCHANGE,
         OTHER
     }
 
@@ -109,11 +110,19 @@ public final class ModernGameInterfaceCatalog {
             case 248:
             case 314:
             case 389:
-                return Kind.QUEST_CHAT;
+                return Kind.GRAND_EXCHANGE;
             case 771:
                 return Kind.DIALOG;
             case 755:
                 return Kind.WORLD_MAP;
+            case 105:
+            case 107:
+            case 109:
+            case 642:
+            case 643:
+            case 644:
+            case 645:
+                return Kind.GRAND_EXCHANGE;
             default:
                 return Kind.OTHER;
         }
