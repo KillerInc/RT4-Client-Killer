@@ -264,6 +264,26 @@ public final class ModernUiRenderer {
             return;
         }
 
+        if (ModernWorldMapUi.handles(interfaceId)) {
+            setClip(
+                0,
+                0,
+                GameShell.canvasWidth,
+                GameShell.canvasHeight
+            );
+            ModernWorldMapUi.render(
+                interfaceId,
+                loadedComponents
+            );
+            setClip(
+                clipLeft,
+                clipTop,
+                clipRight,
+                clipBottom
+            );
+            return;
+        }
+
         boolean inGameTopLevel =
             ModernGameUi.isTopLevel(interfaceId);
         if (inGameTopLevel) {
