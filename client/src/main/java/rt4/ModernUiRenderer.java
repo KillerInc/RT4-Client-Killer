@@ -1832,8 +1832,10 @@ public final class ModernUiRenderer {
             return;
         }
 
-        List<MainMenuImageEntry> entries = new ArrayList<>();
-        List<UiRect> sourceRects = new ArrayList<>();
+        MainMenuImageEntry best = null;
+        int bestScore = Integer.MIN_VALUE;
+        int bestArea = Integer.MAX_VALUE;
+
         for (MainMenuImageEntry image : layout.images) {
             if (!layout.choiceComponentIds.contains(image.componentId)) {
                 continue;
@@ -1845,54 +1847,75 @@ public final class ModernUiRenderer {
                 continue;
             }
 
-            entries.add(image);
-            sourceRects.add(image.rect);
-        }
+            Component component = image.component;
+            int score = 0;
 
-        UiRect sourceUnion = unionRects(sourceRects);
-        if (sourceUnion == null) {
-            Component fallback =
-                leftSide
-                    ? layout.standardChoiceComponent
-                    : layout.highChoiceComponent;
-            if (fallback != null) {
-                ModernUiInputRouter.bind(
-                    fallback,
-                    toModernRect(target),
-                    clip
-                );
+            if (component.onOptionClick != null) {
+                score += 1000;
             }
-            return;
+            if (component.hasEventHandlers) {
+                score += 500;
+            }
+            if (component.buttonType != 0) {
+                score += 250;
+            }
+            if (component.clientCode != 0) {
+                score += 125;
+            }
+            if (hasNonEmptyOps(component)) {
+                score += 750;
+            }
+
+            int area = rectArea(image.rect);
+            if (score > bestScore
+                || score == bestScore && area < bestArea) {
+                best = image;
+                bestScore = score;
+                bestArea = area;
+            }
         }
 
-        for (MainMenuImageEntry image : entries) {
-            int x =
-                target.x
-                    + (image.rect.x - sourceUnion.x)
-                        * target.width
-                        / Math.max(1, sourceUnion.width);
-            int y =
-                target.y
-                    + (image.rect.y - sourceUnion.y)
-                        * target.height
-                        / Math.max(1, sourceUnion.height);
-            int width = Math.max(
-                1,
-                image.rect.width * target.width
-                    / Math.max(1, sourceUnion.width)
-            );
-            int height = Math.max(
-                1,
-                image.rect.height * target.height
-                    / Math.max(1, sourceUnion.height)
-            );
+        Component actionOwner =
+            best == null
+                ? leftSide
+                    ? layout.standardChoiceComponent
+                    : layout.highChoiceComponent
+                : best.component;
 
+        if (actionOwner != null) {
             ModernUiInputRouter.bind(
-                image.component,
-                new ModernUiRect(x, y, width, height),
+                actionOwner,
+                toModernRect(target),
                 clip
             );
+
+            if (ModernUiInputRouter.isDebugHitboxesEnabled()) {
+                DisplayDebug.log(
+                    "MODERN_UI MAIN_MENU_CHOICE_BIND"
+                        + " side=" + (leftSide ? "standard" : "high")
+                        + " component="
+                            + (actionOwner.id & 0xFFFF)
+                        + " fullRect="
+                            + target.x + "," + target.y
+                            + "," + target.width + "x" + target.height
+                );
+            }
         }
+    }
+
+    private static boolean hasNonEmptyOps(
+        Component component
+    ) {
+        if (component == null || component.ops == null) {
+            return false;
+        }
+
+        for (JagString op : component.ops) {
+            if (op != null && op.trim().length() > 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean isMainMenuActionText(String text) {
