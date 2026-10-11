@@ -42,7 +42,6 @@ public final class ModernInGameDialogUi {
 
         ModernInGameDialogLayout layout =
             currentLayout();
-        ModernUiInputRouter.blockWorldInput(layout.panel);
 
         if (Mouse.clickButton == 1
             && layout.title.contains(
@@ -67,6 +66,13 @@ public final class ModernInGameDialogUi {
                 dragging = false;
             }
         }
+
+        ModernUiInputRouter.blockWorldInput(layout.panel);
+        ModernUiInputRouter.registerModernRegion(
+            "dialog-drag",
+            layout.title,
+            layout.panel
+        );
 
         ModernUiRect screen =
             new ModernUiRect(
@@ -94,8 +100,6 @@ public final class ModernInGameDialogUi {
         if (model == null) {
             return;
         }
-
-        prepareInput(components);
 
         ModernInGameDialogLayout layout =
             currentLayout();
