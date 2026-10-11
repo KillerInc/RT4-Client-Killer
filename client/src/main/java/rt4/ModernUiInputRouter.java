@@ -120,6 +120,10 @@ public final class ModernUiInputRouter {
         ModernInGameDialogUi.prepareInput(
             components
         );
+        ModernBankUi.prepareInput(
+            interfaceIdOf(components),
+            components
+        );
         ModernStatusOrbUi.prepareInput(
             components
         );
@@ -128,6 +132,21 @@ public final class ModernUiInputRouter {
             parentX,
             parentY
         );
+    }
+
+    private static int interfaceIdOf(
+        Component[] components
+    ) {
+        if (components == null) {
+            return -1;
+        }
+        for (Component component : components) {
+            if (component != null
+                && component.id != -1) {
+                return component.id >>> 16;
+            }
+        }
+        return -1;
     }
 
     public static synchronized void clear() {
