@@ -1757,17 +1757,17 @@ public final class ModernUiRenderer {
             );
         }
 
-        bindMainMenuChoiceSide(
-            layout,
-            true,
+        bindMainMenuChoiceComponent(
+            230,
             layout.standardChoice,
-            clip
+            clip,
+            "standard"
         );
-        bindMainMenuChoiceSide(
-            layout,
-            false,
+        bindMainMenuChoiceComponent(
+            231,
             layout.highChoice,
-            clip
+            clip,
+            "high"
         );
 
         if (layout.musicSlider != null
@@ -1822,84 +1822,47 @@ public final class ModernUiRenderer {
         }
     }
 
-    private static void bindMainMenuChoiceSide(
-        MainMenuLayout layout,
-        boolean leftSide,
+    private static void bindMainMenuChoiceComponent(
+        int childId,
         UiRect target,
-        ModernUiRect clip
+        ModernUiRect clip,
+        String label
     ) {
         if (target == null) {
             return;
         }
 
-        MainMenuImageEntry best = null;
-        int bestScore = Integer.MIN_VALUE;
-        int bestArea = Integer.MAX_VALUE;
-
-        for (MainMenuImageEntry image : layout.images) {
-            if (!layout.choiceComponentIds.contains(image.componentId)) {
-                continue;
-            }
-
-            boolean imageLeft =
-                rectCenterX(image.rect) < layout.centerX;
-            if (imageLeft != leftSide) {
-                continue;
-            }
-
-            Component component = image.component;
-            int score = 0;
-
-            if (component.onOptionClick != null) {
-                score += 1000;
-            }
-            if (component.hasEventHandlers) {
-                score += 500;
-            }
-            if (component.buttonType != 0) {
-                score += 250;
-            }
-            if (component.clientCode != 0) {
-                score += 125;
-            }
-            if (hasNonEmptyOps(component)) {
-                score += 750;
-            }
-
-            int area = rectArea(image.rect);
-            if (score > bestScore
-                || score == bestScore && area < bestArea) {
-                best = image;
-                bestScore = score;
-                bestArea = area;
-            }
-        }
-
         Component actionOwner =
-            best == null
-                ? leftSide
-                    ? layout.standardChoiceComponent
-                    : layout.highChoiceComponent
-                : best.component;
-
-        if (actionOwner != null) {
-            ModernUiInputRouter.bind(
-                actionOwner,
-                toModernRect(target),
-                clip
+            InterfaceList.getComponent(
+                (744 << 16) | childId
             );
 
-            if (ModernUiInputRouter.isDebugHitboxesEnabled()) {
-                DisplayDebug.log(
-                    "MODERN_UI MAIN_MENU_CHOICE_BIND"
-                        + " side=" + (leftSide ? "standard" : "high")
-                        + " component="
-                            + (actionOwner.id & 0xFFFF)
-                        + " fullRect="
-                            + target.x + "," + target.y
-                            + "," + target.width + "x" + target.height
-                );
-            }
+        if (actionOwner == null) {
+            DisplayDebug.log(
+                "MODERN_UI MAIN_MENU_CHOICE_BIND missing"
+                    + " child=" + childId
+                    + " label=" + label
+            );
+            return;
+        }
+
+        ModernUiInputRouter.bind(
+            actionOwner,
+            toModernRect(target),
+            clip
+        );
+
+        if (ModernUiInputRouter.isDebugHitboxesEnabled()) {
+            DisplayDebug.log(
+                "MODERN_UI MAIN_MENU_CHOICE_BIND"
+                    + " side=" + label
+                    + " component=" + childId
+                    + " onClick="
+                        + (actionOwner.onClick != null)
+                    + " fullRect="
+                        + target.x + "," + target.y
+                        + "," + target.width + "x" + target.height
+            );
         }
     }
 
