@@ -1727,8 +1727,8 @@ public final class client extends GameShell {
 		audioLoop();
 		Keyboard.loop();
 		Mouse.loop();
+		ModernUiInputRouter.beginFrame();
 		ModernUiInputRouter.updateDebugToggle();
-		ModernCharacterSetupUi.processInput();
 		if (GlRenderer.enabled) {
 			GlCleaner.process();
 		}
