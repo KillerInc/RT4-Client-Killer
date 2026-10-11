@@ -119,6 +119,8 @@ tasks.register('verifyModernSvgAssets', JavaExec) {
         '/ui/killer-modern/controls/popup.svg',
         '/ui/killer-modern/controls/popup-divider.svg',
         '/ui/killer-modern/controls/popup-row.svg',
+        '/ui/killer-modern/controls/icon-button.svg',
+        '/ui/killer-modern/controls/icon-button-active.svg',
         '/ui/killer-modern/game-ui/minimap-frame.svg',
         '/ui/killer-modern/game-ui/panel.svg',
         '/ui/killer-modern/game-ui/orb.svg',
