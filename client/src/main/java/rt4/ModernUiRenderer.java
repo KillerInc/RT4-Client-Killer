@@ -414,7 +414,11 @@ public final class ModernUiRenderer {
             return true;
         }
         if (component.clientCode == 1402) {
-            if (loginScreenDepth == 0) {
+            if (mainMenuDepth == 0
+                && loginScreenDepth == 0
+                && titleMenuDepth == 0
+                && graphicsOptionsDepth == 0
+                && audioOptionsDepth == 0) {
                 drawMissing(
                     "login-flames",
                     x,
