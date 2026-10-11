@@ -28,6 +28,7 @@ public final class ModernUiLayoutVerifier {
             verifyWelcome(viewport[0], viewport[1]);
             verifyGameFrame(viewport[0], viewport[1]);
             verifyInventoryPanel(viewport[0], viewport[1]);
+            verifySidebarPanel(viewport[0], viewport[1]);
             verifyStatusOrbs(viewport[0], viewport[1]);
             verifyMainMenu(viewport[0], viewport[1]);
         }
@@ -427,6 +428,53 @@ public final class ModernUiLayoutVerifier {
             width,
             height
         );
+    }
+
+    private static void verifySidebarPanel(
+        int width,
+        int height
+    ) {
+        ModernSidebarPanelLayout layout =
+            ModernSidebarPanelLayout.create(width, height);
+
+        insideScreen(
+            layout.panel,
+            "sidebar panel",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.title,
+            "sidebar title",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.divider,
+            "sidebar divider",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.content,
+            "sidebar content",
+            width,
+            height
+        );
+
+        int capacity = layout.visibleTileCapacity();
+        for (int i = 0; i < capacity; i++) {
+            inside(
+                layout.content,
+                layout.tile(i),
+                "sidebar tile " + i,
+                width,
+                height
+            );
+        }
     }
 
     private static void verifyStatusOrbs(
