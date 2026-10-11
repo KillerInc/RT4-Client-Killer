@@ -42,6 +42,7 @@ public final class ModernInGameDialogUi {
 
         ModernInGameDialogLayout layout =
             currentLayout();
+        ModernUiInputRouter.blockWorldInput(layout.panel);
 
         if (Mouse.clickButton == 1
             && layout.title.contains(
