@@ -284,6 +284,26 @@ public final class ModernUiRenderer {
             return;
         }
 
+        if (ModernGrandExchangeSearchUi.handles(interfaceId)) {
+            setClip(
+                0,
+                0,
+                GameShell.canvasWidth,
+                GameShell.canvasHeight
+            );
+            ModernGrandExchangeSearchUi.render(
+                interfaceId,
+                loadedComponents
+            );
+            setClip(
+                clipLeft,
+                clipTop,
+                clipRight,
+                clipBottom
+            );
+            return;
+        }
+
         if (ModernGrandExchangeUi.handles(interfaceId)) {
             setClip(
                 0,
