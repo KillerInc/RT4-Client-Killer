@@ -7,8 +7,8 @@ package rt4;
  * coordinates are used by this layout.
  */
 public final class ModernCharacterSetupLayout {
-    public static final int PANEL_WIDTH = 760;
-    public static final int PANEL_HEIGHT = 520;
+    public static final int PANEL_WIDTH = 570;
+    public static final int PANEL_HEIGHT = 390;
     public static final int TAB_COUNT = 4;
 
     public final ModernUiRect panel;
@@ -58,11 +58,11 @@ public final class ModernCharacterSetupLayout {
     ) {
         int width = Math.min(
             PANEL_WIDTH,
-            Math.max(600, canvasWidth - 32)
+            Math.max(500, canvasWidth - 32)
         );
         int height = Math.min(
             PANEL_HEIGHT,
-            Math.max(430, canvasHeight - 48)
+            Math.max(350, canvasHeight - 48)
         );
 
         int x =
