@@ -13,6 +13,26 @@ public final class ModernModelContentRenderer {
         int x,
         int y
     ) {
+        return render(component, x, y, component == null ? 0 : component.width, component == null ? 0 : component.height);
+    }
+
+    public static boolean render(
+        Component component,
+        ModernUiRect rect
+    ) {
+        if (rect == null) {
+            return false;
+        }
+        return render(component, rect.x, rect.y, rect.width, rect.height);
+    }
+
+    private static boolean render(
+        Component component,
+        int x,
+        int y,
+        int renderWidth,
+        int renderHeight
+    ) {
         if (component == null) {
             return false;
         }
@@ -137,11 +157,11 @@ public final class ModernModelContentRenderer {
 
         int centerX =
             x
-                + component.width / 2
+                + renderWidth / 2
                 + (scaleX * component.modelOriginX >> 8);
         int centerY =
             y
-                + component.height / 2
+                + renderHeight / 2
                 + (scaleY * component.modelOriginY >> 8);
 
         int sin =
