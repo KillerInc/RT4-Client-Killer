@@ -1165,7 +1165,6 @@ public final class client extends GameShell {
 			InterfaceList.keyCodes[InterfaceList.keyQueueSize] = Keyboard.keyCode;
 			InterfaceList.keyChars[InterfaceList.keyQueueSize] = Keyboard.keyChar;
 		}
-		ModernUiInputRouter.updateDebugToggle();
 		Protocol.sceneDelta++;
 		ModernUiSettingsOverlay.beginFrame();
 		if (InterfaceList.topLevelInterface != -1) {
@@ -1728,6 +1727,8 @@ public final class client extends GameShell {
 		audioLoop();
 		Keyboard.loop();
 		Mouse.loop();
+		ModernUiInputRouter.updateDebugToggle();
+		ModernCharacterSetupUi.processInput();
 		if (GlRenderer.enabled) {
 			GlCleaner.process();
 		}
