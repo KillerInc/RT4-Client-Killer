@@ -90,6 +90,11 @@ public final class ModernCharacterSetupUi {
                 layout.header.right() - layout.title.x,
                 layout.header.height
             );
+        ModernUiInputRouter.registerModernRegion(
+            "character-setup-drag",
+            dragHandle,
+            layout.panel
+        );
 
         if (Mouse.clickButton == 1
             && dragHandle.contains(Mouse.clickX, Mouse.clickY)) {
