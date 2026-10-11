@@ -25,12 +25,34 @@ public final class ModernCharacterSetupUi {
     private static final int[] BODY_LEG_COLOURS = range(248, 276);
     private static final int[] BODY_FEET_COLOURS = range(307, 312);
 
-    private static final int[] SWATCH_COLOURS = {
-        0x551818, 0xA03B42, 0xB44724, 0xD28E8E, 0xB48662, 0xD0A657,
-        0xB96845, 0x6A4C38, 0x443A30, 0x73542D, 0x64A764, 0x138527,
-        0x173E35, 0x253E94, 0x287D83, 0x5A93CF, 0xA82AA6, 0x80528E,
-        0x572677, 0x49463E, 0x8E8E85, 0xC5C2B4, 0xA9A88D, 0x65625A,
-        0x24231F, 0x584028, 0x404000, 0x686048, 0x302828
+    private static final int[] HAIR_COLOURS = {
+        0x300000, 0xB03838, 0x9F2800, 0xC88080, 0xCB823E,
+        0xCDAD53, 0xC06840, 0x50321E, 0x302008, 0x885F29,
+        0x60B060, 0x008300, 0x183028, 0x181890, 0x008383,
+        0x68A8F8, 0xBE00C0, 0x9860B0, 0x581890, 0x2F2A2A,
+        0x76756C, 0xD6D1D1, 0x989878, 0x484038, 0x101010
+    };
+    private static final int[] SKIN_COLOURS = {
+        0xBB8F6A, 0xA47F5D, 0x9E7A49, 0x8E6E42,
+        0x79582A, 0x644E24, 0x4C3D09, 0xD5A985
+    };
+    private static final int[] TORSO_COLOURS = {
+        0x300000, 0xB03838, 0x752F3B, 0xC88080, 0xA17067, 0x9D642F,
+        0x8B3B2A, 0xC06840, 0xAA9045, 0x7B6E32, 0xA3970D, 0x829472,
+        0x60B060, 0x2D723E, 0x1C6135, 0x183028, 0x181890, 0x2D5272,
+        0x6088B0, 0x728C94, 0x83537B, 0x9860B0, 0x581890, 0x3B3B4E,
+        0xADA481, 0x989878, 0x484038, 0x262323, 0x101010
+    };
+    private static final int[] LEG_COLOURS = {
+        0x183028, 0x300000, 0xB03838, 0x752F3B, 0xC88080, 0xA17067,
+        0x9D642F, 0x8B3B2A, 0xC06840, 0xAA9045, 0x7B6E32, 0xA3970D,
+        0x829472, 0x60B060, 0x2D723E, 0x1C6135, 0x181890, 0x2D5272,
+        0x6088B0, 0x728C94, 0x83537B, 0x9860B0, 0x581890, 0x3B3B4E,
+        0xADA481, 0x989878, 0x484038, 0x262323, 0x101010
+    };
+    private static final int[] FEET_COLOURS = {
+        0x584028, 0x404000, 0x686048,
+        0x302828, 0x684820, 0x585850
     };
 
     private static int windowX = Integer.MIN_VALUE;
@@ -101,11 +123,13 @@ public final class ModernCharacterSetupUi {
         if (model.overlay == 28) {
             bind(model, 377, layout.footerButton(0, 2), screen);
             bind(model, 378, layout.footerButton(1, 2), screen);
+            bind(model, 381, overlayToggle(layout), screen);
             return;
         }
         if (model.overlay == 29) {
             bind(model, 394, layout.footerButton(0, 2), screen);
             bind(model, 395, layout.footerButton(1, 2), screen);
+            bind(model, 398, overlayToggle(layout), screen);
             return;
         }
 
@@ -355,7 +379,7 @@ public final class ModernCharacterSetupUi {
             skin ? 1 : 0
         );
         int[] palette = skin ? HEAD_SKIN_COLOURS : HEAD_HAIR_COLOURS;
-        renderPalette(layout, palette);
+        renderPalette(layout, palette, skin ? SKIN_COLOURS : HAIR_COLOURS);
 
         drawFooterButton(layout.footerButton(0, 3), "Back");
         drawFooterButton(layout.footerButton(1, 3), "Randomise");
@@ -403,7 +427,7 @@ public final class ModernCharacterSetupUi {
             new String[] {"Torso", "Legs", "Feet"},
             active
         );
-        renderPalette(layout, activeBodyPalette(model));
+        renderPalette(layout, activeBodyPalette(model), activeBodyColours(model));
 
         drawFooterButton(layout.footerButton(0, 3), "Back");
         drawFooterButton(layout.footerButton(1, 3), "Randomise");
@@ -461,8 +485,49 @@ public final class ModernCharacterSetupUi {
             false
         );
 
+        if (model.overlay == 28 || model.overlay == 29) {
+            ModernUiRect toggle = overlayToggle(layout);
+            drawAsset("controls/button", toggle);
+            Component toggleComponent =
+                model.get(model.overlay == 28 ? 381 : 398);
+            boolean selected =
+                toggleComponent != null
+                    && Cs1ScriptRunner.isTrue(toggleComponent);
+            ModernTrueTypeFont.drawInBox(
+                ModernUiFontRegistry.BOLD_12,
+                selected ? "✓" : "",
+                toggle.x + 5,
+                toggle.y,
+                24,
+                toggle.height,
+                ModernUiMetrics.TEXT_GOLD,
+                1, 1, 10.0F, false
+            );
+            ModernTrueTypeFont.drawInBox(
+                ModernUiFontRegistry.PLAIN_11,
+                "Don't ask me this again",
+                toggle.x + 30,
+                toggle.y,
+                toggle.width - 36,
+                toggle.height,
+                ModernUiMetrics.TEXT_PRIMARY,
+                0, 1, 8.5F, false
+            );
+        }
+
         drawFooterButton(layout.footerButton(0, 2), yes);
         drawFooterButton(layout.footerButton(1, 2), no);
+    }
+
+    private static ModernUiRect overlayToggle(
+        ModernCharacterSetupLayout layout
+    ) {
+        return new ModernUiRect(
+            layout.content.centerX() - 120,
+            layout.content.bottom() - 54,
+            240,
+            28
+        );
     }
 
     private static void drawPrompt(
@@ -617,7 +682,8 @@ public final class ModernCharacterSetupUi {
 
     private static void renderPalette(
         ModernCharacterSetupLayout layout,
-        int[] components
+        int[] components,
+        int[] colours
     ) {
         for (int i = 0; i < components.length; i++) {
             ModernUiRect rect = layout.swatch(i, components.length);
@@ -631,7 +697,7 @@ public final class ModernCharacterSetupUi {
                 rect.y + 5,
                 Math.max(1, rect.width - 10),
                 Math.max(1, rect.height - 10),
-                SWATCH_COLOURS[i % SWATCH_COLOURS.length]
+                colours[i % colours.length]
             );
         }
     }
@@ -667,6 +733,16 @@ public final class ModernCharacterSetupUi {
             return BODY_LEG_COLOURS;
         }
         return BODY_TORSO_COLOURS;
+    }
+
+    private static int[] activeBodyColours(Model model) {
+        if (isVisible(model, 306)) {
+            return FEET_COLOURS;
+        }
+        if (isVisible(model, 247)) {
+            return LEG_COLOURS;
+        }
+        return TORSO_COLOURS;
     }
 
     private static Model discover(Component[] components) {
