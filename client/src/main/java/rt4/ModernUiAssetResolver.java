@@ -299,6 +299,122 @@ public final class ModernUiAssetResolver {
             ModernSidebarPanelLayout.TILE_SIZE,
             ModernSidebarPanelLayout.TILE_SIZE
         );
+        addWarmupSpec(
+            plan,
+            "game-ui/slot",
+            ModernGameFrameLayout.TAB_SIZE,
+            ModernGameFrameLayout.TAB_SIZE
+        );
+        addWarmupSpec(
+            plan,
+            "game-ui/slot-hover",
+            ModernGameFrameLayout.TAB_SIZE,
+            ModernGameFrameLayout.TAB_SIZE
+        );
+
+        ModernChatPanelLayout chatLayout =
+            ModernChatPanelLayout.create(
+                canvasWidth,
+                canvasHeight
+            );
+        addWarmupSpec(
+            plan,
+            "game-ui/panel",
+            chatLayout.panel.width,
+            chatLayout.panel.height
+        );
+        addWarmupSpec(
+            plan,
+            "audio-options/divider",
+            chatLayout.divider.width,
+            chatLayout.divider.height
+        );
+        for (int count = 1; count <= 8; count++) {
+            ModernUiRect rect =
+                chatLayout.actionRect(0, count);
+            addWarmupSpec(
+                plan,
+                "controls/button",
+                rect.width,
+                rect.height
+            );
+            addWarmupSpec(
+                plan,
+                "controls/button-active",
+                rect.width,
+                rect.height
+            );
+        }
+
+        ModernQuestChatLayout questLayout =
+            ModernQuestChatLayout.create(
+                canvasWidth,
+                canvasHeight,
+                Integer.MIN_VALUE,
+                Integer.MIN_VALUE
+            );
+        addWarmupSpec(
+            plan,
+            "game-ui/panel",
+            questLayout.panel.width,
+            questLayout.panel.height
+        );
+        addWarmupSpec(
+            plan,
+            "audio-options/divider",
+            questLayout.divider.width,
+            questLayout.divider.height
+        );
+        for (int count = 1; count <= 5; count++) {
+            ModernUiRect rect =
+                questLayout.actionRect(0, count);
+            addWarmupSpec(
+                plan,
+                "audio-options/button",
+                rect.width,
+                rect.height
+            );
+            addWarmupSpec(
+                plan,
+                "audio-options/button-active",
+                rect.width,
+                rect.height
+            );
+        }
+
+        ModernInGameDialogLayout dialogLayout =
+            ModernInGameDialogLayout.create(
+                canvasWidth,
+                canvasHeight
+            );
+        addWarmupSpec(
+            plan,
+            "game-ui/panel",
+            dialogLayout.panel.width,
+            dialogLayout.panel.height
+        );
+        addWarmupSpec(
+            plan,
+            "audio-options/divider",
+            dialogLayout.divider.width,
+            dialogLayout.divider.height
+        );
+        for (int count = 1; count <= 6; count++) {
+            ModernUiRect rect =
+                dialogLayout.actionRect(0, count);
+            addWarmupSpec(
+                plan,
+                "audio-options/button",
+                rect.width,
+                rect.height
+            );
+            addWarmupSpec(
+                plan,
+                "audio-options/button-active",
+                rect.width,
+                rect.height
+            );
+        }
 
         // Graphics Options - current exact renderer sizes.
         addWarmupSpec(
