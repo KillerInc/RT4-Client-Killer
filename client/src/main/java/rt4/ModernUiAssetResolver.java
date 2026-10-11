@@ -439,8 +439,8 @@ public final class ModernUiAssetResolver {
         );
         for (int i = 0; i < ModernCharacterSetupLayout.TAB_COUNT; i++) {
             ModernUiRect tab = setupLayout.tab(i);
-            addWarmupSpec(plan, "controls/button", tab.width, tab.height);
-            addWarmupSpec(plan, "controls/button-active", tab.width, tab.height);
+            addWarmupSpec(plan, "controls/icon-button", tab.width, tab.height);
+            addWarmupSpec(plan, "controls/icon-button-active", tab.width, tab.height);
         }
         addWarmupSpec(plan, "game-ui/setup-mouse", 72, 72);
         addWarmupSpec(plan, "game-ui/setup-mouse-one", 72, 72);
