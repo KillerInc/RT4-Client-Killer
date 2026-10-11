@@ -1,6 +1,8 @@
 package rt4;
 
+import java.util.ArrayList;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -15,6 +17,8 @@ import java.util.Map;
 public final class ModernUiInputRouter {
     private static final Map<Component, Binding> bindings =
         new IdentityHashMap<>();
+    private static final List<Blocker> blockers =
+        new ArrayList<>();
 
     private static final int DEBUG_FILL = 0x77CFFF;
     private static final int DEBUG_BORDER = 0xA8E4FF;
@@ -40,6 +44,64 @@ public final class ModernUiInputRouter {
                 client.loop
             )
         );
+    }
+
+    public static synchronized void blockWorldInput(
+        ModernUiRect bounds
+    ) {
+        if (bounds == null || !ModernUiManager.isEnabled()) {
+            return;
+        }
+
+        blockers.add(
+            new Blocker(
+                bounds,
+                client.loop
+            )
+        );
+    }
+
+    public static synchronized boolean isWorldInputBlocked(
+        int x,
+        int y
+    ) {
+        if (!ModernUiManager.isEnabled()) {
+            return false;
+        }
+
+        for (Blocker blocker : blockers) {
+            if (blocker != null
+                && blocker.loop == client.loop
+                && blocker.bounds.contains(x, y)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static synchronized boolean isOverBoundControl(
+        int x,
+        int y
+    ) {
+        if (!ModernUiManager.isEnabled()) {
+            return false;
+        }
+
+        for (Binding binding : bindings.values()) {
+            if (binding == null || binding.loop != client.loop) {
+                continue;
+            }
+
+            ModernUiRect bounds = binding.bounds;
+            ModernUiRect clip = binding.clip;
+            if (bounds == null || !bounds.contains(x, y)) {
+                continue;
+            }
+            if (clip == null || clip.contains(x, y)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static synchronized boolean has(Component component) {
@@ -401,6 +463,20 @@ public final class ModernUiInputRouter {
 
     public static synchronized void clear() {
         bindings.clear();
+        blockers.clear();
+    }
+
+    private static final class Blocker {
+        private final ModernUiRect bounds;
+        private final int loop;
+
+        private Blocker(
+            ModernUiRect bounds,
+            int loop
+        ) {
+            this.bounds = bounds;
+            this.loop = loop;
+        }
     }
 
     private static final class Binding {
