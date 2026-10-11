@@ -416,6 +416,128 @@ public final class ModernUiAssetResolver {
             );
         }
 
+        // Bank, shop and trade windows. Their layout classes are
+        // independent; cache exact current-viewport sizes for each surface.
+        for (int interfaceId : new int[] {762, 763, 767}) {
+            ModernBankLayout bankLayout =
+                ModernBankLayout.create(
+                    canvasWidth,
+                    canvasHeight,
+                    interfaceId
+                );
+            addWarmupSpec(
+                plan,
+                "game-ui/panel",
+                bankLayout.panel.width,
+                bankLayout.panel.height
+            );
+            addWarmupSpec(
+                plan,
+                "audio-options/divider",
+                bankLayout.divider.width,
+                bankLayout.divider.height
+            );
+            addWarmupSpec(
+                plan,
+                "game-ui/scrollbar-track",
+                bankLayout.scrollbarTrack().width,
+                bankLayout.scrollbarTrack().height
+            );
+            for (int count = 1; count <= 8; count++) {
+                ModernUiRect rect =
+                    bankLayout.actionRect(0, count);
+                addWarmupSpec(
+                    plan,
+                    "controls/button",
+                    rect.width,
+                    rect.height
+                );
+                addWarmupSpec(
+                    plan,
+                    "controls/button-active",
+                    rect.width,
+                    rect.height
+                );
+            }
+        }
+
+        for (int interfaceId : new int[] {620, 621}) {
+            ModernShopLayout shopLayout =
+                ModernShopLayout.create(
+                    canvasWidth,
+                    canvasHeight,
+                    interfaceId
+                );
+            addWarmupSpec(
+                plan,
+                "game-ui/panel",
+                shopLayout.panel.width,
+                shopLayout.panel.height
+            );
+            addWarmupSpec(
+                plan,
+                "audio-options/divider",
+                shopLayout.divider.width,
+                shopLayout.divider.height
+            );
+            for (int count = 1; count <= 6; count++) {
+                ModernUiRect rect =
+                    shopLayout.actionRect(0, count);
+                addWarmupSpec(
+                    plan,
+                    "controls/button",
+                    rect.width,
+                    rect.height
+                );
+                addWarmupSpec(
+                    plan,
+                    "controls/button-active",
+                    rect.width,
+                    rect.height
+                );
+            }
+        }
+
+        ModernTradeLayout tradeLayout =
+            ModernTradeLayout.create(
+                canvasWidth,
+                canvasHeight
+            );
+        addWarmupSpec(
+            plan,
+            "game-ui/panel",
+            tradeLayout.panel.width,
+            tradeLayout.panel.height
+        );
+        addWarmupSpec(
+            plan,
+            "audio-options/divider",
+            tradeLayout.divider.width,
+            tradeLayout.divider.height
+        );
+        addWarmupSpec(
+            plan,
+            "controls/popup-row",
+            tradeLayout.leftPane.width,
+            tradeLayout.leftPane.height
+        );
+        for (int count = 1; count <= 6; count++) {
+            ModernUiRect rect =
+                tradeLayout.actionRect(0, count);
+            addWarmupSpec(
+                plan,
+                "audio-options/button",
+                rect.width,
+                rect.height
+            );
+            addWarmupSpec(
+                plan,
+                "audio-options/button-active",
+                rect.width,
+                rect.height
+            );
+        }
+
         // Graphics Options - current exact renderer sizes.
         addWarmupSpec(
             plan,
