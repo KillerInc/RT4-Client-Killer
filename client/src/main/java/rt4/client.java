@@ -895,6 +895,8 @@ public final class client extends GameShell {
 			ModernUiCacheProgressOverlay.render();
 		}
 
+		ModernUiInputRouter.renderDebugOverlay();
+
 		if (GlRenderer.enabled && gameState != 0) {
 			GlRenderer.swapBuffers();
 			for (w = 0; w < InterfaceList.rectangles; w++) {
@@ -1163,6 +1165,7 @@ public final class client extends GameShell {
 			InterfaceList.keyCodes[InterfaceList.keyQueueSize] = Keyboard.keyCode;
 			InterfaceList.keyChars[InterfaceList.keyQueueSize] = Keyboard.keyChar;
 		}
+		ModernUiInputRouter.updateDebugToggle();
 		Protocol.sceneDelta++;
 		ModernUiSettingsOverlay.beginFrame();
 		if (InterfaceList.topLevelInterface != -1) {
