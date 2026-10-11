@@ -21,6 +21,7 @@ public final class ModernUiRenderer {
     private static int graphicsOptionsDepth;
     private static int audioOptionsDepth;
     private static int loginScreenDepth;
+    private static int titleMenuDepth;
     private static int graphicsOptionsTitleCenterX;
     private static int graphicsOptionsTitleY;
     private static boolean graphicsOptionsBrightnessRendered;
@@ -91,12 +92,21 @@ public final class ModernUiRenderer {
                 && !loginScreen
                 ? analyzeMainMenu(loadedComponents, parentX, parentY)
                 : null;
+
+        boolean titleMenu =
+            interfaceId == LoginManager.loginScreenId
+                && !loginScreen
+                && detectedMainMenu == null
+                && !graphicsOptions
+                && !audioOptions
+                && ModernTitleMenuUi.isActive(loadedComponents);
         boolean mainMenu = detectedMainMenu != null;
 
         if (mainMenu
             || graphicsOptions
             || audioOptions
-            || loginScreen) {
+            || loginScreen
+            || titleMenu) {
             loginUiActivated = true;
         }
 
@@ -106,7 +116,8 @@ public final class ModernUiRenderer {
                 && !mainMenu
                 && !graphicsOptions
                 && !audioOptions
-                && !loginScreen;
+                && !loginScreen
+                && !titleMenu;
 
         int oldTitleCenterX = graphicsOptionsTitleCenterX;
         int oldTitleY = graphicsOptionsTitleY;
@@ -142,6 +153,12 @@ public final class ModernUiRenderer {
             loginScreenDepth++;
         }
 
+        if (titleMenu) {
+            // Remaining title/account/world screens use one Modern-owned
+            // fallback surface. Vanilla is behavior/state only.
+            titleMenuDepth++;
+        }
+
         renderComponents(
             loadedComponents,
             -1,
@@ -163,6 +180,17 @@ public final class ModernUiRenderer {
             );
             setClip(clipLeft, clipTop, clipRight, clipBottom);
             loginScreenDepth--;
+        }
+
+        if (titleMenu) {
+            setClip(0, 0, GameShell.canvasWidth, GameShell.canvasHeight);
+            ModernTitleMenuUi.render(
+                loadedComponents,
+                parentX,
+                parentY
+            );
+            setClip(clipLeft, clipTop, clipRight, clipBottom);
+            titleMenuDepth--;
         }
 
         if (mainMenu) {
@@ -389,7 +417,8 @@ public final class ModernUiRenderer {
     private static void renderComponentVisual(Component component, int x, int y) {
         if (graphicsOptionsDepth > 0
             || audioOptionsDepth > 0
-            || loginScreenDepth > 0) {
+            || loginScreenDepth > 0
+            || titleMenuDepth > 0) {
             // Rebuilt Modern screens never paint cache-era UI components.
             // Their vanilla trees remain available only as state/action
             // backends while the game scene stays in the background pass.
