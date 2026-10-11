@@ -538,6 +538,46 @@ public final class ModernUiAssetResolver {
             );
         }
 
+        ModernWorldMapLayout worldMapLayout =
+            ModernWorldMapLayout.create(
+                canvasWidth,
+                canvasHeight
+            );
+        addWarmupSpec(
+            plan,
+            "game-ui/panel",
+            worldMapLayout.panel.width,
+            worldMapLayout.panel.height
+        );
+        addWarmupSpec(
+            plan,
+            "audio-options/divider",
+            worldMapLayout.divider.width,
+            worldMapLayout.divider.height
+        );
+        addWarmupSpec(
+            plan,
+            "controls/popup-row",
+            worldMapLayout.overview.width + 4,
+            worldMapLayout.overview.height + 4
+        );
+        for (int count = 1; count <= 8; count++) {
+            ModernUiRect rect =
+                worldMapLayout.actionRect(0, count);
+            addWarmupSpec(
+                plan,
+                "controls/button",
+                rect.width,
+                rect.height
+            );
+            addWarmupSpec(
+                plan,
+                "controls/button-active",
+                rect.width,
+                rect.height
+            );
+        }
+
         // Graphics Options - current exact renderer sizes.
         addWarmupSpec(
             plan,
