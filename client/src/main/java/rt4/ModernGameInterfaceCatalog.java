@@ -22,6 +22,8 @@ public final class ModernGameInterfaceCatalog {
         SHOP,
         TRADE,
         CHAT,
+        QUEST_CHAT,
+        DIALOG,
         WORLD_MAP,
         OTHER
     }
@@ -72,6 +74,12 @@ public final class ModernGameInterfaceCatalog {
             case 637:
             case 639:
                 return Kind.TRADE;
+            case 137:
+            case 173:
+            case 752:
+            case 754:
+            case 757:
+                return Kind.CHAT;
             case 64:
             case 65:
             case 66:
@@ -80,8 +88,6 @@ public final class ModernGameInterfaceCatalog {
             case 69:
             case 70:
             case 71:
-            case 137:
-            case 173:
             case 210:
             case 211:
             case 212:
@@ -103,9 +109,9 @@ public final class ModernGameInterfaceCatalog {
             case 248:
             case 314:
             case 389:
-            case 754:
-            case 757:
-                return Kind.CHAT;
+                return Kind.QUEST_CHAT;
+            case 771:
+                return Kind.DIALOG;
             case 755:
                 return Kind.WORLD_MAP;
             default:
