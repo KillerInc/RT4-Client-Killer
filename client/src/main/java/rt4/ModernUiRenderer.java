@@ -23,6 +23,7 @@ public final class ModernUiRenderer {
     private static int loginScreenDepth;
     private static int titleMenuDepth;
     private static int welcomeDepth;
+    private static int inGameTopLevelDepth;
     private static int graphicsOptionsTitleCenterX;
     private static int graphicsOptionsTitleY;
     private static boolean graphicsOptionsBrightnessRendered;
@@ -147,6 +148,7 @@ public final class ModernUiRenderer {
             ModernGameUi.isTopLevel(interfaceId);
         if (inGameTopLevel) {
             ModernGameUi.prepare(loadedComponents);
+            inGameTopLevelDepth++;
         }
 
         boolean graphicsOptions =
@@ -334,6 +336,7 @@ public final class ModernUiRenderer {
             );
             ModernGameUi.renderChrome();
             setClip(clipLeft, clipTop, clipRight, clipBottom);
+            inGameTopLevelDepth--;
         }
 
         if (suppressStartupDiagnostics) {
@@ -588,7 +591,8 @@ public final class ModernUiRenderer {
             || audioOptionsDepth > 0
             || loginScreenDepth > 0
             || titleMenuDepth > 0
-            || welcomeDepth > 0) {
+            || welcomeDepth > 0
+            || inGameTopLevelDepth > 0) {
             // Rebuilt Modern screens never paint cache-era UI components.
             // Their vanilla trees remain available only as state/action
             // backends while the game scene stays in the background pass.
