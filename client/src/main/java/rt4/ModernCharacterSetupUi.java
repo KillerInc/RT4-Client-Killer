@@ -493,16 +493,15 @@ public final class ModernCharacterSetupUi {
             boolean selected =
                 toggleComponent != null
                     && Cs1ScriptRunner.isTrue(toggleComponent);
-            ModernTrueTypeFont.drawInBox(
-                ModernUiFontRegistry.BOLD_12,
-                selected ? "✓" : "",
-                toggle.x + 5,
-                toggle.y,
-                24,
-                toggle.height,
-                ModernUiMetrics.TEXT_GOLD,
-                1, 1, 10.0F, false
-            );
+            if (selected) {
+                fillRect(
+                    toggle.x + 10,
+                    toggle.centerY() - 5,
+                    10,
+                    10,
+                    ModernUiMetrics.TEXT_GOLD
+                );
+            }
             ModernTrueTypeFont.drawInBox(
                 ModernUiFontRegistry.PLAIN_11,
                 "Don't ask me this again",
