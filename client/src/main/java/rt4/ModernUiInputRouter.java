@@ -321,33 +321,37 @@ public final class ModernUiInputRouter {
             )
         );
 
-        // Build component menus from Modern geometry too. Inventory/item
-        // actions, right-click menus and other multi-op controls must not need
-        // the cache-era component rectangle to be discoverable.
-        for (Map.Entry<Component, Binding> entry : prepared) {
-            Component component = entry.getKey();
-            Binding binding = entry.getValue();
-            ModernUiRect hit = effectiveBounds(binding);
-            if (component == null
-                || hit == null
-                || component.clientCode != 0
-                || !hit.contains(
-                    Mouse.lastMouseX,
-                    Mouse.lastMouseY
-                )) {
-                continue;
-            }
+        // Build in-game component menus from Modern geometry too.
+        // Inventory/item actions, right-click menus and other multi-op
+        // controls must not need the cache-era component rectangle to be
+        // discoverable. Title/login screens keep their original non-menu
+        // action paths.
+        if (client.gameState == 30) {
+            for (Map.Entry<Component, Binding> entry : prepared) {
+                Component component = entry.getKey();
+                Binding binding = entry.getValue();
+                ModernUiRect hit = effectiveBounds(binding);
+                if (component == null
+                    || hit == null
+                    || component.clientCode != 0
+                    || !hit.contains(
+                        Mouse.lastMouseX,
+                        Mouse.lastMouseY
+                    )) {
+                    continue;
+                }
 
-            MiniMenu.addComponentEntries(
-                Mouse.lastMouseY - binding.bounds.y,
-                Mouse.lastMouseX - binding.bounds.x,
-                component
-            );
-            synchronized (ModernUiInputRouter.class) {
-                menuPreparedLoops.put(
-                    component,
-                    client.loop
+                MiniMenu.addComponentEntries(
+                    Mouse.lastMouseY - binding.bounds.y,
+                    Mouse.lastMouseX - binding.bounds.x,
+                    component
                 );
+                synchronized (ModernUiInputRouter.class) {
+                    menuPreparedLoops.put(
+                        component,
+                        client.loop
+                    );
+                }
             }
         }
 
