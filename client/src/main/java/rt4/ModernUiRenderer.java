@@ -144,6 +144,66 @@ public final class ModernUiRenderer {
             return;
         }
 
+        if (ModernChatPanelUi.handles(interfaceId)) {
+            setClip(
+                0,
+                0,
+                GameShell.canvasWidth,
+                GameShell.canvasHeight
+            );
+            ModernChatPanelUi.render(
+                interfaceId,
+                loadedComponents
+            );
+            setClip(
+                clipLeft,
+                clipTop,
+                clipRight,
+                clipBottom
+            );
+            return;
+        }
+
+        if (ModernQuestChatUi.handles(interfaceId)) {
+            setClip(
+                0,
+                0,
+                GameShell.canvasWidth,
+                GameShell.canvasHeight
+            );
+            ModernQuestChatUi.render(
+                interfaceId,
+                loadedComponents
+            );
+            setClip(
+                clipLeft,
+                clipTop,
+                clipRight,
+                clipBottom
+            );
+            return;
+        }
+
+        if (ModernInGameDialogUi.handles(interfaceId)) {
+            setClip(
+                0,
+                0,
+                GameShell.canvasWidth,
+                GameShell.canvasHeight
+            );
+            ModernInGameDialogUi.render(
+                interfaceId,
+                loadedComponents
+            );
+            setClip(
+                clipLeft,
+                clipTop,
+                clipRight,
+                clipBottom
+            );
+            return;
+        }
+
         boolean inGameTopLevel =
             ModernGameUi.isTopLevel(interfaceId);
         if (inGameTopLevel) {
