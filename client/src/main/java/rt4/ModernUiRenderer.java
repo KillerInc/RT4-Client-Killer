@@ -1858,7 +1858,7 @@ public final class ModernUiRenderer {
                     + " side=" + label
                     + " component=" + childId
                     + " onClick="
-                        + (actionOwner.onClick != null)
+                        + (actionOwner.onOptionClick != null)
                     + " fullRect="
                         + target.x + "," + target.y
                         + "," + target.width + "x" + target.height
