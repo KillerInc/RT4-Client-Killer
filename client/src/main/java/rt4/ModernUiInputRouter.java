@@ -203,6 +203,55 @@ public final class ModernUiInputRouter {
         return debugHitboxes;
     }
 
+    public static boolean dispatchPrimaryClick(
+        Component component
+    ) {
+        if (component == null
+            || !has(component)
+            || component.onOptionClick == null
+            || component.ops == null) {
+            return false;
+        }
+
+        int opIndex = -1;
+        JagString opBase = JagString.EMPTY;
+        for (int i = 0; i < component.ops.length; i++) {
+            JagString op = component.ops[i];
+            if (op == null || op.trim().length() == 0) {
+                continue;
+            }
+            if (opIndex != -1) {
+                return false;
+            }
+            opIndex = i;
+            opBase = op;
+        }
+
+        if (opIndex == -1) {
+            return false;
+        }
+
+        ClientProt.sendButtonClick(
+            opBase,
+            component.createdComponentId,
+            opIndex + 1,
+            component.id
+        );
+        MiniMenu.clickProcessingState = 0;
+
+        if (debugHitboxes) {
+            DisplayDebug.log(
+                "MODERN_UI DIRECT_CLICK"
+                    + " interface=" + (component.id >>> 16)
+                    + " component=" + (component.id & 0xFFFF)
+                    + " op=" + (opIndex + 1)
+                    + " text=" + opBase.toString()
+            );
+        }
+
+        return true;
+    }
+
     public static void logDebugClick(Component component) {
         if (!debugHitboxes
             || component == null
