@@ -118,7 +118,10 @@ tasks.register('verifyModernSvgAssets', JavaExec) {
         '/ui/killer-modern/audio-options/toggle-on.svg',
         '/ui/killer-modern/controls/popup.svg',
         '/ui/killer-modern/controls/popup-divider.svg',
-        '/ui/killer-modern/controls/popup-row.svg'
+        '/ui/killer-modern/controls/popup-row.svg',
+        '/ui/killer-modern/game-ui/minimap-frame.svg',
+        '/ui/killer-modern/game-ui/slot.svg',
+        '/ui/killer-modern/game-ui/context-menu.svg'
 }
 
 
