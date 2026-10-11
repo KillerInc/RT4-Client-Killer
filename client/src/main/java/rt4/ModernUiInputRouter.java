@@ -266,8 +266,10 @@ public final class ModernUiInputRouter {
         boolean down =
             Keyboard.pressedKeys.length > 8
                 && Keyboard.pressedKeys[8];
+        boolean requested =
+            Keyboard.consumeModernF8ToggleRequest();
 
-        if (down && !f8WasDown) {
+        if (requested || down && !f8WasDown) {
             debugHitboxes = !debugHitboxes;
             GameShell.fullRedraw = true;
             InterfaceList.fullRedrawAllInterfaces();
@@ -325,27 +327,36 @@ public final class ModernUiInputRouter {
             return false;
         }
 
-        ClientProt.sendButtonClick(
-            opBase,
-            component.createdComponentId,
-            opIndex + 1,
-            component.id
-        );
+        if (component.onOptionClick != null) {
+            HookRequest hookRequest = new HookRequest();
+            hookRequest.arguments = component.onOptionClick;
+            hookRequest.source = component;
+            hookRequest.opBase = opBase;
+            hookRequest.op = opIndex + 1;
+            ScriptRunner.run(hookRequest);
+        } else {
+            ClientProt.sendButtonClick(
+                opBase,
+                component.createdComponentId,
+                opIndex + 1,
+                component.id
+            );
+        }
+
         directHandledLoops.put(
             component,
             client.loop
         );
         MiniMenu.clickProcessingState = 0;
 
-        if (debugHitboxes) {
-            DisplayDebug.log(
-                "MODERN_UI BOUND_DIRECT_CLICK"
-                    + " interface=" + (component.id >>> 16)
-                    + " component=" + (component.id & 0xFFFF)
-                    + " op=" + (opIndex + 1)
-                    + " text=" + opBase.toString()
-            );
-        }
+        DisplayDebug.log(
+            "MODERN_UI BOUND_DIRECT_CLICK"
+                + " interface=" + (component.id >>> 16)
+                + " component=" + (component.id & 0xFFFF)
+                + " op=" + (opIndex + 1)
+                + " hook=" + (component.onOptionClick != null)
+                + " text=" + opBase.toString()
+        );
 
         return true;
     }
