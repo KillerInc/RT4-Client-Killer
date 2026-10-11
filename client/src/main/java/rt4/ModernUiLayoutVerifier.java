@@ -165,26 +165,33 @@ public final class ModernUiLayoutVerifier {
     }
 
     private static void verifyTitleMenus(int width, int height) {
-        ModernTitleMenuLayout layout =
-            ModernTitleMenuLayout.create(width, height);
+        verifyAccountMenu(width, height);
+        verifyWorldMenu(width, height);
+        verifyTitleDialog(width, height);
+    }
 
-        insideScreen(layout.panel, "title-menu panel", width, height);
-        inside(layout.panel, layout.title, "title-menu title", width, height);
-        inside(layout.panel, layout.divider, "title-menu divider", width, height);
-        inside(layout.panel, layout.body, "title-menu body", width, height);
+    private static void verifyAccountMenu(int width, int height) {
+        ModernAccountMenuLayout layout =
+            ModernAccountMenuLayout.create(width, height);
+        verifyTitleFrame(
+            layout,
+            "account-menu",
+            width,
+            height
+        );
 
         for (int i = 0; i < 5; i++) {
             inside(
-                layout.panel,
+                layout.panel(),
                 layout.fieldRect(i, 5),
-                "title-menu field " + i,
+                "account field " + i,
                 width,
                 height
             );
             inside(
-                layout.panel,
+                layout.panel(),
                 layout.fieldLabelRect(i, 5),
-                "title-menu field label " + i,
+                "account field label " + i,
                 width,
                 height
             );
@@ -192,19 +199,9 @@ public final class ModernUiLayoutVerifier {
 
         for (int i = 0; i < 6; i++) {
             inside(
-                layout.panel,
-                layout.actionRect(i, 6, false),
-                "title-menu action " + i,
-                width,
-                height
-            );
-        }
-
-        for (int i = 0; i < 27; i++) {
-            inside(
-                layout.panel,
-                layout.actionRect(i, 27, true),
-                "title-menu world " + i,
+                layout.panel(),
+                layout.actionRect(i, 6),
+                "account action " + i,
                 width,
                 height
             );
@@ -212,13 +209,110 @@ public final class ModernUiLayoutVerifier {
 
         for (int i = 0; i < 3; i++) {
             inside(
-                layout.panel,
+                layout.panel(),
                 layout.navigationRect(i, 3),
-                "title-menu navigation " + i,
+                "account navigation " + i,
                 width,
                 height
             );
         }
+    }
+
+    private static void verifyWorldMenu(int width, int height) {
+        ModernWorldSelectLayout layout =
+            ModernWorldSelectLayout.create(width, height);
+        verifyTitleFrame(
+            layout,
+            "world-menu",
+            width,
+            height
+        );
+
+        for (int i = 0; i < 27; i++) {
+            inside(
+                layout.panel(),
+                layout.actionRect(i, 27),
+                "world action " + i,
+                width,
+                height
+            );
+        }
+
+        for (int i = 0; i < 3; i++) {
+            inside(
+                layout.panel(),
+                layout.navigationRect(i, 3),
+                "world navigation " + i,
+                width,
+                height
+            );
+        }
+    }
+
+    private static void verifyTitleDialog(int width, int height) {
+        ModernTitleDialogLayout layout =
+            ModernTitleDialogLayout.create(width, height);
+        verifyTitleFrame(
+            layout,
+            "title-dialog",
+            width,
+            height
+        );
+
+        for (int i = 0; i < 2; i++) {
+            inside(
+                layout.panel(),
+                layout.actionRect(i, 2),
+                "dialog action " + i,
+                width,
+                height
+            );
+        }
+
+        for (int i = 0; i < 2; i++) {
+            inside(
+                layout.panel(),
+                layout.navigationRect(i, 2),
+                "dialog navigation " + i,
+                width,
+                height
+            );
+        }
+    }
+
+    private static void verifyTitleFrame(
+        ModernTitleScreenLayout layout,
+        String name,
+        int width,
+        int height
+    ) {
+        insideScreen(
+            layout.panel(),
+            name + " panel",
+            width,
+            height
+        );
+        inside(
+            layout.panel(),
+            layout.title(),
+            name + " title",
+            width,
+            height
+        );
+        inside(
+            layout.panel(),
+            layout.divider(),
+            name + " divider",
+            width,
+            height
+        );
+        inside(
+            layout.panel(),
+            layout.body(),
+            name + " body",
+            width,
+            height
+        );
     }
 
     private static void verifyWelcome(int width, int height) {
