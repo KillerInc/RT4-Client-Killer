@@ -224,7 +224,7 @@ public final class ModernBankLayout {
 
     public ModernUiRect scrollbarTrack() {
         return new ModernUiRect(
-            gridViewport.right() + 4,
+            panel.right() - 18,
             gridViewport.y,
             12,
             gridViewport.height
