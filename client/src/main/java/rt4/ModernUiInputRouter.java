@@ -305,42 +305,52 @@ public final class ModernUiInputRouter {
             return true;
         }
 
-        if (component.ops == null) {
-            return false;
-        }
-
         int opIndex = -1;
         JagString opBase = JagString.EMPTY;
-        for (int i = 0; i < component.ops.length; i++) {
-            JagString op = component.ops[i];
-            if (op == null || op.trim().length() == 0) {
-                continue;
+        if (component.ops != null) {
+            for (int i = 0; i < component.ops.length; i++) {
+                JagString op = component.ops[i];
+                if (op == null || op.trim().length() == 0) {
+                    continue;
+                }
+                if (opIndex != -1) {
+                    return false;
+                }
+                opIndex = i;
+                opBase = op;
             }
-            if (opIndex != -1) {
-                return false;
-            }
-            opIndex = i;
-            opBase = op;
         }
 
-        if (opIndex == -1) {
-            return false;
+        boolean localClick = false;
+
+        // IF3 "onclick" handlers are stored as onClickRepeat in this client.
+        // Mouse-style setup cards use onclick rather than onop, so invoke the
+        // same client script the vanilla traversal would schedule.
+        if (component.onClickRepeat != null) {
+            HookRequest clickHook = new HookRequest();
+            clickHook.arguments = component.onClickRepeat;
+            clickHook.source = component;
+            clickHook.mouseX = Mouse.clickX - bounds.x;
+            clickHook.mouseY = Mouse.clickY - bounds.y;
+            ScriptRunner.run(clickHook);
+            localClick = true;
         }
 
-        if (component.onOptionClick != null) {
-            HookRequest hookRequest = new HookRequest();
-            hookRequest.arguments = component.onOptionClick;
-            hookRequest.source = component;
-            hookRequest.opBase = opBase;
-            hookRequest.op = opIndex + 1;
-            ScriptRunner.run(hookRequest);
-        } else {
+        // Use the original button dispatcher for normal ops. It already runs
+        // onOptionClick scripts, handles special client actions, validates
+        // server-active properties and sends the correct packet where needed.
+        if (opIndex != -1) {
             ClientProt.sendButtonClick(
                 opBase,
                 component.createdComponentId,
                 opIndex + 1,
                 component.id
             );
+            localClick = true;
+        }
+
+        if (!localClick) {
+            return false;
         }
 
         directHandledLoops.put(
@@ -354,7 +364,8 @@ public final class ModernUiInputRouter {
                 + " interface=" + (component.id >>> 16)
                 + " component=" + (component.id & 0xFFFF)
                 + " op=" + (opIndex + 1)
-                + " hook=" + (component.onOptionClick != null)
+                + " onclick=" + (component.onClickRepeat != null)
+                + " onop=" + (component.onOptionClick != null)
                 + " text=" + opBase.toString()
         );
 
