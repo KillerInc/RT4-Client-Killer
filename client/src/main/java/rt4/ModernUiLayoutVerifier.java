@@ -207,6 +207,23 @@ public final class ModernUiLayoutVerifier {
             );
         }
 
+        for (int i = 0; i < 2; i++) {
+            ModernUiRect action =
+                layout.formActionRect(i, 2, 5);
+            inside(
+                layout.panel(),
+                action,
+                "account form action " + i,
+                width,
+                height
+            );
+            separated(
+                layout.fieldRect(4, 5),
+                action,
+                "account fields/actions"
+            );
+        }
+
         for (int i = 0; i < 3; i++) {
             inside(
                 layout.panel(),
