@@ -689,9 +689,9 @@ public class InterfaceList {
 				int inputOriginX = absX;
 				int inputOriginY = absY;
 
-				// Child traversal always uses original RT4 layout. The Modern
-				// input router changes only this component's mouse rectangle,
-				// never the coordinates or clipping inherited by descendants.
+				// Modern-owned controls use their Modern rectangle as the
+				// authoritative hit area. Cache-era component geometry remains
+				// only for child-tree traversal and backend state/action lookup.
 				int childLeft = left;
 				int childTop = top;
 				int childRight = right;
@@ -1183,6 +1183,7 @@ public class InterfaceList {
 						&& client.gameState == 30
 						&& !Cs1ScriptRunner.isMenuOpen
 						&& !modernDirectClick
+						&& !ModernUiInputRouter.isMenuPrepared(component)
 						&& component.clientCode == 0
 						&& Mouse.lastMouseX >= left
 						&& Mouse.lastMouseY >= top
