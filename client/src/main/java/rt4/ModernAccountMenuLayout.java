@@ -107,24 +107,30 @@ public final class ModernAccountMenuLayout
 
     @Override
     public ModernUiRect fieldRect(int index, int count) {
-        int width = FIELD_WIDTH;
-        int height = FIELD_HEIGHT;
-        int spacing = 52;
         int visible = Math.max(1, Math.min(5, count));
-        int total = height + (visible - 1) * spacing;
-        int start =
-            panel.y + 205
-                + Math.max(
-                    0,
-                    (panel.bottom() - 78 - (panel.y + 205) - total)
-                        / 2
-                );
+
+        if (visible >= 3) {
+            int columns = 2;
+            int width = 220;
+            int gap = 16;
+            int used = columns * width + gap;
+            int startX = panel.centerX() - used / 2;
+            int row = Math.max(0, index) / columns;
+            int column = Math.max(0, index) % columns;
+
+            return new ModernUiRect(
+                startX + column * (width + gap),
+                panel.y + 214 + row * 58,
+                width,
+                FIELD_HEIGHT
+            );
+        }
 
         return new ModernUiRect(
-            panel.centerX() - width / 2,
-            start + index * spacing,
-            width,
-            height
+            panel.centerX() - FIELD_WIDTH / 2,
+            panel.y + 222 + Math.max(0, index) * 66,
+            FIELD_WIDTH,
+            FIELD_HEIGHT
         );
     }
 
@@ -159,6 +165,38 @@ public final class ModernAccountMenuLayout
             start + index * spacing,
             width,
             height
+        );
+    }
+
+    public ModernUiRect formActionRect(
+        int index,
+        int count,
+        int fieldCount
+    ) {
+        if (fieldCount <= 0) {
+            return actionRect(index, count);
+        }
+
+        int visible = Math.max(1, Math.min(4, count));
+        int columns = visible <= 2 ? visible : 2;
+        int rows = (visible + columns - 1) / columns;
+        int gap = 12;
+        int used =
+            columns * ACTION_WIDTH
+                + Math.max(0, columns - 1) * gap;
+        int startX = panel.centerX() - used / 2;
+        int row = Math.max(0, index) / columns;
+        int column = Math.max(0, index) % columns;
+        int startY =
+            panel.bottom()
+                - 88
+                - Math.max(0, rows - 1) * 38;
+
+        return new ModernUiRect(
+            startX + column * (ACTION_WIDTH + gap),
+            startY + row * 38,
+            ACTION_WIDTH,
+            ACTION_HEIGHT
         );
     }
 
