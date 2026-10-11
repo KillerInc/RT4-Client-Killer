@@ -1183,13 +1183,9 @@ public class MiniMenu {
 	@OriginalMember(owner = "client!ob", name = "a", descriptor = "(IIIIIIB)V")
 	public static void addEntries(@OriginalArg(0) int screenY, @OriginalArg(1) int width, @OriginalArg(2) int height, @OriginalArg(3) int screenX, @OriginalArg(4) int mouseY, @OriginalArg(5) int mouseX) {
 		if (ModernUiInputRouter.isWorldInputBlocked(mouseX, mouseY)) {
-			if (ModernUiInputRouter.isDebugHitboxesEnabled()) {
-				DisplayDebug.log(
-					"MODERN_UI WORLD_INPUT_BLOCKED"
-						+ " phase=menu-build"
-						+ " mouse=" + mouseX + "," + mouseY
-				);
-			}
+			// This is hover/menu suppression over a Modern window, not an
+			// actual blocked click. Keep it silent so diagnostics only report
+			// real unclaimed clicks.
 			return;
 		}
 		@Pc(15) int i;
