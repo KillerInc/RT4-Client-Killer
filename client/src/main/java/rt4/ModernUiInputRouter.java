@@ -19,6 +19,8 @@ public final class ModernUiInputRouter {
         new IdentityHashMap<>();
     private static final List<Blocker> blockers =
         new ArrayList<>();
+    private static final Map<Component, Integer> directHandledLoops =
+        new IdentityHashMap<>();
 
     private static final int DEBUG_FILL = 0x77CFFF;
     private static final int DEBUG_BORDER = 0xA8E4FF;
@@ -283,9 +285,81 @@ public final class ModernUiInputRouter {
         return debugHitboxes;
     }
 
+    public static boolean dispatchBoundPrimaryClick(
+        Component component,
+        ModernUiRect bounds
+    ) {
+        if (component == null
+            || bounds == null
+            || Mouse.clickButton != 1
+            || !bounds.contains(Mouse.clickX, Mouse.clickY)) {
+            return false;
+        }
+
+        Integer handledLoop =
+            directHandledLoops.get(component);
+        if (handledLoop != null
+            && handledLoop == client.loop) {
+            return true;
+        }
+
+        if (component.ops == null) {
+            return false;
+        }
+
+        int opIndex = -1;
+        JagString opBase = JagString.EMPTY;
+        for (int i = 0; i < component.ops.length; i++) {
+            JagString op = component.ops[i];
+            if (op == null || op.trim().length() == 0) {
+                continue;
+            }
+            if (opIndex != -1) {
+                return false;
+            }
+            opIndex = i;
+            opBase = op;
+        }
+
+        if (opIndex == -1) {
+            return false;
+        }
+
+        ClientProt.sendButtonClick(
+            opBase,
+            component.createdComponentId,
+            opIndex + 1,
+            component.id
+        );
+        directHandledLoops.put(
+            component,
+            client.loop
+        );
+        MiniMenu.clickProcessingState = 0;
+
+        if (debugHitboxes) {
+            DisplayDebug.log(
+                "MODERN_UI BOUND_DIRECT_CLICK"
+                    + " interface=" + (component.id >>> 16)
+                    + " component=" + (component.id & 0xFFFF)
+                    + " op=" + (opIndex + 1)
+                    + " text=" + opBase.toString()
+            );
+        }
+
+        return true;
+    }
+
     public static boolean dispatchPrimaryClick(
         Component component
     ) {
+        Integer handledLoop =
+            directHandledLoops.get(component);
+        if (handledLoop != null
+            && handledLoop == client.loop) {
+            return true;
+        }
+
         if (component == null
             || !has(component)
             || component.onOptionClick == null
@@ -482,6 +556,7 @@ public final class ModernUiInputRouter {
     public static synchronized void clear() {
         bindings.clear();
         blockers.clear();
+        directHandledLoops.clear();
     }
 
     private static final class Blocker {
