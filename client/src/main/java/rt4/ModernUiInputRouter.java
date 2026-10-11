@@ -134,6 +134,10 @@ public final class ModernUiInputRouter {
             interfaceId,
             components
         );
+        ModernWorldMapUi.prepareInput(
+            interfaceId,
+            components
+        );
         ModernStatusOrbUi.prepareInput(
             components
         );
