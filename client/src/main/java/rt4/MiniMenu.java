@@ -1182,6 +1182,16 @@ public class MiniMenu {
 
 	@OriginalMember(owner = "client!ob", name = "a", descriptor = "(IIIIIIB)V")
 	public static void addEntries(@OriginalArg(0) int screenY, @OriginalArg(1) int width, @OriginalArg(2) int height, @OriginalArg(3) int screenX, @OriginalArg(4) int mouseY, @OriginalArg(5) int mouseX) {
+		if (ModernUiInputRouter.isWorldInputBlocked(mouseX, mouseY)) {
+			if (ModernUiInputRouter.isDebugHitboxesEnabled()) {
+				DisplayDebug.log(
+					"MODERN_UI WORLD_INPUT_BLOCKED"
+						+ " phase=menu-build"
+						+ " mouse=" + mouseX + "," + mouseY
+				);
+			}
+			return;
+		}
 		@Pc(15) int i;
 		@Pc(47) int x;
 		if (itemTargetMode == 0) {
@@ -1671,6 +1681,25 @@ public class MiniMenu {
 
 	@OriginalMember(owner = "client!ej", name = "h", descriptor = "(I)V")
 	public static void processClick() {
+		if (ModernUiInputRouter.isWorldInputBlocked(
+				Mouse.clickX,
+				Mouse.clickY
+			)
+			&& !ModernUiInputRouter.isOverBoundControl(
+				Mouse.clickX,
+				Mouse.clickY
+			)) {
+			clickProcessingState = 0;
+			if (ModernUiInputRouter.isDebugHitboxesEnabled()) {
+				DisplayDebug.log(
+					"MODERN_UI WORLD_INPUT_BLOCKED"
+						+ " phase=click"
+						+ " click="
+						+ Mouse.clickX + "," + Mouse.clickY
+				);
+			}
+			return;
+		}
 		if (clickProcessingState == 2) {
 			if (ScriptRunner.interfaceMouseX == Mouse.lastHandledClickX && ScriptRunner.interfaceMouseY == Mouse.lastHandledClickY) {
 				clickProcessingState = 0;
