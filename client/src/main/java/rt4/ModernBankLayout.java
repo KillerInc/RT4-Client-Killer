@@ -71,15 +71,15 @@ public final class ModernBankLayout {
             );
             ModernUiRect toolbar = new ModernUiRect(
                 panel.x + 10,
-                panel.bottom() - 44,
+                panel.bottom() - 76,
                 panel.width - 20,
-                30
+                62
             );
             ModernUiRect grid = new ModernUiRect(
                 panel.x + 10,
                 panel.y + 50,
                 panel.width - 20,
-                panel.height - 104
+                panel.height - 138
             );
             return new ModernBankLayout(
                 panel,
@@ -123,13 +123,13 @@ public final class ModernBankLayout {
             panel.x + 14,
             panel.y + 56,
             panel.width - 28,
-            32
+            66
         );
         ModernUiRect grid = new ModernUiRect(
             panel.x + 16,
-            panel.y + 100,
+            panel.y + 134,
             panel.width - 40,
-            panel.height - 118
+            panel.height - 152
         );
 
         return new ModernBankLayout(
@@ -147,19 +147,42 @@ public final class ModernBankLayout {
         int count
     ) {
         int visible = Math.max(1, Math.min(8, count));
+        int columns = Math.min(4, visible);
+        int rows =
+            (visible + columns - 1) / columns;
         int gap = 6;
-        int width = Math.max(
-            64,
-            (toolbar.width
-                - Math.max(0, visible - 1) * gap)
-                / visible
-        );
+        int width =
+            Math.max(
+                1,
+                (toolbar.width
+                    - Math.max(0, columns - 1) * gap)
+                    / columns
+            );
+        int height =
+            rows <= 1
+                ? Math.min(30, toolbar.height)
+                : Math.max(
+                    1,
+                    (toolbar.height - gap) / 2
+                );
+        int row = Math.max(0, index) / columns;
+        int column = Math.max(0, index) % columns;
+        int usedHeight =
+            rows <= 1
+                ? height
+                : height * 2 + gap;
+        int startY =
+            toolbar.y
+                + Math.max(
+                    0,
+                    (toolbar.height - usedHeight) / 2
+                );
 
         return new ModernUiRect(
-            toolbar.x + Math.max(0, index) * (width + gap),
-            toolbar.y,
+            toolbar.x + column * (width + gap),
+            startY + row * (height + gap),
             width,
-            toolbar.height
+            height
         );
     }
 
