@@ -1,6 +1,10 @@
 package rt4;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -15,6 +19,8 @@ public final class ModernGameUi {
 
     private static int preparedLoop = -1;
     private static ModernGameFrameLayout layout;
+    private static final List<Component> tabs =
+        new ArrayList<>();
 
     private ModernGameUi() {
     }
@@ -40,12 +46,22 @@ public final class ModernGameUi {
 
         preparedLoop = client.loop;
         renderBounds.clear();
+        tabs.clear();
         layout = ModernGameFrameLayout.create(
             GameShell.canvasWidth,
             GameShell.canvasHeight
         );
 
-        discover(components, -1);
+        List<TabCandidate> candidates =
+            new ArrayList<>();
+        discover(
+            components,
+            -1,
+            0,
+            0,
+            candidates
+        );
+        selectTabRow(candidates);
     }
 
     public static void prepareInput(
@@ -71,6 +87,18 @@ public final class ModernGameUi {
             ModernUiInputRouter.bind(
                 entry.getKey(),
                 entry.getValue(),
+                screen
+            );
+        }
+
+        int count = Math.min(
+            ModernGameFrameLayout.TAB_COUNT,
+            tabs.size()
+        );
+        for (int i = 0; i < count; i++) {
+            ModernUiInputRouter.bind(
+                tabs.get(i),
+                layout.tabSlot(i),
                 screen
             );
         }
@@ -129,11 +157,22 @@ public final class ModernGameUi {
             "game-ui/compass-frame",
             layout.compass
         );
+
+        int count = Math.min(
+            ModernGameFrameLayout.TAB_COUNT,
+            tabs.size()
+        );
+        for (int i = 0; i < count; i++) {
+            renderTab(tabs.get(i), layout.tabSlot(i));
+        }
     }
 
     private static void discover(
         Component[] components,
-        int layer
+        int layer,
+        int parentX,
+        int parentY,
+        List<TabCandidate> candidates
     ) {
         if (components == null) {
             return;
@@ -145,6 +184,9 @@ public final class ModernGameUi {
                 continue;
             }
 
+            int x = parentX + component.x;
+            int y = parentY + component.y;
+
             if (component.clientCode == 1338) {
                 renderBounds.put(
                     component,
@@ -155,21 +197,148 @@ public final class ModernGameUi {
                     component,
                     layout.compass
                 );
+            } else if (component.clientCode == 0
+                && component.type == 5
+                && isInteractive(component)) {
+                candidates.add(
+                    new TabCandidate(
+                        component,
+                        x,
+                        y
+                    )
+                );
             }
 
             if (component.type == 0) {
+                int childX = x - component.scrollX;
+                int childY = y - component.scrollY;
                 discover(
                     components,
-                    component.id
+                    component.id,
+                    childX,
+                    childY,
+                    candidates
                 );
                 if (component.createdComponents != null) {
                     discover(
                         component.createdComponents,
-                        component.id
+                        component.id,
+                        childX,
+                        childY,
+                        candidates
                     );
                 }
             }
         }
+    }
+
+    private static void selectTabRow(
+        List<TabCandidate> candidates
+    ) {
+        if (candidates.isEmpty()) {
+            return;
+        }
+
+        List<TabCandidate> best =
+            new ArrayList<>();
+
+        for (TabCandidate seed : candidates) {
+            List<TabCandidate> row =
+                new ArrayList<>();
+            for (TabCandidate candidate : candidates) {
+                if (Math.abs(
+                    candidate.y - seed.y
+                ) <= 8) {
+                    row.add(candidate);
+                }
+            }
+            if (row.size() > best.size()) {
+                best = row;
+            }
+        }
+
+        Collections.sort(
+            best,
+            Comparator.comparingInt(
+                candidate -> candidate.x
+            )
+        );
+
+        int count = Math.min(
+            ModernGameFrameLayout.TAB_COUNT,
+            best.size()
+        );
+        for (int i = 0; i < count; i++) {
+            tabs.add(best.get(i).component);
+        }
+    }
+
+    private static void renderTab(
+        Component component,
+        ModernUiRect rect
+    ) {
+        boolean active =
+            Cs1ScriptRunner.isTrue(component);
+        boolean hover =
+            rect.contains(
+                Mouse.lastMouseX,
+                Mouse.lastMouseY
+            );
+
+        drawAsset(
+            active || hover
+                ? "game-ui/slot-hover"
+                : "game-ui/slot",
+            rect
+        );
+
+        Sprite sprite =
+            component.getSprite(active);
+        if (sprite == null) {
+            return;
+        }
+
+        int max = Math.max(1, rect.width - 8);
+        int width = Math.max(1, sprite.width);
+        int height = Math.max(1, sprite.height);
+
+        if (width > max || height > max) {
+            float scale =
+                Math.min(
+                    max / (float) width,
+                    max / (float) height
+                );
+            width = Math.max(
+                1,
+                (int) (width * scale)
+            );
+            height = Math.max(
+                1,
+                (int) (height * scale)
+            );
+            sprite.renderResized(
+                rect.centerX() - width / 2,
+                rect.centerY() - height / 2,
+                width,
+                height
+            );
+        } else {
+            sprite.render(
+                rect.centerX() - width / 2,
+                rect.centerY() - height / 2
+            );
+        }
+    }
+
+    private static boolean isInteractive(
+        Component component
+    ) {
+        return component != null
+            && (component.buttonType != 0
+                || component.hasEventHandlers
+                || InterfaceList.getServerActiveProperties(
+                    component
+                ).events != 0);
     }
 
     private static void renderCompass(
@@ -241,6 +410,22 @@ public final class ModernGameUi {
                 rect.width,
                 rect.height
             );
+        }
+    }
+
+    private static final class TabCandidate {
+        private final Component component;
+        private final int x;
+        private final int y;
+
+        private TabCandidate(
+            Component component,
+            int x,
+            int y
+        ) {
+            this.component = component;
+            this.x = x;
+            this.y = y;
         }
     }
 
