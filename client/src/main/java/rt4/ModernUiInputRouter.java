@@ -100,6 +100,11 @@ public final class ModernUiInputRouter {
             parentX,
             parentY
         );
+        ModernGameUi.prepareInput(
+            components,
+            parentX,
+            parentY
+        );
         ModernUiRenderer.prepareMainMenuInput(
             components,
             parentX,
