@@ -36,6 +36,7 @@ public final class ModernUiLayoutVerifier {
             verifyShop(viewport[0], viewport[1]);
             verifyTrade(viewport[0], viewport[1]);
             verifyWorldMap(viewport[0], viewport[1]);
+            verifyGrandExchange(viewport[0], viewport[1]);
             verifyStatusOrbs(viewport[0], viewport[1]);
             verifyMainMenu(viewport[0], viewport[1]);
         }
@@ -926,6 +927,156 @@ public final class ModernUiLayoutVerifier {
                 height
             );
         }
+    }
+
+    private static void verifyGrandExchange(
+        int width,
+        int height
+    ) {
+        ModernGrandExchangeLayout full =
+            ModernGrandExchangeLayout.create(
+                width,
+                height,
+                false
+            );
+
+        insideScreen(
+            full.panel,
+            "grand exchange panel",
+            width,
+            height
+        );
+        inside(
+            full.panel,
+            full.title,
+            "grand exchange title",
+            width,
+            height
+        );
+        inside(
+            full.panel,
+            full.divider,
+            "grand exchange divider",
+            width,
+            height
+        );
+        inside(
+            full.panel,
+            full.info,
+            "grand exchange info",
+            width,
+            height
+        );
+        inside(
+            full.panel,
+            full.content,
+            "grand exchange content",
+            width,
+            height
+        );
+        inside(
+            full.panel,
+            full.footer,
+            "grand exchange footer",
+            width,
+            height
+        );
+
+        for (int i = 0; i < 6; i++) {
+            ModernUiRect card = full.offerCard(i);
+            inside(
+                full.content,
+                card,
+                "grand exchange offer " + i,
+                width,
+                height
+            );
+            inside(
+                card,
+                full.offerAction(i, 0),
+                "grand exchange buy " + i,
+                width,
+                height
+            );
+            inside(
+                card,
+                full.offerAction(i, 1),
+                "grand exchange sell " + i,
+                width,
+                height
+            );
+        }
+
+        for (int i = 0; i < 8; i++) {
+            inside(
+                full.panel,
+                full.actionRect(i, 8),
+                "grand exchange action " + i,
+                width,
+                height
+            );
+        }
+
+        ModernGrandExchangeLayout side =
+            ModernGrandExchangeLayout.create(
+                width,
+                height,
+                true
+            );
+        insideScreen(
+            side.panel,
+            "grand exchange side panel",
+            width,
+            height
+        );
+        inside(
+            side.panel,
+            side.title,
+            "grand exchange side title",
+            width,
+            height
+        );
+        inside(
+            side.panel,
+            side.divider,
+            "grand exchange side divider",
+            width,
+            height
+        );
+        inside(
+            side.panel,
+            side.info,
+            "grand exchange side info",
+            width,
+            height
+        );
+        inside(
+            side.panel,
+            side.content,
+            "grand exchange side content",
+            width,
+            height
+        );
+        inside(
+            side.panel,
+            side.footer,
+            "grand exchange side footer",
+            width,
+            height
+        );
+
+        Component inventory = new Component();
+        inventory.baseWidth = 4;
+        inventory.baseHeight = 7;
+        inventory.invMarginX = 4;
+        inventory.invMarginY = 4;
+        inside(
+            side.content,
+            side.inventoryGrid(inventory),
+            "grand exchange side inventory",
+            width,
+            height
+        );
     }
 
     private static void verifyStatusOrbs(
