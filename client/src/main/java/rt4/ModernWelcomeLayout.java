@@ -88,14 +88,24 @@ public final class ModernWelcomeLayout {
     }
 
     public ModernUiRect actionRect(int index, int count) {
-        int width = 150;
+        int visible = Math.max(1, Math.min(4, count));
         int gap = 12;
+        int sideInset = 24;
+        int available =
+            Math.max(
+                1,
+                panel.width
+                    - sideInset * 2
+                    - Math.max(0, visible - 1) * gap
+            );
+        int width = Math.min(150, available / visible);
         int total =
-            count * width + Math.max(0, count - 1) * gap;
+            visible * width
+                + Math.max(0, visible - 1) * gap;
         int startX = panel.centerX() - total / 2;
 
         return new ModernUiRect(
-            startX + index * (width + gap),
+            startX + Math.max(0, index) * (width + gap),
             panel.bottom() - 56,
             width,
             32
