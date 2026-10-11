@@ -1214,6 +1214,12 @@ public final class ModernUiRenderer {
                             component.font == -1
                                 ? ModernUiFontRegistry.DEFAULT
                                 : ModernUiFontRegistry.resolveAsset(component.font);
+                        if (fontAsset == null
+                            && client.gameState == 30) {
+                            fontAsset =
+                                ModernUiFontRegistry.DEFAULT;
+                        }
+
                         if (fontAsset == null) {
                             drawMissingLegacyGlyphs(
                                 component,
