@@ -33,11 +33,8 @@ public final class ModernTitleMenuUi {
             return;
         }
 
-        ModernTitleMenuLayout layout =
-            ModernTitleMenuLayout.create(
-                GameShell.canvasWidth,
-                GameShell.canvasHeight
-            );
+        ModernTitleScreenLayout layout =
+            layoutFor(model.kind);
         ModernUiRect clip = new ModernUiRect(
             0,
             0,
@@ -60,8 +57,7 @@ public final class ModernTitleMenuUi {
                 action.component,
                 layout.actionRect(
                     i,
-                    model.actions.size(),
-                    model.worldGrid
+                    model.actions.size()
                 ),
                 clip
             );
@@ -90,11 +86,8 @@ public final class ModernTitleMenuUi {
             return;
         }
 
-        ModernTitleMenuLayout layout =
-            ModernTitleMenuLayout.create(
-                GameShell.canvasWidth,
-                GameShell.canvasHeight
-            );
+        ModernTitleScreenLayout layout =
+            layoutFor(model.kind);
 
         prepareInput(components, parentX, parentY);
 
@@ -111,13 +104,13 @@ public final class ModernTitleMenuUi {
             );
         }
 
-        drawAsset("main-menu/logo", layout.logo);
-        drawAsset("audio-options/panel", layout.panel);
-        drawAsset("audio-options/divider", layout.divider);
+        drawAsset("main-menu/logo", layout.logo());
+        drawAsset("audio-options/panel", layout.panel());
+        drawAsset("audio-options/divider", layout.divider());
 
         drawCentered(
             model.title,
-            layout.title,
+            layout.title(),
             ModernUiFontRegistry.BOLD_12,
             ModernUiMetrics.FONT_TITLE,
             ModernUiMetrics.TEXT_GOLD
@@ -184,8 +177,7 @@ public final class ModernTitleMenuUi {
             drawButton(
                 layout.actionRect(
                     i,
-                    model.actions.size(),
-                    model.worldGrid
+                    model.actions.size()
                 ),
                 action.label
             );
@@ -283,6 +275,12 @@ public final class ModernTitleMenuUi {
 
         boolean worldGrid =
             worldKeyword || worldLabels >= 2;
+        ScreenKind screenKind =
+            worldGrid
+                ? ScreenKind.WORLD
+                : accountKeyword
+                    ? ScreenKind.ACCOUNT
+                    : ScreenKind.DIALOG;
 
         String title =
             worldGrid
@@ -433,12 +431,34 @@ public final class ModernTitleMenuUi {
         }
 
         return new Model(
+            screenKind,
             title,
             body,
             fields,
             actions,
             navigation,
             worldGrid
+        );
+    }
+
+    private static ModernTitleScreenLayout layoutFor(
+        ScreenKind kind
+    ) {
+        if (kind == ScreenKind.WORLD) {
+            return ModernWorldSelectLayout.create(
+                GameShell.canvasWidth,
+                GameShell.canvasHeight
+            );
+        }
+        if (kind == ScreenKind.ACCOUNT) {
+            return ModernAccountMenuLayout.create(
+                GameShell.canvasWidth,
+                GameShell.canvasHeight
+            );
+        }
+        return ModernTitleDialogLayout.create(
+            GameShell.canvasWidth,
+            GameShell.canvasHeight
         );
     }
 
@@ -883,7 +903,14 @@ public final class ModernTitleMenuUi {
         }
     }
 
+    private enum ScreenKind {
+        WORLD,
+        ACCOUNT,
+        DIALOG
+    }
+
     private static final class Model {
+        private final ScreenKind kind;
         private final String title;
         private final List<String> body;
         private final List<Field> fields;
@@ -892,6 +919,7 @@ public final class ModernTitleMenuUi {
         private final boolean worldGrid;
 
         private Model(
+            ScreenKind kind,
             String title,
             List<String> body,
             List<Field> fields,
@@ -899,6 +927,7 @@ public final class ModernTitleMenuUi {
             List<Action> navigation,
             boolean worldGrid
         ) {
+            this.kind = kind;
             this.title = title;
             this.body = body;
             this.fields = fields;
