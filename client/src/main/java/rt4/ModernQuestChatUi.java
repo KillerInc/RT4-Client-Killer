@@ -45,6 +45,7 @@ public final class ModernQuestChatUi {
 
         ModernQuestChatLayout layout =
             currentLayout();
+        ModernUiInputRouter.blockWorldInput(layout.panel);
 
         if (Mouse.clickButton == 1
             && layout.header.contains(
