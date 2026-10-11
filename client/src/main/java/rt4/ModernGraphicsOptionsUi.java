@@ -54,6 +54,7 @@ public final class ModernGraphicsOptionsUi {
 
         ModernGraphicsOptionsLayout layout = layout();
         ModernUiRect clip = layout.panel();
+        ModernUiInputRouter.blockWorldInput(clip);
         ModernUiRect popupClip = new ModernUiRect(
             0,
             0,
@@ -133,6 +134,32 @@ public final class ModernGraphicsOptionsUi {
             ModernUiInputRouter.bind(
                 mainMenu,
                 toModern(layout.mainMenu()),
+                clip
+            );
+        }
+
+        Component modernSelector =
+            findClientCodeComponent(
+                components,
+                GraphicsOptionsUiInjector.CLIENT_CODE_SELECTOR_HIT
+            );
+        if (modernSelector != null) {
+            ModernUiInputRouter.bind(
+                modernSelector,
+                toModern(layout.control(4, 2)),
+                clip
+            );
+        }
+
+        Component styleEditor =
+            findClientCodeComponent(
+                components,
+                GraphicsOptionsUiInjector.CLIENT_CODE_STYLE_TEXT
+            );
+        if (styleEditor != null) {
+            ModernUiInputRouter.bind(
+                styleEditor,
+                toModern(layout.styleEditor()),
                 clip
             );
         }
@@ -1146,84 +1173,37 @@ public final class ModernGraphicsOptionsUi {
         ModernGraphicsOptionsLayout layout,
         ModernUiRect clip
     ) {
-        List<ComponentEntry> entries = new ArrayList<>();
-        collectComponentEntries(
-            components,
-            -1,
-            parentX,
-            parentY,
-            entries
-        );
+        int[] children = {275, 276, 277, 278};
 
-        ComponentEntry displayLabel =
-            findTextEntry(entries, "display modes");
-        ComponentEntry advancedLabel =
-            findTextEntry(entries, "advanced options");
-        if (displayLabel == null || advancedLabel == null) {
-            return;
-        }
-
-        int bandTop = displayLabel.y + 10;
-        int bandBottom = advancedLabel.y - 4;
-        List<ComponentEntry> candidates = new ArrayList<>();
-
-        for (ComponentEntry entry : entries) {
-            Component component = entry.component;
-            if (!isInteractive(component)
-                || component.type == 0) {
+        for (int i = 0; i < children.length; i++) {
+            Component action =
+                directChild(
+                    components,
+                    children[i]
+                );
+            if (action == null) {
                 continue;
             }
-            int width = Math.max(1, component.width);
-            int height = Math.max(1, component.height);
-            int cy = entry.y + height / 2;
-            if (cy < bandTop || cy >= bandBottom
-                || width < 20 || width > 180
-                || height < 12 || height > 80) {
-                continue;
-            }
-            candidates.add(entry);
-        }
 
-        candidates.sort(
-            Comparator.comparingInt(
-                entry ->
-                    entry.x
-                        + Math.max(
-                            1,
-                            entry.component.width
-                        ) / 2
-            )
-        );
-
-        List<ComponentEntry> selected = new ArrayList<>();
-        for (ComponentEntry candidate : candidates) {
-            int cx =
-                candidate.x
-                    + Math.max(1, candidate.component.width) / 2;
-            if (selected.isEmpty()) {
-                selected.add(candidate);
-                continue;
-            }
-            ComponentEntry previous =
-                selected.get(selected.size() - 1);
-            int previousCx =
-                previous.x
-                    + Math.max(1, previous.component.width) / 2;
-            if (Math.abs(cx - previousCx) > 24) {
-                selected.add(candidate);
-            }
-        }
-
-        if (selected.size() < 4) {
-            return;
-        }
-
-        for (int i = 0; i < 4; i++) {
             ModernUiInputRouter.bind(
-                selected.get(i).component,
+                action,
                 toModern(layout.displayModeButton(i)),
                 clip
             );
+
+            if (ModernUiInputRouter.isDebugHitboxesEnabled()) {
+                DisplayDebug.log(
+                    "MODERN_UI GRAPHICS_MODE_BIND"
+                        + " index=" + i
+                        + " component=" + children[i]
+                        + " onClick=" + (action.onClick != null)
+                        + " rect="
+                        + layout.displayModeButton(i).x + ","
+                        + layout.displayModeButton(i).y + ","
+                        + layout.displayModeButton(i).width + "x"
+                        + layout.displayModeButton(i).height
+                );
+            }
         }
     }
 
@@ -1446,6 +1426,34 @@ public final class ModernGraphicsOptionsUi {
 
     private static ModernUiRect toModern(ModernUiRect rect) {
         return rect;
+    }
+
+    private static Component findClientCodeComponent(
+        Component[] components,
+        int clientCode
+    ) {
+        if (components == null) {
+            return null;
+        }
+
+        for (Component component : components) {
+            if (component == null) {
+                continue;
+            }
+            if (component.clientCode == clientCode) {
+                return component;
+            }
+            Component nested =
+                findClientCodeComponent(
+                    component.createdComponents,
+                    clientCode
+                );
+            if (nested != null) {
+                return nested;
+            }
+        }
+
+        return null;
     }
 
     private static Component directChild(
