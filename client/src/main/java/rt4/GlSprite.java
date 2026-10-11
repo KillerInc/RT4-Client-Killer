@@ -210,6 +210,101 @@ public class GlSprite extends Sprite {
 		gl.glActiveTexture(GL2.GL_TEXTURE0);
 	}
 
+
+	/**
+	 * Modern UI rectangular rotated rendering path. This intentionally uses
+	 * only the source sprite plus the active raster clip; no cache-era UI mask
+	 * sprite is sampled.
+	 */
+	public final void renderRotatedRect(
+		int x,
+		int y,
+		int destWidth,
+		int destHeight,
+		int srcX,
+		int srcY,
+		int angle,
+		int zoom
+	) {
+		GlRenderer.begin2DReplace();
+		GL2 gl = GlRenderer.gl;
+		GlRenderer.setTextureId(this.textureId);
+		if (GlobalConfig.BILINEAR_MINIMAP) {
+			this.setTextureFilter(2);
+		} else {
+			this.setTextureFilter(1);
+		}
+
+		int halfW = -destWidth / 2;
+		int halfH = -destHeight / 2;
+		int halfWPos = -halfW;
+		int halfHPos = -halfH;
+		int sinAngle =
+			(int) (Math.sin((double) angle / 326.11D) * 65536.0D);
+		int cosAngle =
+			(int) (Math.cos((double) angle / 326.11D) * 65536.0D);
+		int scaledSin = sinAngle * zoom >> 8;
+		int scaledCos = cosAngle * zoom >> 8;
+
+		int tlX =
+			(srcX << 16) + halfH * scaledSin + halfW * scaledCos;
+		int tlY =
+			(srcY << 16) + (halfH * scaledCos - halfW * scaledSin);
+		int trX =
+			(srcX << 16) + halfH * scaledSin + halfWPos * scaledCos;
+		int trY =
+			(srcY << 16) + (halfH * scaledCos - halfWPos * scaledSin);
+		int blX =
+			(srcX << 16) + halfHPos * scaledSin + halfW * scaledCos;
+		int blY =
+			(srcY << 16) + (halfHPos * scaledCos - halfW * scaledSin);
+		int brX =
+			(srcX << 16) + halfHPos * scaledSin + halfWPos * scaledCos;
+		int brY =
+			(srcY << 16) + (halfHPos * scaledCos - halfWPos * scaledSin);
+
+		float texWidthF =
+			(float) this.powerOfTwoWidth * 65536.0F;
+		float texHeightF =
+			(float) this.powerOfTwoHeight * 65536.0F;
+
+		gl.glBegin(GL2.GL_TRIANGLE_FAN);
+		gl.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+		gl.glTexCoord2f(
+			(float) trX / texWidthF,
+			(float) trY / texHeightF
+		);
+		gl.glVertex2f(
+			(float) (x + destWidth),
+			(float) (GlRenderer.canvasHeight - y)
+		);
+		gl.glTexCoord2f(
+			(float) tlX / texWidthF,
+			(float) tlY / texHeightF
+		);
+		gl.glVertex2f(
+			(float) x,
+			(float) (GlRenderer.canvasHeight - y)
+		);
+		gl.glTexCoord2f(
+			(float) blX / texWidthF,
+			(float) blY / texHeightF
+		);
+		gl.glVertex2f(
+			(float) x,
+			(float) (GlRenderer.canvasHeight - y - destHeight)
+		);
+		gl.glTexCoord2f(
+			(float) brX / texWidthF,
+			(float) brY / texHeightF
+		);
+		gl.glVertex2f(
+			(float) (x + destWidth),
+			(float) (GlRenderer.canvasHeight - y - destHeight)
+		);
+		gl.glEnd();
+	}
+
 	@OriginalMember(owner = "client!cf", name = "d", descriptor = "(II)V")
 	@Override
 	public final void renderHorizontalFlip(@OriginalArg(0) int x, @OriginalArg(1) int y) {
