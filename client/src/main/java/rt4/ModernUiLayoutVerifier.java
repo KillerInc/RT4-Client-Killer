@@ -32,6 +32,7 @@ public final class ModernUiLayoutVerifier {
             verifyChatPanel(viewport[0], viewport[1]);
             verifyQuestChat(viewport[0], viewport[1]);
             verifyInGameDialog(viewport[0], viewport[1]);
+            verifyCharacterSetup(viewport[0], viewport[1]);
             verifyBank(viewport[0], viewport[1]);
             verifyShop(viewport[0], viewport[1]);
             verifyTrade(viewport[0], viewport[1]);
@@ -666,6 +667,135 @@ public final class ModernUiLayoutVerifier {
                 layout.actionArea,
                 layout.actionRect(i, 6),
                 "in-game dialog action " + i,
+                width,
+                height
+            );
+        }
+    }
+
+    private static void verifyCharacterSetup(
+        int width,
+        int height
+    ) {
+        ModernCharacterSetupLayout layout =
+            ModernCharacterSetupLayout.create(
+                width,
+                height,
+                width - 180,
+                height - 140
+            );
+
+        insideScreen(
+            layout.panel,
+            "character setup panel",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.header,
+            "character setup header",
+            width,
+            height
+        );
+        inside(
+            layout.header,
+            layout.tabs,
+            "character setup tabs",
+            width,
+            height
+        );
+        inside(
+            layout.header,
+            layout.title,
+            "character setup title",
+            width,
+            height
+        );
+        inside(
+            layout.header,
+            layout.notice,
+            "character setup notice",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.content,
+            "character setup content",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.footer,
+            "character setup footer",
+            width,
+            height
+        );
+
+        for (int i = 0;
+            i < ModernCharacterSetupLayout.TAB_COUNT;
+            i++) {
+            inside(
+                layout.tabs,
+                layout.tab(i),
+                "character setup tab " + i,
+                width,
+                height
+            );
+        }
+
+        for (int i = 0; i < 2; i++) {
+            inside(
+                layout.content,
+                layout.choiceCard(i),
+                "character setup choice " + i,
+                width,
+                height
+            );
+        }
+
+        inside(
+            layout.leftPane,
+            layout.previewCard(true),
+            "character setup head preview",
+            width,
+            height
+        );
+        inside(
+            layout.centerPane,
+            layout.previewCard(false),
+            "character setup body preview",
+            width,
+            height
+        );
+
+        for (int i = 0; i < 5; i++) {
+            inside(
+                layout.leftPane,
+                layout.bodySelector(i),
+                "character setup body selector " + i,
+                width,
+                height
+            );
+        }
+
+        for (int i = 0; i < 29; i++) {
+            inside(
+                layout.paletteArea(),
+                layout.swatch(i, 29),
+                "character setup swatch " + i,
+                width,
+                height
+            );
+        }
+
+        for (int i = 0; i < 3; i++) {
+            inside(
+                layout.footer,
+                layout.footerButton(i, 3),
+                "character setup footer button " + i,
                 width,
                 height
             );
