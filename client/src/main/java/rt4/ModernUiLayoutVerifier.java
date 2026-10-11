@@ -32,6 +32,9 @@ public final class ModernUiLayoutVerifier {
             verifyChatPanel(viewport[0], viewport[1]);
             verifyQuestChat(viewport[0], viewport[1]);
             verifyInGameDialog(viewport[0], viewport[1]);
+            verifyBank(viewport[0], viewport[1]);
+            verifyShop(viewport[0], viewport[1]);
+            verifyTrade(viewport[0], viewport[1]);
             verifyStatusOrbs(viewport[0], viewport[1]);
             verifyMainMenu(viewport[0], viewport[1]);
         }
@@ -658,6 +661,206 @@ public final class ModernUiLayoutVerifier {
                 layout.actionArea,
                 layout.actionRect(i, 6),
                 "in-game dialog action " + i,
+                width,
+                height
+            );
+        }
+    }
+
+    private static void verifyBank(
+        int width,
+        int height
+    ) {
+        for (int interfaceId : new int[] {762, 763, 767}) {
+            ModernBankLayout layout =
+                ModernBankLayout.create(
+                    width,
+                    height,
+                    interfaceId
+                );
+
+            insideScreen(
+                layout.panel,
+                "bank panel " + interfaceId,
+                width,
+                height
+            );
+            inside(
+                layout.panel,
+                layout.title,
+                "bank title " + interfaceId,
+                width,
+                height
+            );
+            inside(
+                layout.panel,
+                layout.divider,
+                "bank divider " + interfaceId,
+                width,
+                height
+            );
+            inside(
+                layout.panel,
+                layout.toolbar,
+                "bank toolbar " + interfaceId,
+                width,
+                height
+            );
+            inside(
+                layout.panel,
+                layout.gridViewport,
+                "bank grid " + interfaceId,
+                width,
+                height
+            );
+
+            for (int i = 0; i < 8; i++) {
+                inside(
+                    layout.toolbar,
+                    layout.actionRect(i, 8),
+                    "bank action " + interfaceId + ":" + i,
+                    width,
+                    height
+                );
+            }
+
+            inside(
+                layout.panel,
+                layout.scrollbarTrack(),
+                "bank scrollbar " + interfaceId,
+                width,
+                height
+            );
+        }
+    }
+
+    private static void verifyShop(
+        int width,
+        int height
+    ) {
+        for (int interfaceId : new int[] {620, 621}) {
+            ModernShopLayout layout =
+                ModernShopLayout.create(
+                    width,
+                    height,
+                    interfaceId
+                );
+
+            insideScreen(
+                layout.panel,
+                "shop panel " + interfaceId,
+                width,
+                height
+            );
+            inside(
+                layout.panel,
+                layout.title,
+                "shop title " + interfaceId,
+                width,
+                height
+            );
+            inside(
+                layout.panel,
+                layout.divider,
+                "shop divider " + interfaceId,
+                width,
+                height
+            );
+            inside(
+                layout.panel,
+                layout.info,
+                "shop info " + interfaceId,
+                width,
+                height
+            );
+            inside(
+                layout.panel,
+                layout.gridViewport,
+                "shop grid " + interfaceId,
+                width,
+                height
+            );
+            inside(
+                layout.panel,
+                layout.toolbar,
+                "shop toolbar " + interfaceId,
+                width,
+                height
+            );
+
+            for (int i = 0; i < 6; i++) {
+                inside(
+                    layout.toolbar,
+                    layout.actionRect(i, 6),
+                    "shop action " + interfaceId + ":" + i,
+                    width,
+                    height
+                );
+            }
+        }
+    }
+
+    private static void verifyTrade(
+        int width,
+        int height
+    ) {
+        ModernTradeLayout layout =
+            ModernTradeLayout.create(width, height);
+
+        insideScreen(
+            layout.panel,
+            "trade panel",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.title,
+            "trade title",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.divider,
+            "trade divider",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.leftPane,
+            "trade left pane",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.rightPane,
+            "trade right pane",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.messageArea,
+            "trade messages",
+            width,
+            height
+        );
+        inside(
+            layout.panel,
+            layout.actions,
+            "trade actions",
+            width,
+            height
+        );
+
+        for (int i = 0; i < 6; i++) {
+            inside(
+                layout.actions,
+                layout.actionRect(i, 6),
+                "trade action " + i,
                 width,
                 height
             );
