@@ -1770,54 +1770,17 @@ public final class ModernUiRenderer {
             "high"
         );
 
-        if (layout.musicSlider != null
-            && !layout.musicSliderComponentIds.isEmpty()) {
-            List<UiRect> sourceRects = new ArrayList<>();
-            for (MainMenuImageEntry image : layout.images) {
-                if (layout.musicSliderComponentIds.contains(
-                    image.componentId
-                )) {
-                    sourceRects.add(image.rect);
-                }
-            }
-            UiRect sourceUnion = unionRects(sourceRects);
-            if (sourceUnion != null) {
-                for (MainMenuImageEntry image : layout.images) {
-                    if (!layout.musicSliderComponentIds.contains(
-                        image.componentId
-                    )) {
-                        continue;
-                    }
-
-                    int x =
-                        layout.musicSlider.x
-                            + (image.rect.x - sourceUnion.x)
-                                * layout.musicSlider.width
-                                / Math.max(1, sourceUnion.width);
-                    int y =
-                        layout.musicSlider.y
-                            + (image.rect.y - sourceUnion.y)
-                                * layout.musicSlider.height
-                                / Math.max(1, sourceUnion.height);
-                    int width = Math.max(
-                        1,
-                        image.rect.width
-                            * layout.musicSlider.width
-                            / Math.max(1, sourceUnion.width)
-                    );
-                    int height = Math.max(
-                        1,
-                        image.rect.height
-                            * layout.musicSlider.height
-                            / Math.max(1, sourceUnion.height)
-                    );
-
-                    ModernUiInputRouter.bind(
-                        image.component,
-                        new ModernUiRect(x, y, width, height),
-                        clip
-                    );
-                }
+        if (layout.musicSlider != null) {
+            Component volumeAction =
+                InterfaceList.getComponent(
+                    (744 << 16) | 272
+                );
+            if (volumeAction != null) {
+                ModernUiInputRouter.bind(
+                    volumeAction,
+                    toModernRect(layout.musicSlider),
+                    clip
+                );
             }
         }
     }
