@@ -358,10 +358,10 @@ public final class ModernCharacterSetupUi {
             );
 
             ModernUiRect icon = new ModernUiRect(
-                tab.centerX() - 13,
-                tab.y + 7,
-                26,
-                26
+                tab.centerX() - 15,
+                tab.centerY() - 15,
+                30,
+                30
             );
             drawAsset(TAB_ICONS[i], icon);
         }
@@ -802,9 +802,21 @@ public final class ModernCharacterSetupUi {
         Model model,
         int child
     ) {
-        Component component = model.get(child);
-        return component != null
-            && component.onMouseOver == null;
+        if (child == 37) {
+            return VarpDomain.activeVarps.length > 170
+                && VarpDomain.activeVarps[170] != 1;
+        }
+        if (child == 40) {
+            return VarpDomain.activeVarps.length > 170
+                && VarpDomain.activeVarps[170] == 1;
+        }
+        if (child == 49) {
+            return !PlayerAppearance.DEFAULT.gender;
+        }
+        if (child == 52) {
+            return PlayerAppearance.DEFAULT.gender;
+        }
+        return false;
     }
 
     private static void dispatchFooterClick(
