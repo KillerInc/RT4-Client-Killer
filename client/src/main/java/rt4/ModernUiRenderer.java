@@ -22,6 +22,7 @@ public final class ModernUiRenderer {
     private static int audioOptionsDepth;
     private static int loginScreenDepth;
     private static int titleMenuDepth;
+    private static int welcomeDepth;
     private static int graphicsOptionsTitleCenterX;
     private static int graphicsOptionsTitleY;
     private static boolean graphicsOptionsBrightnessRendered;
@@ -100,6 +101,9 @@ public final class ModernUiRenderer {
                 && !graphicsOptions
                 && !audioOptions
                 && ModernTitleMenuUi.isActive(loadedComponents);
+
+        boolean welcome =
+            ModernWelcomeUi.isActive(loadedComponents);
         boolean mainMenu = detectedMainMenu != null;
 
         if (mainMenu
@@ -159,6 +163,10 @@ public final class ModernUiRenderer {
             titleMenuDepth++;
         }
 
+        if (welcome) {
+            welcomeDepth++;
+        }
+
         renderComponents(
             loadedComponents,
             -1,
@@ -191,6 +199,17 @@ public final class ModernUiRenderer {
             );
             setClip(clipLeft, clipTop, clipRight, clipBottom);
             titleMenuDepth--;
+        }
+
+        if (welcome) {
+            setClip(0, 0, GameShell.canvasWidth, GameShell.canvasHeight);
+            ModernWelcomeUi.render(
+                loadedComponents,
+                parentX,
+                parentY
+            );
+            setClip(clipLeft, clipTop, clipRight, clipBottom);
+            welcomeDepth--;
         }
 
         if (mainMenu) {
@@ -418,7 +437,8 @@ public final class ModernUiRenderer {
         if (graphicsOptionsDepth > 0
             || audioOptionsDepth > 0
             || loginScreenDepth > 0
-            || titleMenuDepth > 0) {
+            || titleMenuDepth > 0
+            || welcomeDepth > 0) {
             // Rebuilt Modern screens never paint cache-era UI components.
             // Their vanilla trees remain available only as state/action
             // backends while the game scene stays in the background pass.
