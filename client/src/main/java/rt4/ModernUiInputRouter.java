@@ -20,6 +20,8 @@ public final class ModernUiInputRouter {
         new IdentityHashMap<>();
     private static final List<Blocker> blockers =
         new ArrayList<>();
+    private static final List<DebugRegion> debugRegions =
+        new ArrayList<>();
     private static final Map<Component, Integer> directHandledLoops =
         new IdentityHashMap<>();
     private static final Map<Component, Integer> menuPreparedLoops =
@@ -57,9 +59,28 @@ public final class ModernUiInputRouter {
     public static synchronized void beginFrame() {
         bindings.clear();
         blockers.clear();
+        debugRegions.clear();
         directHandledLoops.clear();
         menuPreparedLoops.clear();
         activePrepareSerial = 0;
+    }
+
+    public static synchronized void registerModernRegion(
+        String label,
+        ModernUiRect bounds,
+        ModernUiRect clip
+    ) {
+        if (bounds == null || !ModernUiManager.isEnabled()) {
+            return;
+        }
+        debugRegions.add(
+            new DebugRegion(
+                label == null ? "" : label,
+                bounds,
+                clip == null ? bounds : clip,
+                client.loop
+            )
+        );
     }
 
     public static synchronized void blockWorldInput(
@@ -705,14 +726,85 @@ public final class ModernUiInputRouter {
                 );
             }
         }
+
+        for (DebugRegion region : debugRegions) {
+            if (region == null || region.loop != client.loop) {
+                continue;
+            }
+
+            ModernUiRect bounds = region.bounds;
+            ModernUiRect clip = region.clip;
+            int left = Math.max(0, bounds.x);
+            int top = Math.max(0, bounds.y);
+            int right = Math.min(
+                GameShell.canvasWidth,
+                bounds.right()
+            );
+            int bottom = Math.min(
+                GameShell.canvasHeight,
+                bounds.bottom()
+            );
+            if (clip != null) {
+                left = Math.max(left, clip.x);
+                top = Math.max(top, clip.y);
+                right = Math.min(right, clip.right());
+                bottom = Math.min(bottom, clip.bottom());
+            }
+
+            int width = right - left;
+            int height = bottom - top;
+            if (width <= 0 || height <= 0) {
+                continue;
+            }
+
+            if (GlRenderer.enabled) {
+                GlRaster.fillRectAlpha(
+                    left, top, width, height,
+                    DEBUG_FILL, 56
+                );
+                GlRaster.drawRectAlpha(
+                    left, top, width, height,
+                    DEBUG_BORDER, 220
+                );
+            } else {
+                SoftwareRaster.fillRectAlpha(
+                    left, top, width, height,
+                    DEBUG_FILL, 56
+                );
+                SoftwareRaster.drawRectAlpha(
+                    left, top, width, height,
+                    DEBUG_BORDER, 220
+                );
+            }
+        }
     }
 
     public static synchronized void clear() {
         bindings.clear();
         blockers.clear();
+        debugRegions.clear();
         directHandledLoops.clear();
         menuPreparedLoops.clear();
         activePrepareSerial = 0;
+    }
+
+    private static final class DebugRegion {
+        private final String label;
+        private final ModernUiRect bounds;
+        private final ModernUiRect clip;
+        private final int loop;
+
+        private DebugRegion(
+            String label,
+            ModernUiRect bounds,
+            ModernUiRect clip,
+            int loop
+        ) {
+            this.label = label;
+            this.bounds = bounds;
+            this.clip = clip;
+            this.loop = loop;
+        }
     }
 
     private static final class Blocker {
