@@ -530,8 +530,14 @@ public final class ModernUiInputRouter {
             HookRequest clickHook = new HookRequest();
             clickHook.arguments = component.onClickRepeat;
             clickHook.source = component;
-            clickHook.mouseX = Mouse.clickX - bounds.x;
-            clickHook.mouseY = Mouse.clickY - bounds.y;
+            int localX = Mouse.clickX - bounds.x;
+            int localY = Mouse.clickY - bounds.y;
+            clickHook.mouseX =
+                localX * Math.max(1, component.width)
+                    / Math.max(1, bounds.width);
+            clickHook.mouseY =
+                localY * Math.max(1, component.height)
+                    / Math.max(1, bounds.height);
             ScriptRunner.run(clickHook);
             localClick = true;
         }
