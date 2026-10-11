@@ -1648,6 +1648,10 @@ public class MiniMenu {
 
 	@OriginalMember(owner = "client!dm", name = "a", descriptor = "(Lclient!be;III)V")
 	public static void renderTooltip(@OriginalArg(0) Component component, @OriginalArg(2) int y, @OriginalArg(3) int x) {
+		if (ModernUiManager.isEnabled()) {
+			ModernMiniMenuUi.renderTooltip(component, y, x);
+			return;
+		}
 		if (size < 2 && itemTargetMode == 0 && !isTargeting) {
 			return;
 		}
@@ -1699,6 +1703,10 @@ public class MiniMenu {
 
 	@OriginalMember(owner = "client!lf", name = "b", descriptor = "(I)V")
 	public static void drawA() {
+		if (ModernUiManager.isEnabled()) {
+			ModernMiniMenuUi.render();
+			return;
+		}
 		@Pc(3) int menuY = InterfaceList.menuY;
 		@Pc(9) int menuWidth = InterfaceList.menuWidth;
 		@Pc(11) int menuX = InterfaceList.menuX;
@@ -1728,6 +1736,10 @@ public class MiniMenu {
 
 	@OriginalMember(owner = "client!ij", name = "a", descriptor = "(B)V")
 	public static void drawB() {
+		if (ModernUiManager.isEnabled()) {
+			ModernMiniMenuUi.render();
+			return;
+		}
 		@Pc(3) int menuX = InterfaceList.menuX;
 		@Pc(9) int menuY = InterfaceList.menuY;
 		@Pc(11) int menuHeight = InterfaceList.menuHeight;
