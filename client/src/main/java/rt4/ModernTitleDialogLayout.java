@@ -8,6 +8,8 @@ public final class ModernTitleDialogLayout
 
     public static final int PANEL_WIDTH = 500;
     public static final int PANEL_HEIGHT = 360;
+    public static final int ACTION_WIDTH = 180;
+    public static final int ACTION_HEIGHT = 30;
 
     private final ModernUiRect panel;
     private final ModernUiRect logo;
@@ -137,7 +139,7 @@ public final class ModernTitleDialogLayout
 
     @Override
     public ModernUiRect actionRect(int index, int count) {
-        int width = 180;
+        int width = ACTION_WIDTH;
         int gap = 12;
         int visible = Math.max(1, Math.min(2, count));
         int total =
@@ -147,7 +149,7 @@ public final class ModernTitleDialogLayout
             start + index * (width + gap),
             panel.bottom() - 92,
             width,
-            30
+            ACTION_HEIGHT
         );
     }
 
