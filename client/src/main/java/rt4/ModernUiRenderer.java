@@ -184,6 +184,26 @@ public final class ModernUiRenderer {
             return;
         }
 
+        if (ModernCharacterSetupUi.handles(interfaceId)) {
+            setClip(
+                0,
+                0,
+                GameShell.canvasWidth,
+                GameShell.canvasHeight
+            );
+            ModernCharacterSetupUi.render(
+                interfaceId,
+                loadedComponents
+            );
+            setClip(
+                clipLeft,
+                clipTop,
+                clipRight,
+                clipBottom
+            );
+            return;
+        }
+
         if (ModernInGameDialogUi.handles(interfaceId)) {
             setClip(
                 0,
