@@ -119,7 +119,6 @@ public final class ModernCharacterSetupUi {
         if (model.overlay == 26) {
             bind(model, 362, layout.footerButton(0, 2), screen);
             bind(model, 360, layout.footerButton(1, 2), screen);
-            dispatchFooterClick(model, 362, layout.footerButton(0, 2));
             dispatchFooterClick(model, 360, layout.footerButton(1, 2));
             return;
         }
@@ -127,7 +126,6 @@ public final class ModernCharacterSetupUi {
             bind(model, 377, layout.footerButton(0, 2), screen);
             bind(model, 378, layout.footerButton(1, 2), screen);
             bind(model, 381, overlayToggle(layout), screen);
-            dispatchFooterClick(model, 377, layout.footerButton(0, 2));
             dispatchFooterClick(model, 378, layout.footerButton(1, 2));
             return;
         }
@@ -135,7 +133,6 @@ public final class ModernCharacterSetupUi {
             bind(model, 394, layout.footerButton(0, 2), screen);
             bind(model, 395, layout.footerButton(1, 2), screen);
             bind(model, 398, overlayToggle(layout), screen);
-            dispatchFooterClick(model, 394, layout.footerButton(0, 2));
             dispatchFooterClick(model, 395, layout.footerButton(1, 2));
             return;
         }
@@ -164,18 +161,8 @@ public final class ModernCharacterSetupUi {
 
         switch (model.tab) {
             case 0:
-                dispatchFooterClick(
-                    model,
-                    46,
-                    layout.footerButton(0, 1)
-                );
                 break;
             case 1:
-                dispatchFooterClick(
-                    model,
-                    56,
-                    layout.footerButton(0, 2)
-                );
                 dispatchFooterClick(
                     model,
                     58,
@@ -185,35 +172,15 @@ public final class ModernCharacterSetupUi {
             case 2:
                 dispatchFooterClick(
                     model,
-                    171,
-                    layout.footerButton(0, 3)
-                );
-                dispatchFooterClick(
-                    model,
                     169,
                     layout.footerButton(1, 3)
-                );
-                dispatchFooterClick(
-                    model,
-                    167,
-                    layout.footerButton(2, 3)
                 );
                 break;
             case 3:
                 dispatchFooterClick(
                     model,
-                    323,
-                    layout.footerButton(0, 3)
-                );
-                dispatchFooterClick(
-                    model,
                     321,
                     layout.footerButton(1, 3)
-                );
-                dispatchFooterClick(
-                    model,
-                    319,
-                    layout.footerButton(2, 3)
                 );
                 break;
             default:
@@ -1018,21 +985,6 @@ public final class ModernCharacterSetupUi {
                 && VarcDomain.varcs[196] == 1;
         }
         return false;
-    }
-
-    private static void dispatchFooterClick(
-        Model model,
-        int child,
-        ModernUiRect bounds
-    ) {
-        Component component = model.get(child);
-        if (component == null) {
-            return;
-        }
-        ModernUiInputRouter.dispatchBoundPrimaryClick(
-            component,
-            bounds
-        );
     }
 
     private static int[] activeBodyPalette(Model model) {
