@@ -108,6 +108,9 @@ public final class ModernUiInputRouter {
         ModernInventoryPanelUi.prepareInput(
             components
         );
+        ModernSidebarPanelUi.prepareInput(
+            components
+        );
         ModernStatusOrbUi.prepareInput(
             components
         );
