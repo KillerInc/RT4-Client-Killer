@@ -54,6 +54,7 @@ public final class ModernInventoryPanelUi {
                 GameShell.canvasHeight,
                 inventory
             );
+        ModernUiInputRouter.blockWorldInput(layout.panel);
 
         ModernUiInputRouter.bind(
             inventory,
