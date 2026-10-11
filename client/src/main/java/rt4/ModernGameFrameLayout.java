@@ -56,8 +56,14 @@ public final class ModernGameFrameLayout {
         );
 
         ModernUiRect compass = new ModernUiRect(
-            mapX - COMPASS_SIZE / 2 + 4,
-            mapY - COMPASS_SIZE / 2 + 4,
+            Math.max(
+                4,
+                mapX - COMPASS_SIZE / 2 + 4
+            ),
+            Math.max(
+                4,
+                mapY - COMPASS_SIZE / 2 + 4
+            ),
             COMPASS_SIZE,
             COMPASS_SIZE
         );
