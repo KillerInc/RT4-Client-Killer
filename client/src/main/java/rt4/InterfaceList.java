@@ -688,6 +688,8 @@ public class InterfaceList {
 
 				int inputOriginX = absX;
 				int inputOriginY = absY;
+				int inputWidth = component.width;
+				int inputHeight = component.height;
 
 				// Modern-owned controls use their Modern rectangle as the
 				// authoritative hit area. Cache-era component geometry remains
@@ -705,6 +707,8 @@ public class InterfaceList {
 					if (bounds != null) {
 						inputOriginX = bounds.x;
 						inputOriginY = bounds.y;
+						inputWidth = bounds.width;
+						inputHeight = bounds.height;
 						int modernClipLeft = modernClip == null
 							? clipLeft
 							: modernClip.x;
@@ -840,8 +844,8 @@ public class InterfaceList {
 									WorldMap.component = component;
 									if (isClicked) {
 										if (Keyboard.pressedKeys[Keyboard.KEY_CTRL] && LoginManager.staffModLevel > 0) {
-											j = (int) ((double) (Mouse.clickX - inputOriginX - component.width / 2) * 2.0D / (double) WorldMap.zoom);
-											skill = (int) ((double) (Mouse.clickY - inputOriginY - component.height / 2) * 2.0D / (double) WorldMap.zoom);
+											j = (int) ((double) (Mouse.clickX - inputOriginX - inputWidth / 2) * 2.0D / (double) WorldMap.zoom);
+											skill = (int) ((double) (Mouse.clickY - inputOriginY - inputHeight / 2) * 2.0D / (double) WorldMap.zoom);
 											k = WorldMap.viewX + j;
 											@Pc(516) int mapY = WorldMap.viewY + skill;
 											@Pc(520) int tileX = k + WorldMap.originX;
@@ -872,7 +876,7 @@ public class InterfaceList {
 								}
 								if (component.clientCode == 1401) {
 									if (isPressed) {
-										WorldMap.setViewFromMousePosition(component.width, Mouse.lastMouseY - inputOriginY, Mouse.lastMouseX - inputOriginX, component.height);
+										WorldMap.setViewFromMousePosition(inputWidth, Mouse.lastMouseY - inputOriginY, Mouse.lastMouseX - inputOriginX, inputHeight);
 									}
 									continue;
 								}
