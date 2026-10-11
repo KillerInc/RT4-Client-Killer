@@ -79,6 +79,11 @@ public final class ModernUiRenderer {
 
         Component[] loadedComponents = InterfaceList.components[interfaceId];
 
+        ModernGameUiDiagnostics.observe(
+            interfaceId,
+            loadedComponents
+        );
+
         if (ModernInventoryPanelUi.handles(interfaceId)) {
             setClip(
                 0,
@@ -3433,6 +3438,7 @@ public final class ModernUiRenderer {
     public static void clearCaches() {
         loggedMissing.clear();
         ModernUiInputRouter.clear();
+        ModernGameUiDiagnostics.clear();
         ModernUiAssetResolver.clear();
         ModernTrueTypeFont.clear();
     }
