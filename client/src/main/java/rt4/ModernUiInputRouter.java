@@ -16,6 +16,11 @@ public final class ModernUiInputRouter {
     private static final Map<Component, Binding> bindings =
         new IdentityHashMap<>();
 
+    private static final int DEBUG_FILL = 0x77CFFF;
+    private static final int DEBUG_BORDER = 0xA8E4FF;
+    private static boolean debugHitboxes;
+    private static boolean f8WasDown;
+
     private ModernUiInputRouter() {
     }
 
@@ -173,6 +178,124 @@ public final class ModernUiInputRouter {
             }
         }
         return -1;
+    }
+
+    public static void updateDebugToggle() {
+        boolean down =
+            Keyboard.pressedKeys.length > 8
+                && Keyboard.pressedKeys[8];
+
+        if (down && !f8WasDown) {
+            debugHitboxes = !debugHitboxes;
+            GameShell.fullRedraw = true;
+            InterfaceList.fullRedrawAllInterfaces();
+            DisplayDebug.log(
+                "MODERN_UI hitbox debug "
+                    + (debugHitboxes ? "enabled" : "disabled")
+                    + " via F8"
+            );
+        }
+
+        f8WasDown = down;
+    }
+
+    public static boolean isDebugHitboxesEnabled() {
+        return debugHitboxes;
+    }
+
+    public static synchronized void renderDebugOverlay() {
+        if (!debugHitboxes || !ModernUiManager.isEnabled()) {
+            return;
+        }
+
+        if (GlRenderer.enabled) {
+            GlRaster.setClip(
+                0,
+                0,
+                GameShell.canvasWidth,
+                GameShell.canvasHeight
+            );
+        } else {
+            SoftwareRaster.setClip(
+                0,
+                0,
+                GameShell.canvasWidth,
+                GameShell.canvasHeight
+            );
+            Rasteriser.prepare();
+        }
+
+        for (Binding binding : bindings.values()) {
+            if (binding == null || binding.loop != client.loop) {
+                continue;
+            }
+
+            ModernUiRect bounds = binding.bounds;
+            ModernUiRect clip = binding.clip;
+            if (bounds == null) {
+                continue;
+            }
+
+            int left = Math.max(0, bounds.x);
+            int top = Math.max(0, bounds.y);
+            int right = Math.min(
+                GameShell.canvasWidth,
+                bounds.right()
+            );
+            int bottom = Math.min(
+                GameShell.canvasHeight,
+                bounds.bottom()
+            );
+
+            if (clip != null) {
+                left = Math.max(left, clip.x);
+                top = Math.max(top, clip.y);
+                right = Math.min(right, clip.right());
+                bottom = Math.min(bottom, clip.bottom());
+            }
+
+            int width = right - left;
+            int height = bottom - top;
+            if (width <= 0 || height <= 0) {
+                continue;
+            }
+
+            if (GlRenderer.enabled) {
+                GlRaster.fillRectAlpha(
+                    left,
+                    top,
+                    width,
+                    height,
+                    DEBUG_FILL,
+                    56
+                );
+                GlRaster.drawRectAlpha(
+                    left,
+                    top,
+                    width,
+                    height,
+                    DEBUG_BORDER,
+                    220
+                );
+            } else {
+                SoftwareRaster.fillRectAlpha(
+                    left,
+                    top,
+                    width,
+                    height,
+                    DEBUG_FILL,
+                    56
+                );
+                SoftwareRaster.drawRectAlpha(
+                    left,
+                    top,
+                    width,
+                    height,
+                    DEBUG_BORDER,
+                    220
+                );
+            }
+        }
     }
 
     public static synchronized void clear() {
