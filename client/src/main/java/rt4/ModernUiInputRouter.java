@@ -111,6 +111,15 @@ public final class ModernUiInputRouter {
         ModernSidebarPanelUi.prepareInput(
             components
         );
+        ModernChatPanelUi.prepareInput(
+            components
+        );
+        ModernQuestChatUi.prepareInput(
+            components
+        );
+        ModernInGameDialogUi.prepareInput(
+            components
+        );
         ModernStatusOrbUi.prepareInput(
             components
         );
