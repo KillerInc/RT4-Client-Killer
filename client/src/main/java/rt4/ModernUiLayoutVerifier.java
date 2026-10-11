@@ -26,6 +26,7 @@ public final class ModernUiLayoutVerifier {
             verifyLogin(viewport[0], viewport[1]);
             verifyTitleMenus(viewport[0], viewport[1]);
             verifyWelcome(viewport[0], viewport[1]);
+            verifyGameFrame(viewport[0], viewport[1]);
             verifyMainMenu(viewport[0], viewport[1]);
         }
 
@@ -348,6 +349,41 @@ public final class ModernUiLayoutVerifier {
                 "welcome action " + i,
                 width,
                 height
+            );
+        }
+    }
+
+    private static void verifyGameFrame(int width, int height) {
+        ModernGameFrameLayout layout =
+            ModernGameFrameLayout.create(width, height);
+
+        insideScreen(
+            layout.minimapFrame,
+            "game minimap frame",
+            width,
+            height
+        );
+        inside(
+            layout.minimapFrame,
+            layout.minimap,
+            "game minimap",
+            width,
+            height
+        );
+        insideScreen(
+            layout.compass,
+            "game compass",
+            width,
+            height
+        );
+
+        if (!layout.minimapFrame.contains(
+            layout.minimap.centerX(),
+            layout.minimap.centerY()
+        )) {
+            fail(
+                "game minimap frame lost minimap center at "
+                    + width + "x" + height
             );
         }
     }
