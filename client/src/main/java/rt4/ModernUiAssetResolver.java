@@ -411,6 +411,70 @@ public final class ModernUiAssetResolver {
         addWarmupSpec(plan, "main-menu/footer", 300, 32);
         addWarmupSpec(plan, "main-menu/edge", 12, 220);
 
+        // Remaining title/account/world menus.
+        addWarmupSpec(
+            plan,
+            "audio-options/panel",
+            ModernTitleMenuLayout.PANEL_WIDTH,
+            ModernTitleMenuLayout.PANEL_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
+            "controls/button",
+            ModernTitleMenuLayout.FIELD_WIDTH,
+            ModernTitleMenuLayout.FIELD_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
+            "controls/button-active",
+            ModernTitleMenuLayout.FIELD_WIDTH,
+            ModernTitleMenuLayout.FIELD_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
+            "audio-options/button",
+            ModernTitleMenuLayout.BUTTON_WIDTH,
+            ModernTitleMenuLayout.BUTTON_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
+            "audio-options/button-active",
+            ModernTitleMenuLayout.BUTTON_WIDTH,
+            ModernTitleMenuLayout.BUTTON_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
+            "audio-options/button",
+            160,
+            ModernTitleMenuLayout.BUTTON_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
+            "audio-options/button-active",
+            160,
+            ModernTitleMenuLayout.BUTTON_HEIGHT
+        );
+        addWarmupSpec(
+            plan,
+            "audio-options/button",
+            150,
+            30
+        );
+        addWarmupSpec(
+            plan,
+            "audio-options/button-active",
+            150,
+            30
+        );
+
+        // Post-login welcome/community menu.
+        addWarmupSpec(
+            plan,
+            "audio-options/panel",
+            ModernWelcomeLayout.PANEL_WIDTH,
+            ModernWelcomeLayout.PANEL_HEIGHT
+        );
+
         // Login form reuses existing Modern vectors but at its own exact
         // declarative sizes so opening the screen never rasterizes on demand.
         addWarmupSpec(
