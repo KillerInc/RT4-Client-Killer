@@ -263,6 +263,12 @@ public final class ModernUiAssetResolver {
         addWarmupSpec(plan, "game-ui/scrollbar-track", 12, 120);
         addWarmupSpec(plan, "game-ui/scrollbar-thumb", 10, 28);
         addWarmupSpec(plan, "game-ui/context-menu", 180, 120);
+        addWarmupSpec(
+            plan,
+            "game-ui/panel",
+            ModernInventoryPanelLayout.PANEL_WIDTH,
+            ModernInventoryPanelLayout.PANEL_HEIGHT
+        );
 
         // Graphics Options - current exact renderer sizes.
         addWarmupSpec(
