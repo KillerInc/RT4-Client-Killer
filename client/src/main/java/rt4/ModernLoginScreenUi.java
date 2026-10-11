@@ -226,10 +226,19 @@ public final class ModernLoginScreenUi {
     public static void processInput() {
         if (!ModernUiManager.isEnabled()
             || client.gameState != 10
-            || activeLoop != client.loop) {
+            || 744 < 0
+            || 744 >= InterfaceList.components.length) {
             return;
         }
 
+        Component[] components =
+            InterfaceList.components[744];
+        if (components == null
+            || discover(components, 0, 0) == null) {
+            return;
+        }
+
+        activeLoop = client.loop;
         initializeFieldsIfNeeded();
 
         ModernLoginScreenLayout layout =
