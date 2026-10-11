@@ -8,6 +8,12 @@ public final class ModernAccountMenuLayout
 
     public static final int PANEL_WIDTH = 560;
     public static final int PANEL_HEIGHT = 500;
+    public static final int FIELD_WIDTH = 260;
+    public static final int FIELD_HEIGHT = 34;
+    public static final int ACTION_WIDTH = 210;
+    public static final int ACTION_HEIGHT = 30;
+    public static final int NAV_WIDTH = 150;
+    public static final int NAV_HEIGHT = 30;
 
     private final ModernUiRect panel;
     private final ModernUiRect logo;
@@ -101,8 +107,8 @@ public final class ModernAccountMenuLayout
 
     @Override
     public ModernUiRect fieldRect(int index, int count) {
-        int width = 260;
-        int height = 34;
+        int width = FIELD_WIDTH;
+        int height = FIELD_HEIGHT;
         int spacing = 52;
         int visible = Math.max(1, Math.min(5, count));
         int total = height + (visible - 1) * spacing;
@@ -135,8 +141,8 @@ public final class ModernAccountMenuLayout
 
     @Override
     public ModernUiRect actionRect(int index, int count) {
-        int width = 210;
-        int height = 30;
+        int width = ACTION_WIDTH;
+        int height = ACTION_HEIGHT;
         int spacing = 42;
         int visible = Math.max(1, Math.min(6, count));
         int total = height + (visible - 1) * spacing;
@@ -203,7 +209,7 @@ public final class ModernAccountMenuLayout
         int index,
         int count
     ) {
-        int width = 150;
+        int width = NAV_WIDTH;
         int gap = 12;
         int total =
             count * width + Math.max(0, count - 1) * gap;
@@ -212,7 +218,7 @@ public final class ModernAccountMenuLayout
             start + index * (width + gap),
             panel.bottom() - 48,
             width,
-            30
+            NAV_HEIGHT
         );
     }
 }
