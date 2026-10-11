@@ -785,6 +785,7 @@ public class InterfaceList {
 							}
 						}
 						if (isClicked) {
+							ModernUiInputRouter.logDebugClick(component);
 							Cs1ScriptRunner.startComponentDrag(Mouse.clickY - inputOriginY, Mouse.clickX - inputOriginX, component);
 						}
 						if (Cs1ScriptRunner.draggedComponent != null && Cs1ScriptRunner.draggedComponent != component && isHovered && getServerActiveProperties(component).isDragTarget()) {
