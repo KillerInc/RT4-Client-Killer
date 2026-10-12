@@ -48,8 +48,12 @@ public final class ModernModelContentRenderer {
         int verticalOffset = 0;
 
         if (component.clientCode == 328) {
+            PlayerAppearance appearance =
+                PlayerList.self == null
+                    ? PlayerAppearance.DEFAULT
+                    : PlayerList.self.appearance;
             model =
-                PlayerAppearance.DEFAULT.getBodyModel(
+                appearance.getBodyModel(
                     null,
                     -1,
                     null,
