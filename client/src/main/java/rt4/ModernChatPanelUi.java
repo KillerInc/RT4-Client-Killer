@@ -12,6 +12,9 @@ import java.util.Map;
  * Quest/NPC dialogue is intentionally excluded; it has its own movable window.
  */
 public final class ModernChatPanelUi {
+    private static final int SCROLLBAR_WIDTH = 14;
+    private static int scrollLinesFromBottom;
+
     private ModernChatPanelUi() {
     }
 
@@ -40,6 +43,81 @@ public final class ModernChatPanelUi {
                 GameShell.canvasWidth,
                 GameShell.canvasHeight
             );
+        float chatFontSize =
+            ModernUiPreferences.getChatFontSize();
+        int chatLineHeight =
+            Math.max(
+                18,
+                Math.round(chatFontSize) + 4
+            );
+        int baseTextWidth =
+            Math.max(1, layout.messages.width - 8);
+        List<String> wrappedForScroll =
+            wrapMessages(
+                model.messages,
+                baseTextWidth,
+                chatFontSize
+            );
+        int maxLines =
+            Math.max(
+                1,
+                layout.messages.height / chatLineHeight
+            );
+        boolean overflow =
+            wrappedForScroll.size() > maxLines;
+        if (overflow) {
+            wrappedForScroll =
+                wrapMessages(
+                    model.messages,
+                    Math.max(
+                        1,
+                        baseTextWidth
+                            - SCROLLBAR_WIDTH - 6
+                    ),
+                    chatFontSize
+                );
+            maxLines =
+                Math.max(
+                    1,
+                    layout.messages.height
+                        / chatLineHeight
+                );
+        }
+        int maxScroll =
+            Math.max(
+                0,
+                wrappedForScroll.size() - maxLines
+            );
+        scrollLinesFromBottom =
+            Math.max(
+                0,
+                Math.min(
+                    scrollLinesFromBottom,
+                    maxScroll
+                )
+            );
+
+        if (overflow
+            && layout.historyPanel.contains(
+                Mouse.lastMouseX,
+                Mouse.lastMouseY
+            )
+            && MouseWheel.wheelRotation != 0) {
+            scrollLinesFromBottom =
+                Math.max(
+                    0,
+                    Math.min(
+                        maxScroll,
+                        scrollLinesFromBottom
+                            + MouseWheel.wheelRotation
+                                * -3
+                    )
+                );
+            MouseWheel.wheelRotation = 0;
+            InterfaceList.fullRedrawAllInterfaces();
+            GameShell.fullRedraw = true;
+        }
+
         ModernUiInputRouter.blockWorldInput(layout.historyPanel);
         ModernUiInputRouter.registerModernRegion(
             "chat-font-decrease",
@@ -153,9 +231,6 @@ public final class ModernChatPanelUi {
         int textWidth =
             Math.max(1, layout.messages.width - 8);
 
-        // Wrap against the actual current chat-window width before deciding
-        // how many rows fit. This prevents larger live font sizes from being
-        // clipped inside a one-line row.
         List<String> wrappedMessages =
             wrapMessages(
                 model.messages,
@@ -168,13 +243,57 @@ public final class ModernChatPanelUi {
                 1,
                 layout.messages.height / chatLineHeight
             );
-        int start =
+        boolean overflow =
+            wrappedMessages.size() > maxLines;
+        if (overflow) {
+            textWidth =
+                Math.max(
+                    1,
+                    textWidth
+                        - SCROLLBAR_WIDTH - 6
+                );
+            wrappedMessages =
+                wrapMessages(
+                    model.messages,
+                    textWidth,
+                    chatFontSize
+                );
+        }
+
+        int maxScroll =
             Math.max(
                 0,
                 wrappedMessages.size() - maxLines
             );
+        scrollLinesFromBottom =
+            Math.max(
+                0,
+                Math.min(
+                    scrollLinesFromBottom,
+                    maxScroll
+                )
+            );
+        int start =
+            Math.max(
+                0,
+                wrappedMessages.size()
+                    - maxLines
+                    - scrollLinesFromBottom
+            );
         int count =
-            wrappedMessages.size() - start;
+            Math.min(
+                maxLines,
+                wrappedMessages.size() - start
+            );
+
+        if (overflow) {
+            drawScrollbar(
+                layout.messages,
+                start,
+                maxLines,
+                wrappedMessages.size()
+            );
+        }
 
         for (int i = 0; i < count; i++) {
             ModernUiRect row =
@@ -184,7 +303,10 @@ public final class ModernChatPanelUi {
                 wrappedMessages.get(start + i),
                 row.x + 4,
                 row.y,
-                Math.max(1, row.width - 8),
+                Math.max(
+                    1,
+                    textWidth
+                ),
                 row.height,
                 ModernUiMetrics.TEXT_PRIMARY,
                 0,
@@ -598,6 +720,61 @@ public final class ModernChatPanelUi {
         return out.toString()
             .replaceAll("\\s+", " ")
             .trim();
+    }
+
+    private static void drawScrollbar(
+        ModernUiRect viewport,
+        int startLine,
+        int visibleLines,
+        int totalLines
+    ) {
+        if (totalLines <= visibleLines) {
+            return;
+        }
+
+        ModernUiRect track =
+            new ModernUiRect(
+                viewport.right() - SCROLLBAR_WIDTH,
+                viewport.y,
+                SCROLLBAR_WIDTH,
+                viewport.height
+            );
+        int thumbHeight =
+            Math.max(
+                24,
+                track.height
+                    * visibleLines
+                    / Math.max(1, totalLines)
+            );
+        int maxStart =
+            Math.max(
+                1,
+                totalLines - visibleLines
+            );
+        int travel =
+            Math.max(0, track.height - thumbHeight);
+        int thumbY =
+            track.y
+                + travel * startLine / maxStart;
+        ModernUiRect thumb =
+            new ModernUiRect(
+                track.x,
+                thumbY,
+                track.width,
+                Math.min(
+                    thumbHeight,
+                    track.bottom() - thumbY
+                )
+            );
+
+        drawAsset(
+            "game-ui/scrollbar-track",
+            track
+        );
+        drawAsset(
+            "game-ui/scrollbar-thumb",
+            thumb
+        );
     }
 
     private static void drawFontButton(
