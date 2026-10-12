@@ -10,6 +10,7 @@ public final class ModernChatPanelLayout {
     public static final int ACTION_HEIGHT = 26;
 
     public final ModernUiRect panel;
+    public final ModernUiRect historyPanel;
     public final ModernUiRect title;
     public final ModernUiRect divider;
     public final ModernUiRect messages;
@@ -17,12 +18,14 @@ public final class ModernChatPanelLayout {
 
     private ModernChatPanelLayout(
         ModernUiRect panel,
+        ModernUiRect historyPanel,
         ModernUiRect title,
         ModernUiRect divider,
         ModernUiRect messages,
         ModernUiRect actions
     ) {
         this.panel = panel;
+        this.historyPanel = historyPanel;
         this.title = title;
         this.divider = divider;
         this.messages = messages;
@@ -50,51 +53,62 @@ public final class ModernChatPanelLayout {
 
         int x = 12;
 
-        // The channel selector is a distinct strip below the chat history.
-        // Anchor the history window directly above it so the two always move
-        // together as one bottom-left chat stack.
-        int actionY = Math.max(
-            12,
-            frame.tabBar.y - ACTION_HEIGHT - 8
-        );
+        // The layout parent is the entire chat stack so every child remains
+        // inside its declared bounds for verification/input clipping. The
+        // visible history panel itself still ends above the channel strip.
+        int gap = 4;
+        int stackHeight = height + gap + ACTION_HEIGHT;
         int y = Math.max(
             12,
-            actionY - height - 4
+            frame.tabBar.y - stackHeight - 8
         );
 
         ModernUiRect panel =
-            new ModernUiRect(x, y, width, height);
+            new ModernUiRect(
+                x,
+                y,
+                width,
+                stackHeight
+            );
+        ModernUiRect historyPanel =
+            new ModernUiRect(
+                panel.x,
+                panel.y,
+                panel.width,
+                height
+            );
         ModernUiRect title =
             new ModernUiRect(
-                panel.x + 12,
-                panel.y + 8,
-                panel.width - 24,
+                historyPanel.x + 12,
+                historyPanel.y + 8,
+                historyPanel.width - 24,
                 20
             );
         ModernUiRect divider =
             new ModernUiRect(
-                panel.x + 12,
-                panel.y + 32,
-                panel.width - 24,
+                historyPanel.x + 12,
+                historyPanel.y + 32,
+                historyPanel.width - 24,
                 4
             );
         ModernUiRect messages =
             new ModernUiRect(
-                panel.x + 12,
-                panel.y + 42,
-                panel.width - 24,
-                panel.height - 54
+                historyPanel.x + 12,
+                historyPanel.y + 42,
+                historyPanel.width - 24,
+                historyPanel.height - 54
             );
         ModernUiRect actions =
             new ModernUiRect(
                 panel.x + 8,
-                actionY,
+                historyPanel.bottom() + gap,
                 panel.width - 16,
                 ACTION_HEIGHT
             );
 
         return new ModernChatPanelLayout(
             panel,
+            historyPanel,
             title,
             divider,
             messages,
