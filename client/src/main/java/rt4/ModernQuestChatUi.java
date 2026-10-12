@@ -176,7 +176,7 @@ public final class ModernQuestChatUi {
                 ModernUiMetrics.TEXT_PRIMARY,
                 1,
                 1,
-                21.0F,
+                15.0F,
                 false
             );
         }
@@ -595,7 +595,7 @@ public final class ModernQuestChatUi {
         Component component,
         float fallback
     ) {
-        final float questChatBoost = 12.0F;
+        final float questChatBoost = 6.0F;
 
         if (component == null || component.font < 0) {
             return fallback + questChatBoost;
