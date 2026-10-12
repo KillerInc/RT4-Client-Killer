@@ -569,15 +569,21 @@ public final class ModernLoginScreenUi {
                 password
             );
         Component passwordAction =
-            findFieldAction(
-                entries,
-                password,
-                login
-            );
+            authenticating
+                ? null
+                : findFieldAction(
+                    entries,
+                    password,
+                    login
+                );
         Component loginAction =
-            actionForText(entries, login);
+            authenticating
+                ? null
+                : actionForText(entries, login);
         Component mainMenuAction =
-            actionForText(entries, mainMenu);
+            authenticating || mainMenu == null
+                ? null
+                : actionForText(entries, mainMenu);
 
         return new Backend(
             title,
@@ -717,6 +723,9 @@ public final class ModernLoginScreenUi {
         List<Entry> entries,
         TextEntry text
     ) {
+        if (text == null) {
+            return null;
+        }
         if (isInteractive(text.component)) {
             return text.component;
         }
