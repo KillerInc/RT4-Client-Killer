@@ -28,6 +28,8 @@ public final class Keyboard implements KeyListener, FocusListener {
 
 	private static volatile boolean modernF8Down = false;
 	private static volatile boolean modernF8ToggleRequested = false;
+	private static volatile boolean modernF12Down = false;
+	private static volatile boolean modernF12LogoutRequested = false;
 
 	@OriginalMember(owner = "client!bg", name = "A", descriptor = "[I")
 	public static final int[] eventQueue = new int[128];
@@ -302,6 +304,14 @@ public final class Keyboard implements KeyListener, FocusListener {
 		return true;
 	}
 
+	public static boolean consumeModernF12LogoutRequest() {
+		if (!modernF12LogoutRequested) {
+			return false;
+		}
+		modernF12LogoutRequested = false;
+		return true;
+	}
+
 	@OriginalMember(owner = "client!pk", name = "f", descriptor = "(B)I")
 	public static int getIdleLoops() {
 		return idleLoops;
@@ -319,6 +329,12 @@ public final class Keyboard implements KeyListener, FocusListener {
 				modernF8ToggleRequested = true;
 			}
 			modernF8Down = true;
+		}
+		if (event.getKeyCode() == KeyEvent.VK_F12) {
+			if (!modernF12Down) {
+				modernF12LogoutRequested = true;
+			}
+			modernF12Down = true;
 		}
 
 		idleLoops = 0;
@@ -385,6 +401,9 @@ public final class Keyboard implements KeyListener, FocusListener {
 	public final synchronized void keyReleased(@OriginalArg(0) KeyEvent event) {
 		if (event.getKeyCode() == KeyEvent.VK_F8) {
 			modernF8Down = false;
+		}
+		if (event.getKeyCode() == KeyEvent.VK_F12) {
+			modernF12Down = false;
 		}
 		if (instance != null) {
 			idleLoops = 0;
