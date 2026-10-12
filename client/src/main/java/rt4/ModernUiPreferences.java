@@ -28,6 +28,7 @@ public final class ModernUiPreferences {
     private static float uiScale = 1.0F;
     private static float textScale = 1.0F;
     private static float iconScale = 1.0F;
+    private static float chatFontSize = 19.0F;
     private static NameDisplayMode playerNameMode = NameDisplayMode.ALWAYS;
     private static NameDisplayMode npcNameMode = NameDisplayMode.ALWAYS;
     private static final LinkedHashSet<String> enabledAddons = new LinkedHashSet<>();
@@ -55,6 +56,7 @@ public final class ModernUiPreferences {
                 uiScale = parseScale(properties.getProperty("uiScale"), 1.0F);
                 textScale = parseScale(properties.getProperty("textScale"), 1.0F);
                 iconScale = parseScale(properties.getProperty("iconScale"), 1.0F);
+                chatFontSize = parseChatFontSize(properties.getProperty("chatFontSize"), 19.0F);
                 playerNameMode = NameDisplayMode.parse(properties.getProperty("playerNames"), NameDisplayMode.ALWAYS);
                 npcNameMode = NameDisplayMode.parse(properties.getProperty("npcNames"), NameDisplayMode.ALWAYS);
 
@@ -88,6 +90,7 @@ public final class ModernUiPreferences {
             properties.setProperty("uiScale", Float.toString(uiScale));
             properties.setProperty("textScale", Float.toString(textScale));
             properties.setProperty("iconScale", Float.toString(iconScale));
+            properties.setProperty("chatFontSize", Float.toString(chatFontSize));
             properties.setProperty("playerNames", playerNameMode.id);
             properties.setProperty("npcNames", npcNameMode.id);
             properties.setProperty("addons", String.join(",", enabledAddons));
@@ -187,6 +190,21 @@ public final class ModernUiPreferences {
         save();
     }
 
+    public static float getChatFontSize() {
+        load();
+        return chatFontSize;
+    }
+
+    public static void setChatFontSize(float value) {
+        load();
+        chatFontSize = clampChatFontSize(value);
+        save();
+    }
+
+    public static void adjustChatFontSize(float delta) {
+        setChatFontSize(getChatFontSize() + delta);
+    }
+
     public static NameDisplayMode getPlayerNameMode() {
         load();
         return playerNameMode;
@@ -263,6 +281,24 @@ public final class ModernUiPreferences {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? fallback : trimmed;
+    }
+
+    private static float parseChatFontSize(String value, float fallback) {
+        try {
+            return clampChatFontSize(Float.parseFloat(value));
+        } catch (Exception ignored) {
+            return fallback;
+        }
+    }
+
+    private static float clampChatFontSize(float value) {
+        if (value < 8.0F) {
+            return 8.0F;
+        }
+        if (value > 40.0F) {
+            return 40.0F;
+        }
+        return Math.round(value);
     }
 
     private static float parseScale(String value, float fallback) {
