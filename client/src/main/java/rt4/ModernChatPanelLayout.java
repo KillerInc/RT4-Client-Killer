@@ -7,11 +7,14 @@ package rt4;
 public final class ModernChatPanelLayout {
     public static final int PANEL_WIDTH = 510;
     public static final int PANEL_HEIGHT = 176;
-    public static final int ACTION_HEIGHT = 26;
+    public static final int ACTION_HEIGHT = 38;
+    public static final int FONT_BUTTON_SIZE = 22;
 
     public final ModernUiRect panel;
     public final ModernUiRect historyPanel;
     public final ModernUiRect title;
+    public final ModernUiRect fontDecrease;
+    public final ModernUiRect fontIncrease;
     public final ModernUiRect divider;
     public final ModernUiRect messages;
     public final ModernUiRect actions;
@@ -20,6 +23,8 @@ public final class ModernChatPanelLayout {
         ModernUiRect panel,
         ModernUiRect historyPanel,
         ModernUiRect title,
+        ModernUiRect fontDecrease,
+        ModernUiRect fontIncrease,
         ModernUiRect divider,
         ModernUiRect messages,
         ModernUiRect actions
@@ -27,6 +32,8 @@ public final class ModernChatPanelLayout {
         this.panel = panel;
         this.historyPanel = historyPanel;
         this.title = title;
+        this.fontDecrease = fontDecrease;
+        this.fontIncrease = fontIncrease;
         this.divider = divider;
         this.messages = messages;
         this.actions = actions;
@@ -77,11 +84,28 @@ public final class ModernChatPanelLayout {
                 panel.width,
                 height
             );
+        ModernUiRect fontIncrease =
+            new ModernUiRect(
+                historyPanel.right() - 10 - FONT_BUTTON_SIZE,
+                historyPanel.y + 6,
+                FONT_BUTTON_SIZE,
+                FONT_BUTTON_SIZE
+            );
+        ModernUiRect fontDecrease =
+            new ModernUiRect(
+                fontIncrease.x - 4 - FONT_BUTTON_SIZE,
+                fontIncrease.y,
+                FONT_BUTTON_SIZE,
+                FONT_BUTTON_SIZE
+            );
         ModernUiRect title =
             new ModernUiRect(
                 historyPanel.x + 12,
                 historyPanel.y + 8,
-                historyPanel.width - 24,
+                Math.max(
+                    80,
+                    fontDecrease.x - historyPanel.x - 20
+                ),
                 20
             );
         ModernUiRect divider =
@@ -110,6 +134,8 @@ public final class ModernChatPanelLayout {
             panel,
             historyPanel,
             title,
+            fontDecrease,
+            fontIncrease,
             divider,
             messages,
             actions
@@ -117,7 +143,13 @@ public final class ModernChatPanelLayout {
     }
 
     public ModernUiRect messageLine(int index, int count) {
-        int lineHeight = 18;
+        int lineHeight =
+            Math.max(
+                18,
+                Math.round(
+                    ModernUiPreferences.getChatFontSize()
+                ) + 4
+            );
         int visible =
             Math.max(
                 1,
