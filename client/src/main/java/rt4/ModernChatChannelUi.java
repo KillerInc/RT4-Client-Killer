@@ -50,6 +50,19 @@ public final class ModernChatChannelUi {
                 GameShell.canvasHeight
             );
 
+        // The Modern bar always renders all seven channels, but the legacy
+        // cache may expose fewer backend controls. Block the whole visible
+        // channel strip so unbound Modern buttons (notably Trade/Assist on
+        // some interface states) can never pass clicks through to the world.
+        ModernUiInputRouter.blockWorldInput(
+            layout.actions
+        );
+        ModernUiInputRouter.registerModernRegion(
+            "chat-channel-bar",
+            layout.actions,
+            screen
+        );
+
         int count = Math.min(LABELS.length, controls.size());
         for (int i = 0; i < count; i++) {
             ModernUiInputRouter.bind(
