@@ -972,6 +972,12 @@ public class Protocol {
 			}
 			scriptArgs[0] = inboundBuffer.g4();
 			setVerifyId(tracknum);
+
+			if (ModernQuestChatServerState.handleRunScript(scriptArgs)) {
+				opcode = -1;
+				return true;
+			}
+
 			@Pc(226) HookRequest request = new HookRequest();
 			request.arguments = scriptArgs;
 			ScriptRunner.run(request);
