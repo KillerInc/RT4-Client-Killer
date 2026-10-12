@@ -93,7 +93,7 @@ public final class ModernChatChannelUi {
             String status = statusFor(i);
             int labelHeight = status.isEmpty()
                 ? rect.height
-                : Math.max(12, rect.height / 2);
+                : Math.max(22, rect.height / 2);
 
             ModernTrueTypeFont.drawInBox(
                 ModernUiFontRegistry.BOLD_12,
@@ -105,7 +105,7 @@ public final class ModernChatChannelUi {
                 ModernUiMetrics.TEXT_PRIMARY,
                 1,
                 1,
-                10.5F,
+                14.0F,
                 false
             );
 
@@ -120,7 +120,7 @@ public final class ModernChatChannelUi {
                     statusColor(status),
                     1,
                     1,
-                    9.5F,
+                    12.0F,
                     false
                 );
             }
