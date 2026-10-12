@@ -49,9 +49,17 @@ public final class ModernChatPanelLayout {
         );
 
         int x = 12;
+
+        // The channel selector is a distinct strip below the chat history.
+        // Anchor the history window directly above it so the two always move
+        // together as one bottom-left chat stack.
+        int actionY = Math.max(
+            12,
+            frame.tabBar.y - ACTION_HEIGHT - 8
+        );
         int y = Math.max(
             12,
-            frame.tabBar.y - height - 8
+            actionY - height - 4
         );
 
         ModernUiRect panel =
@@ -75,12 +83,12 @@ public final class ModernChatPanelLayout {
                 panel.x + 12,
                 panel.y + 42,
                 panel.width - 24,
-                panel.height - 78
+                panel.height - 54
             );
         ModernUiRect actions =
             new ModernUiRect(
                 panel.x + 8,
-                panel.bottom() - ACTION_HEIGHT - 8,
+                actionY,
                 panel.width - 16,
                 ACTION_HEIGHT
             );
