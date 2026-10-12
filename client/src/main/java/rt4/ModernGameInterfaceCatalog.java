@@ -83,6 +83,10 @@ public final class ModernGameInterfaceCatalog {
             case 754:
             case 757:
                 return Kind.CHAT;
+            // Cache chatbox dialogue families. These are the classic
+            // NPC/player/option dialogue interfaces used by the server.
+            // Modern UI renders them in the separate movable Quest Chat
+            // window rather than treating them as the normal chat panel.
             case 64:
             case 65:
             case 66:
@@ -111,6 +115,8 @@ public final class ModernGameInterfaceCatalog {
             case 247:
             case 248:
             case 314:
+                return Kind.QUEST_CHAT;
+            // The server's actual Grand Exchange item search interface.
             case 389:
                 return Kind.GRAND_EXCHANGE_SEARCH;
             case 771:
