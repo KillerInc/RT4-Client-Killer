@@ -192,12 +192,37 @@ public final class ModernQuestChatUi {
 
             if (linkStyle) {
                 anyLinkHover |= hover;
+
+                int bulletSize = 14;
+                ModernUiRect bullet =
+                    new ModernUiRect(
+                        rect.x + 4,
+                        rect.y
+                            + Math.max(
+                                0,
+                                (rect.height - bulletSize) / 2
+                            ),
+                        bulletSize,
+                        bulletSize
+                    );
+                drawAsset(
+                    hover
+                        ? "controls/quest-option-bullet-hover"
+                        : "controls/quest-option-bullet",
+                    bullet
+                );
+
+                int textX =
+                    bullet.right() + 8;
                 ModernTrueTypeFont.drawInBox(
                     ModernUiFontRegistry.BOLD_12,
-                    "› " + action.label,
-                    rect.x + 6,
+                    action.label,
+                    textX,
                     rect.y,
-                    Math.max(1, rect.width - 12),
+                    Math.max(
+                        1,
+                        rect.right() - textX - 6
+                    ),
                     rect.height,
                     hover
                         ? 0xFFF0A0
