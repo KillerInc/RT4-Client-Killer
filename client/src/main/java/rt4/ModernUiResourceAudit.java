@@ -54,7 +54,7 @@ public final class ModernUiResourceAudit {
 
         if (!started) {
             started = true;
-            append(
+            writeFresh(
                 "============================================================\n"
                     + "OSRS Client Killer Edition - Modern UI Resource Audit\n"
                     + "Started: " + FORMAT.format(new Date()) + "\n"
@@ -201,6 +201,19 @@ public final class ModernUiResourceAudit {
             logs.mkdirs();
         }
         return new File(logs, "modern-ui-resource-audit.log");
+    }
+
+    private static void writeFresh(String text) {
+        File file = getReportFile();
+        try (PrintWriter out = new PrintWriter(new FileWriter(file, false))) {
+            out.print(text);
+        } catch (Throwable ex) {
+            DisplayDebug.log(
+                "MODERN_UI resource audit reset failed file="
+                    + file.getAbsolutePath(),
+                ex
+            );
+        }
     }
 
     private static void append(String text) {
