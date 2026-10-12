@@ -391,7 +391,7 @@ public final class ScriptRunner {
 					PluginRepository.PlayerOverheadDraw((Player) entity,left + screenX, top + screenY);
 				}
 
-				@Pc(58) NpcType npcType;
+				@Pc(58) NpcType npcType = null;
 				if (entity instanceof Npc) {
 					npcType = ((Npc) entity).type;
 					if (npcType.multiNpcs != null) {
@@ -401,6 +401,16 @@ public final class ScriptRunner {
 						continue;
 					}
 				}
+
+				ModernEntityNameOverlay.draw(
+					entity,
+					npcType,
+					screenX,
+					screenY,
+					left,
+					top
+				);
+
 				@Pc(161) int markerIndex;
 				if (entityIndex >= PlayerList.size) {
 					npcType = ((Npc) entity).type;
