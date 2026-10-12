@@ -8,7 +8,7 @@ public final class ModernChatPanelLayout {
     public static final int PANEL_WIDTH = 510;
     public static final int PANEL_HEIGHT = 176;
     public static final int ACTION_HEIGHT = 38;
-    public static final int FONT_BUTTON_SIZE = 22;
+    public static final int FONT_BUTTON_SIZE = 30;
 
     public final ModernUiRect panel;
     public final ModernUiRect historyPanel;
