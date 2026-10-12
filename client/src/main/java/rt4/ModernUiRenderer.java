@@ -193,6 +193,16 @@ public final class ModernUiRenderer {
                 interfaceId,
                 loadedComponents
             );
+
+            // Chatbox dialogue interfaces (NPC/player/options) are opened as
+            // nested subinterfaces beneath the chat-area component tree. The
+            // Modern chat panel suppresses vanilla visuals, but must still
+            // traverse those open subinterface pointers so Quest Chat can be
+            // discovered and drawn in the detached foreground window.
+            renderModernOpenSubinterfaces(
+                loadedComponents
+            );
+
             setClip(
                 clipLeft,
                 clipTop,
@@ -584,6 +594,67 @@ public final class ModernUiRenderer {
 
         if (suppressStartupDiagnostics) {
             suppressDiagnosticsDepth--;
+        }
+    }
+
+    private static void renderModernOpenSubinterfaces(
+        Component[] components
+    ) {
+        if (components == null) {
+            return;
+        }
+
+        Set<Integer> rendered =
+            new HashSet<>();
+
+        renderModernOpenSubinterfaces(
+            components,
+            rendered
+        );
+    }
+
+    private static void renderModernOpenSubinterfaces(
+        Component[] components,
+        Set<Integer> rendered
+    ) {
+        if (components == null) {
+            return;
+        }
+
+        for (Component component : components) {
+            if (component == null) {
+                continue;
+            }
+
+            ComponentPointer open =
+                (ComponentPointer)
+                    InterfaceList.openInterfaces.get(
+                        component.id
+                    );
+            if (open != null
+                && rendered.add(open.interfaceId)
+                && (isForegroundWindow(open.interfaceId)
+                    || ModernGameInterfaceCatalog.kind(
+                        open.interfaceId
+                    ) == ModernGameInterfaceCatalog.Kind.QUEST_CHAT)) {
+                renderInterface(
+                    open.interfaceId,
+                    0,
+                    GameShell.canvasWidth,
+                    0,
+                    -1,
+                    GameShell.canvasHeight,
+                    0,
+                    0
+                );
+            }
+
+            if (component.createdComponents != null) {
+                renderModernOpenSubinterfaces(
+                    component.createdComponents,
+                    rendered
+                );
+            }
         }
     }
 
