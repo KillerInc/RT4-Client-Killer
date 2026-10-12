@@ -196,6 +196,34 @@ public final class ModernQuestChatLayout {
         );
     }
 
+    /**
+     * Compatibility geometry used by cache warmup/layout verification.
+     * Runtime Quest Chat rendering uses the portrait/link-aware overload.
+     */
+    public ModernUiRect actionRect(
+        int index,
+        int count
+    ) {
+        int visible = Math.max(1, Math.min(5, count));
+        int gap = 8;
+        int width =
+            Math.max(
+                82,
+                (actions.width
+                    - Math.max(0, visible - 1) * gap)
+                    / visible
+            );
+
+        return new ModernUiRect(
+            actions.x
+                + Math.max(0, index)
+                    * (width + gap),
+            actions.y,
+            width,
+            actions.height
+        );
+    }
+
     public ModernUiRect actionRect(
         int index,
         int count,
