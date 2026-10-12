@@ -41,6 +41,38 @@ public final class ModernChatPanelUi {
                 GameShell.canvasHeight
             );
         ModernUiInputRouter.blockWorldInput(layout.historyPanel);
+        ModernUiInputRouter.registerModernRegion(
+            "chat-font-decrease",
+            layout.fontDecrease,
+            layout.historyPanel
+        );
+        ModernUiInputRouter.registerModernRegion(
+            "chat-font-increase",
+            layout.fontIncrease,
+            layout.historyPanel
+        );
+
+        if (Mouse.clickButton == 1) {
+            if (layout.fontDecrease.contains(
+                    Mouse.clickX,
+                    Mouse.clickY
+                )) {
+                ModernUiPreferences.adjustChatFontSize(-1.0F);
+                Mouse.clickButton = 0;
+                MiniMenu.clickProcessingState = 0;
+                InterfaceList.fullRedrawAllInterfaces();
+                GameShell.fullRedraw = true;
+            } else if (layout.fontIncrease.contains(
+                    Mouse.clickX,
+                    Mouse.clickY
+                )) {
+                ModernUiPreferences.adjustChatFontSize(1.0F);
+                Mouse.clickButton = 0;
+                MiniMenu.clickProcessingState = 0;
+                InterfaceList.fullRedrawAllInterfaces();
+                GameShell.fullRedraw = true;
+            }
+        }
 
         ModernUiRect screen =
             new ModernUiRect(
@@ -80,6 +112,23 @@ public final class ModernChatPanelUi {
         drawAsset("game-ui/panel", layout.historyPanel);
         drawAsset("audio-options/divider", layout.divider);
 
+        drawFontButton(
+            layout.fontDecrease,
+            "-",
+            layout.fontDecrease.contains(
+                Mouse.lastMouseX,
+                Mouse.lastMouseY
+            )
+        );
+        drawFontButton(
+            layout.fontIncrease,
+            "+",
+            layout.fontIncrease.contains(
+                Mouse.lastMouseX,
+                Mouse.lastMouseY
+            )
+        );
+
         ModernTrueTypeFont.drawInBox(
             ModernUiFontRegistry.BOLD_12,
             "Chat",
@@ -94,10 +143,17 @@ public final class ModernChatPanelUi {
             false
         );
 
+        int chatLineHeight =
+            Math.max(
+                18,
+                Math.round(
+                    ModernUiPreferences.getChatFontSize()
+                ) + 4
+            );
         int maxLines =
             Math.max(
                 1,
-                layout.messages.height / 18
+                layout.messages.height / chatLineHeight
             );
         int start =
             Math.max(
@@ -120,7 +176,7 @@ public final class ModernChatPanelUi {
                 ModernUiMetrics.TEXT_PRIMARY,
                 0,
                 1,
-                ModernUiMetrics.FONT_CONTROL,
+                ModernUiPreferences.getChatFontSize(),
                 false
             );
         }
@@ -452,6 +508,32 @@ public final class ModernChatPanelUi {
         return out.toString()
             .replaceAll("\\s+", " ")
             .trim();
+    }
+
+    private static void drawFontButton(
+        ModernUiRect rect,
+        String label,
+        boolean hover
+    ) {
+        drawAsset(
+            hover
+                ? "controls/button-active"
+                : "controls/button",
+            rect
+        );
+        ModernTrueTypeFont.drawInBox(
+            ModernUiFontRegistry.BOLD_12,
+            label,
+            rect.x,
+            rect.y - 1,
+            rect.width,
+            rect.height,
+            ModernUiMetrics.TEXT_PRIMARY,
+            1,
+            1,
+            15.0F,
+            false
+        );
     }
 
     private static void drawAsset(
