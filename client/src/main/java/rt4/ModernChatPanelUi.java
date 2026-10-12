@@ -143,13 +143,26 @@ public final class ModernChatPanelUi {
             false
         );
 
+        float chatFontSize =
+            ModernUiPreferences.getChatFontSize();
         int chatLineHeight =
             Math.max(
                 18,
-                Math.round(
-                    ModernUiPreferences.getChatFontSize()
-                ) + 4
+                Math.round(chatFontSize) + 4
             );
+        int textWidth =
+            Math.max(1, layout.messages.width - 8);
+
+        // Wrap against the actual current chat-window width before deciding
+        // how many rows fit. This prevents larger live font sizes from being
+        // clipped inside a one-line row.
+        List<String> wrappedMessages =
+            wrapMessages(
+                model.messages,
+                textWidth,
+                chatFontSize
+            );
+
         int maxLines =
             Math.max(
                 1,
@@ -158,17 +171,17 @@ public final class ModernChatPanelUi {
         int start =
             Math.max(
                 0,
-                model.messages.size() - maxLines
+                wrappedMessages.size() - maxLines
             );
         int count =
-            model.messages.size() - start;
+            wrappedMessages.size() - start;
 
         for (int i = 0; i < count; i++) {
             ModernUiRect row =
                 layout.messageLine(i, count);
             ModernTrueTypeFont.drawInBox(
                 ModernUiFontRegistry.PLAIN_11,
-                model.messages.get(start + i),
+                wrappedMessages.get(start + i),
                 row.x + 4,
                 row.y,
                 Math.max(1, row.width - 8),
@@ -176,7 +189,7 @@ public final class ModernChatPanelUi {
                 ModernUiMetrics.TEXT_PRIMARY,
                 0,
                 1,
-                ModernUiPreferences.getChatFontSize(),
+                chatFontSize,
                 false
             );
         }
@@ -442,6 +455,83 @@ public final class ModernChatPanelUi {
             }
         }
         return -1;
+    }
+
+    private static List<String> wrapMessages(
+        List<String> messages,
+        int width,
+        float fontSize
+    ) {
+        List<String> wrapped = new ArrayList<>();
+        if (messages == null || messages.isEmpty()) {
+            return wrapped;
+        }
+
+        for (String message : messages) {
+            String cleanMessage = clean(message);
+            if (cleanMessage.isEmpty()) {
+                continue;
+            }
+
+            StringBuilder line = new StringBuilder();
+            for (String word : cleanMessage.split(" ")) {
+                String candidate =
+                    line.length() == 0
+                        ? word
+                        : line + " " + word;
+
+                if (line.length() > 0
+                    && ModernTrueTypeFont.getWidth(
+                        ModernUiFontRegistry.PLAIN_11,
+                        candidate,
+                        fontSize
+                    ) > width) {
+                    wrapped.add(line.toString());
+                    line.setLength(0);
+                    line.append(word);
+                } else {
+                    if (line.length() > 0) {
+                        line.append(' ');
+                    }
+                    line.append(word);
+                }
+
+                // Extremely long single tokens still need to stay inside the
+                // window. Split them by character only when word wrapping
+                // cannot fit the token on an empty line.
+                if (line.length() > 0
+                    && ModernTrueTypeFont.getWidth(
+                        ModernUiFontRegistry.PLAIN_11,
+                        line.toString(),
+                        fontSize
+                    ) > width) {
+                    String value = line.toString();
+                    line.setLength(0);
+                    StringBuilder part = new StringBuilder();
+                    for (int i = 0; i < value.length(); i++) {
+                        char ch = value.charAt(i);
+                        String test = part.toString() + ch;
+                        if (part.length() > 0
+                            && ModernTrueTypeFont.getWidth(
+                                ModernUiFontRegistry.PLAIN_11,
+                                test,
+                                fontSize
+                            ) > width) {
+                            wrapped.add(part.toString());
+                            part.setLength(0);
+                        }
+                        part.append(ch);
+                    }
+                    line.append(part);
+                }
+            }
+
+            if (line.length() > 0) {
+                wrapped.add(line.toString());
+            }
+        }
+
+        return wrapped;
     }
 
     private static boolean containsIgnoreCase(
