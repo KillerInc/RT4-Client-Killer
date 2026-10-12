@@ -94,14 +94,16 @@ public final class ModernChatChannelUi {
             int labelHeight = status.isEmpty()
                 ? rect.height
                 : Math.max(22, rect.height / 2);
+            int labelOffsetY = 12;
+            int stateOffsetY = -3;
 
             ModernTrueTypeFont.drawInBox(
                 ModernUiFontRegistry.BOLD_12,
                 LABELS[i],
                 rect.x + 2,
-                rect.y,
+                rect.y + labelOffsetY,
                 Math.max(1, rect.width - 4),
-                labelHeight,
+                Math.max(1, labelHeight - labelOffsetY),
                 ModernUiMetrics.TEXT_PRIMARY,
                 1,
                 1,
@@ -114,9 +116,12 @@ public final class ModernChatChannelUi {
                     ModernUiFontRegistry.PLAIN_11,
                     status,
                     rect.x + 2,
-                    rect.y + labelHeight - 1,
+                    rect.y + labelHeight - 1 + stateOffsetY,
                     Math.max(1, rect.width - 4),
-                    rect.height - labelHeight + 1,
+                    Math.max(
+                        1,
+                        rect.height - labelHeight + 1 - stateOffsetY
+                    ),
                     statusColor(status),
                     1,
                     1,
