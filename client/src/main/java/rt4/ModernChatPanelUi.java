@@ -621,7 +621,13 @@ public final class ModernChatPanelUi {
             ModernUiMetrics.TEXT_PRIMARY,
             1,
             1,
-            15.0F,
+            Math.max(
+                18.0F,
+                Math.min(
+                    24.0F,
+                    ModernUiPreferences.getChatFontSize()
+                )
+            ),
             false
         );
     }
