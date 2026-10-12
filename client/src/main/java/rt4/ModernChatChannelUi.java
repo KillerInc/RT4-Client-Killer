@@ -85,8 +85,8 @@ public final class ModernChatChannelUi {
 
             drawAsset(
                 hover
-                    ? "controls/button-active"
-                    : "controls/button",
+                    ? "controls/chat-channel-button-active"
+                    : "controls/chat-channel-button",
                 rect
             );
 
