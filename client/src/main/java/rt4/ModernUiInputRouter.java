@@ -242,6 +242,9 @@ public final class ModernUiInputRouter {
         ModernChatPanelUi.prepareInput(
             components
         );
+        ModernChatChannelUi.prepareInput(
+            components
+        );
         ModernQuestChatUi.prepareInput(
             components
         );
