@@ -28,6 +28,8 @@ public final class ModernUiPreferences {
     private static float uiScale = 1.0F;
     private static float textScale = 1.0F;
     private static float iconScale = 1.0F;
+    private static NameDisplayMode playerNameMode = NameDisplayMode.ALWAYS;
+    private static NameDisplayMode npcNameMode = NameDisplayMode.ALWAYS;
     private static final LinkedHashSet<String> enabledAddons = new LinkedHashSet<>();
 
     private ModernUiPreferences() {
@@ -53,6 +55,8 @@ public final class ModernUiPreferences {
                 uiScale = parseScale(properties.getProperty("uiScale"), 1.0F);
                 textScale = parseScale(properties.getProperty("textScale"), 1.0F);
                 iconScale = parseScale(properties.getProperty("iconScale"), 1.0F);
+                playerNameMode = NameDisplayMode.parse(properties.getProperty("playerNames"), NameDisplayMode.ALWAYS);
+                npcNameMode = NameDisplayMode.parse(properties.getProperty("npcNames"), NameDisplayMode.ALWAYS);
 
                 enabledAddons.clear();
                 String addonList = properties.getProperty("addons", "");
@@ -84,6 +88,8 @@ public final class ModernUiPreferences {
             properties.setProperty("uiScale", Float.toString(uiScale));
             properties.setProperty("textScale", Float.toString(textScale));
             properties.setProperty("iconScale", Float.toString(iconScale));
+            properties.setProperty("playerNames", playerNameMode.id);
+            properties.setProperty("npcNames", npcNameMode.id);
             properties.setProperty("addons", String.join(",", enabledAddons));
 
             File target = getSettingsFile();
@@ -179,6 +185,55 @@ public final class ModernUiPreferences {
         load();
         iconScale = clampScale(value);
         save();
+    }
+
+    public static NameDisplayMode getPlayerNameMode() {
+        load();
+        return playerNameMode;
+    }
+
+    public static void setPlayerNameMode(NameDisplayMode value) {
+        load();
+        playerNameMode = value == null ? NameDisplayMode.ALWAYS : value;
+        save();
+    }
+
+    public static NameDisplayMode getNpcNameMode() {
+        load();
+        return npcNameMode;
+    }
+
+    public static void setNpcNameMode(NameDisplayMode value) {
+        load();
+        npcNameMode = value == null ? NameDisplayMode.ALWAYS : value;
+        save();
+    }
+
+    public enum NameDisplayMode {
+        OFF("off"),
+        HOVER("hover"),
+        ALWAYS("always");
+
+        private final String id;
+
+        NameDisplayMode(String id) {
+            this.id = id;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public static NameDisplayMode parse(String value, NameDisplayMode fallback) {
+            if (value != null) {
+                for (NameDisplayMode mode : values()) {
+                    if (mode.id.equalsIgnoreCase(value.trim())) {
+                        return mode;
+                    }
+                }
+            }
+            return fallback;
+        }
     }
 
     public static Set<String> getEnabledAddons() {
