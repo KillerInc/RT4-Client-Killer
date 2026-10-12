@@ -77,11 +77,11 @@ public final class ModernGameInterfaceCatalog {
             case 637:
             case 639:
                 return Kind.TRADE;
+            // 137/173 carry actual chat content. 752/754/757 are chatbox
+            // infrastructure (input/filter/auxiliary layers) and must not be
+            // rendered as independent Modern chat windows.
             case 137:
             case 173:
-            case 752:
-            case 754:
-            case 757:
                 return Kind.CHAT;
             // Cache chatbox dialogue families. These are the classic
             // NPC/player/option dialogue interfaces used by the server.
@@ -99,13 +99,11 @@ public final class ModernGameInterfaceCatalog {
             case 211:
             case 212:
             case 213:
-            case 214:
-            case 215:
-            case 216:
-            case 217:
-            case 218:
-            case 219:
-            case 220:
+            // Dialogue option interfaces (2-5 choices).
+            case 228:
+            case 230:
+            case 232:
+            case 234:
             case 241:
             case 242:
             case 243:
