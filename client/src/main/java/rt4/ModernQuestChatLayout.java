@@ -5,9 +5,9 @@ package rt4;
  */
 public final class ModernQuestChatLayout {
     public static final int WIDTH = 540;
-    public static final int HEIGHT = 230;
-    public static final int HEADER_HEIGHT = 32;
-    public static final int ACTION_HEIGHT = 30;
+    public static final int HEIGHT = 260;
+    public static final int HEADER_HEIGHT = 44;
+    public static final int ACTION_HEIGHT = 42;
 
     public final ModernUiRect panel;
     public final ModernUiRect header;
@@ -81,30 +81,31 @@ public final class ModernQuestChatLayout {
         ModernUiRect header =
             new ModernUiRect(
                 panel.x + 10,
-                panel.y + 6,
+                panel.y + 8,
                 panel.width - 20,
                 HEADER_HEIGHT
             );
         ModernUiRect divider =
             new ModernUiRect(
                 panel.x + 12,
-                panel.y + 41,
+                header.bottom() + 4,
                 panel.width - 24,
                 4
-            );
-        ModernUiRect body =
-            new ModernUiRect(
-                panel.x + 18,
-                panel.y + 52,
-                panel.width - 36,
-                panel.height - 104
             );
         ModernUiRect actions =
             new ModernUiRect(
                 panel.x + 16,
-                panel.bottom() - ACTION_HEIGHT - 12,
+                panel.bottom() - ACTION_HEIGHT - 14,
                 panel.width - 32,
                 ACTION_HEIGHT
+            );
+        int bodyY = divider.bottom() + 8;
+        ModernUiRect body =
+            new ModernUiRect(
+                panel.x + 18,
+                bodyY,
+                panel.width - 36,
+                Math.max(40, actions.y - bodyY - 8)
             );
 
         return new ModernQuestChatLayout(
