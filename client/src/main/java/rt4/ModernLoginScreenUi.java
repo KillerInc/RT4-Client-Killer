@@ -538,12 +538,17 @@ public final class ModernLoginScreenUi {
         TextEntry password = find(entries, Kind.PASSWORD);
         TextEntry login = find(entries, Kind.LOGIN);
         TextEntry mainMenu = find(entries, Kind.MAIN_MENU);
+        TextEntry loginProgress = findLoginProgress(entries);
+        if (login == null && loginProgress != null) {
+            login = loginProgress;
+        }
 
+        boolean authenticating = loginProgress != null;
         if (title == null
             || username == null
             || password == null
             || login == null
-            || mainMenu == null) {
+            || mainMenu == null && !authenticating) {
             return null;
         }
 
@@ -587,6 +592,24 @@ public final class ModernLoginScreenUi {
             loginAction,
             mainMenuAction
         );
+    }
+
+    private static TextEntry findLoginProgress(
+        List<Entry> entries
+    ) {
+        for (Entry entry : entries) {
+            String normalized = normalize(entry.text);
+            if (normalized.startsWith("performing login")
+                || normalized.startsWith("logging in")
+                || normalized.startsWith("connecting")) {
+                return new TextEntry(
+                    entry.component,
+                    entry.rect,
+                    display(entry.text)
+                );
+            }
+        }
+        return null;
     }
 
     private static TextEntry findStatusMessage(
