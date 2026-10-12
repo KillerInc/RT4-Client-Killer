@@ -144,6 +144,26 @@ public final class ModernUiRenderer {
             return;
         }
 
+        if (ModernChatChannelUi.handles(interfaceId)) {
+            setClip(
+                0,
+                0,
+                GameShell.canvasWidth,
+                GameShell.canvasHeight
+            );
+            ModernChatChannelUi.render(
+                interfaceId,
+                loadedComponents
+            );
+            setClip(
+                clipLeft,
+                clipTop,
+                clipRight,
+                clipBottom
+            );
+            return;
+        }
+
         if (ModernChatPanelUi.handles(interfaceId)) {
             setClip(
                 0,
