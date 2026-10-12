@@ -35,6 +35,14 @@ public final class ModernUiRenderer {
     private static int suppressDiagnosticsDepth;
     private static boolean loginUiActivated;
 
+    // In-game windows are composited in a final foreground pass. The legacy
+    // interface tree does not provide a reliable z-order for our detached
+    // Modern surfaces, so drawing them inline can allow HUD/chat siblings to
+    // paint over them later in the same traversal.
+    private static final List<DeferredWindow> deferredWindows =
+        new ArrayList<>();
+    private static boolean flushingDeferredWindows;
+
     private ModernUiRenderer() {
     }
 
@@ -84,6 +92,16 @@ public final class ModernUiRenderer {
             interfaceId,
             loadedComponents
         );
+
+        if (!flushingDeferredWindows
+            && inGameTopLevelDepth > 0
+            && isForegroundWindow(interfaceId)) {
+            deferForegroundWindow(
+                interfaceId,
+                loadedComponents
+            );
+            return;
+        }
 
         if (ModernInventoryPanelUi.handles(interfaceId)) {
             setClip(
@@ -555,12 +573,135 @@ public final class ModernUiRenderer {
                 GameShell.canvasHeight
             );
             ModernGameUi.renderChrome();
+
+            // All detached windows render after the complete base HUD,
+            // including chat, minimap, sidebar and status chrome.
+            flushForegroundWindows();
+
             setClip(clipLeft, clipTop, clipRight, clipBottom);
             inGameTopLevelDepth--;
         }
 
         if (suppressStartupDiagnostics) {
             suppressDiagnosticsDepth--;
+        }
+    }
+
+    private static boolean isForegroundWindow(
+        int interfaceId
+    ) {
+        return ModernQuestChatUi.handles(interfaceId)
+            || ModernCharacterSetupUi.handles(interfaceId)
+            || ModernInGameDialogUi.handles(interfaceId)
+            || ModernBankUi.handles(interfaceId)
+            || ModernShopUi.handles(interfaceId)
+            || ModernTradeUi.handles(interfaceId)
+            || ModernWorldMapUi.handles(interfaceId)
+            || ModernGrandExchangeSearchUi.handles(interfaceId)
+            || ModernGrandExchangeUi.handles(interfaceId);
+    }
+
+    private static void deferForegroundWindow(
+        int interfaceId,
+        Component[] components
+    ) {
+        for (int i = deferredWindows.size() - 1; i >= 0; i--) {
+            if (deferredWindows.get(i).interfaceId == interfaceId) {
+                deferredWindows.remove(i);
+            }
+        }
+        deferredWindows.add(
+            new DeferredWindow(
+                interfaceId,
+                components
+            )
+        );
+    }
+
+    private static void flushForegroundWindows() {
+        if (deferredWindows.isEmpty()) {
+            return;
+        }
+
+        List<DeferredWindow> pending =
+            new ArrayList<>(deferredWindows);
+        deferredWindows.clear();
+        flushingDeferredWindows = true;
+
+        try {
+            setClip(
+                0,
+                0,
+                GameShell.canvasWidth,
+                GameShell.canvasHeight
+            );
+
+            for (DeferredWindow window : pending) {
+                int interfaceId = window.interfaceId;
+                Component[] components = window.components;
+
+                if (ModernQuestChatUi.handles(interfaceId)) {
+                    ModernQuestChatUi.render(
+                        interfaceId,
+                        components
+                    );
+                } else if (ModernCharacterSetupUi.handles(interfaceId)) {
+                    ModernCharacterSetupUi.render(
+                        interfaceId,
+                        components
+                    );
+                } else if (ModernInGameDialogUi.handles(interfaceId)) {
+                    ModernInGameDialogUi.render(
+                        interfaceId,
+                        components
+                    );
+                } else if (ModernBankUi.handles(interfaceId)) {
+                    ModernBankUi.render(
+                        interfaceId,
+                        components
+                    );
+                } else if (ModernShopUi.handles(interfaceId)) {
+                    ModernShopUi.render(
+                        interfaceId,
+                        components
+                    );
+                } else if (ModernTradeUi.handles(interfaceId)) {
+                    ModernTradeUi.render(
+                        interfaceId,
+                        components
+                    );
+                } else if (ModernWorldMapUi.handles(interfaceId)) {
+                    ModernWorldMapUi.render(
+                        interfaceId,
+                        components
+                    );
+                } else if (ModernGrandExchangeSearchUi.handles(interfaceId)) {
+                    ModernGrandExchangeSearchUi.render(
+                        interfaceId,
+                        components
+                    );
+                } else if (ModernGrandExchangeUi.handles(interfaceId)) {
+                    ModernGrandExchangeUi.render(
+                        interfaceId,
+                        components
+                    );
+                }
+            }
+        } finally {
+            flushingDeferredWindows = false;
+        }
+    }
+
+    private static final class DeferredWindow {
+        private final int interfaceId;
+        private final Component[] components;
+
+        private DeferredWindow(
+            int interfaceId,
+            Component[] components
+        ) {
+            this.interfaceId = interfaceId;
+            this.components = components;
         }
     }
 
