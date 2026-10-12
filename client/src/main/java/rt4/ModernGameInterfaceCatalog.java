@@ -83,6 +83,7 @@ public final class ModernGameInterfaceCatalog {
             // rendered as independent Modern chat windows.
             case 137:
             case 173:
+            case 752:
                 return Kind.CHAT;
             case 754:
                 return Kind.CHAT_CONTROLS;
