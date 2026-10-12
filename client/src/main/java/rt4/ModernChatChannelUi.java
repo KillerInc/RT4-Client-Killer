@@ -20,6 +20,8 @@ public final class ModernChatChannelUi {
     private static final String[] LABELS = {
         "All", "Game", "Public", "Private", "Clan", "Trade", "Assist"
     };
+    private static final int STATUS_ON = 0x00FF00;
+    private static final int STATUS_OFF = 0xFF4040;
 
     private ModernChatChannelUi() {
     }
@@ -103,7 +105,7 @@ public final class ModernChatChannelUi {
                 ModernUiMetrics.TEXT_PRIMARY,
                 1,
                 1,
-                8.3F,
+                10.5F,
                 false
             );
 
@@ -115,14 +117,24 @@ public final class ModernChatChannelUi {
                     rect.y + labelHeight - 1,
                     Math.max(1, rect.width - 4),
                     rect.height - labelHeight + 1,
-                    ModernUiMetrics.TEXT_GOLD,
+                    statusColor(status),
                     1,
                     1,
-                    7.4F,
+                    9.5F,
                     false
                 );
             }
         }
+    }
+
+    private static int statusColor(String status) {
+        if ("On".equalsIgnoreCase(status)) {
+            return STATUS_ON;
+        }
+        if ("Off".equalsIgnoreCase(status)) {
+            return STATUS_OFF;
+        }
+        return ModernUiMetrics.TEXT_GOLD;
     }
 
     private static String statusFor(int index) {
