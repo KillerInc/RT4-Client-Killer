@@ -1767,6 +1767,8 @@ public final class client extends GameShell {
 			}
 		}
 
+		ModernWorldMouseWheel.process();
+
 		// A display-mode change may request a plugin refresh. Process it only
 		// after the current client tick has completed so the renderer switch can
 		// return to the game's confirmation script immediately.
