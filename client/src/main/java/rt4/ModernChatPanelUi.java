@@ -40,7 +40,7 @@ public final class ModernChatPanelUi {
                 GameShell.canvasWidth,
                 GameShell.canvasHeight
             );
-        ModernUiInputRouter.blockWorldInput(layout.panel);
+        ModernUiInputRouter.blockWorldInput(layout.historyPanel);
 
         ModernUiRect screen =
             new ModernUiRect(
@@ -77,7 +77,7 @@ public final class ModernChatPanelUi {
 
         prepareInput(components);
 
-        drawAsset("game-ui/panel", layout.panel);
+        drawAsset("game-ui/panel", layout.historyPanel);
         drawAsset("audio-options/divider", layout.divider);
 
         ModernTrueTypeFont.drawInBox(
