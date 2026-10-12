@@ -1108,14 +1108,31 @@ public final class ModernCharacterSetupUi {
                 && VarpDomain.activeVarps[170] == 1;
         }
         if (child == 49) {
-            return VarcDomain.varcs.length > 196
-                && VarcDomain.varcs[196] != 1;
+            return !isLiveCharacterFemale();
         }
         if (child == 52) {
-            return VarcDomain.varcs.length > 196
-                && VarcDomain.varcs[196] == 1;
+            return isLiveCharacterFemale();
         }
         return false;
+    }
+
+    private static boolean isLiveCharacterFemale() {
+        if (PlayerList.self != null
+            && PlayerList.self.appearance != null) {
+            boolean female =
+                PlayerList.self.appearance.gender;
+
+            // Keep the legacy character-setup varc in sync so any remaining
+            // original scripts see the same gender as the Modern selector and
+            // live preview.
+            if (VarcDomain.varcs.length > 196) {
+                VarcDomain.varcs[196] = female ? 1 : 0;
+            }
+            return female;
+        }
+
+        return VarcDomain.varcs.length > 196
+            && VarcDomain.varcs[196] == 1;
     }
 
     private static int[] activeBodyPalette(Model model) {
