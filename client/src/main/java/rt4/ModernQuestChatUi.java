@@ -143,31 +143,89 @@ public final class ModernQuestChatUi {
 
         ModernUiRect contentBody =
             layout.contentBody(hasPortrait);
-        int maxLines =
-            Math.max(1, contentBody.height / 20);
-        int count =
-            Math.min(maxLines, model.messages.size());
-        for (int i = 0; i < count; i++) {
-            ModernUiRect row =
-                layout.bodyLine(
-                    i,
-                    count,
-                    hasPortrait
+
+        if (ModernQuestChatServerState.isActive()
+            && !model.messages.isEmpty()) {
+            StringBuilder semanticText =
+                new StringBuilder();
+            for (int i = 0; i < model.messages.size(); i++) {
+                if (semanticText.length() > 0) {
+                    semanticText.append('\n');
+                }
+                semanticText.append(
+                    model.messages.get(i).text
                 );
-            TextEntry message = model.messages.get(i);
+            }
+
+            TextEntry styleSource =
+                model.messages.get(0);
             ModernTrueTypeFont.drawInBox(
-                fontFor(message.component),
-                message.text,
-                row.x,
-                row.y,
-                row.width,
-                row.height,
-                colorFor(message.component, ModernUiMetrics.TEXT_PRIMARY),
+                fontFor(styleSource.component),
+                semanticText.toString(),
+                contentBody.x,
+                contentBody.y,
+                contentBody.width,
+                contentBody.height,
+                colorFor(
+                    styleSource.component,
+                    ModernUiMetrics.TEXT_PRIMARY
+                ),
                 1,
                 1,
-                sizeFor(message.component, ModernUiMetrics.FONT_CONTROL),
+                sizeFor(
+                    styleSource.component,
+                    ModernUiMetrics.FONT_CONTROL
+                ),
                 false
             );
+        } else {
+            int lineHeight =
+                Math.max(
+                    22,
+                    ModernTrueTypeFont.getLineHeight(
+                        ModernUiFontRegistry.QUILL_8,
+                        20.0F
+                    ) + 2
+                );
+            int maxLines =
+                Math.max(
+                    1,
+                    contentBody.height / lineHeight
+                );
+            int count =
+                Math.min(
+                    maxLines,
+                    model.messages.size()
+                );
+            for (int i = 0; i < count; i++) {
+                ModernUiRect row =
+                    layout.bodyLine(
+                        i,
+                        count,
+                        hasPortrait
+                    );
+                TextEntry message =
+                    model.messages.get(i);
+                ModernTrueTypeFont.drawInBox(
+                    fontFor(message.component),
+                    message.text,
+                    row.x,
+                    row.y,
+                    row.width,
+                    Math.max(row.height, lineHeight),
+                    colorFor(
+                        message.component,
+                        ModernUiMetrics.TEXT_PRIMARY
+                    ),
+                    1,
+                    1,
+                    sizeFor(
+                        message.component,
+                        ModernUiMetrics.FONT_CONTROL
+                    ),
+                    false
+                );
+            }
         }
 
         int actionCount =
