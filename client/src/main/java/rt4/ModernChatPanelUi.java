@@ -222,6 +222,38 @@ public final class ModernChatPanelUi {
             }
         }
 
+        // The normal chat log is runtime state, not static component text.
+        // Add the live Chat ring-buffer newest-last so the Modern panel remains
+        // useful even when interface 752 itself contains only chatbox chrome.
+        List<String> liveMessages = new ArrayList<>();
+        int liveCount = Math.min(Chat.size, Chat.messages.length);
+        for (int i = liveCount - 1; i >= 0; i--) {
+            JagString message = Chat.messages[i];
+            if (message == null || message.length() == 0) {
+                continue;
+            }
+
+            String body = clean(message.toString());
+            JagString nameValue = Chat.names[i];
+            String name =
+                nameValue == null
+                    ? ""
+                    : clean(nameValue.toString());
+
+            String line =
+                name.isEmpty()
+                    ? body
+                    : name + ": " + body;
+            if (!line.isEmpty()
+                && !containsIgnoreCase(liveMessages, line)) {
+                liveMessages.add(line);
+            }
+        }
+
+        if (!liveMessages.isEmpty()) {
+            messages = liveMessages;
+        }
+
         if (messages.size() > 30) {
             messages =
                 new ArrayList<>(
