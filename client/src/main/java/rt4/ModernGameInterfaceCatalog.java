@@ -22,6 +22,7 @@ public final class ModernGameInterfaceCatalog {
         SHOP,
         TRADE,
         CHAT,
+        CHAT_CONTROLS,
         QUEST_CHAT,
         DIALOG,
         WORLD_MAP,
@@ -83,6 +84,8 @@ public final class ModernGameInterfaceCatalog {
             case 137:
             case 173:
                 return Kind.CHAT;
+            case 754:
+                return Kind.CHAT_CONTROLS;
             // Cache chatbox dialogue families. These are the classic
             // NPC/player/option dialogue interfaces used by the server.
             // Modern UI renders them in the separate movable Quest Chat
