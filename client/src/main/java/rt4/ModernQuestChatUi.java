@@ -304,6 +304,85 @@ public final class ModernQuestChatUi {
             title = new TextEntry(null, "Dialogue");
         }
 
+        // When the server has explicitly negotiated Modern Quest Chat, use
+        // its semantic payload for presentation. Keep the hidden legacy
+        // components only as action targets so dialogue progression remains
+        // fully server-authoritative and vanilla-compatible.
+        if (ModernQuestChatServerState.isActive()) {
+            String serverTitle =
+                clean(
+                    ModernQuestChatServerState.getSpeakerName()
+                );
+            if (!serverTitle.isEmpty()) {
+                title =
+                    new TextEntry(
+                        title.component,
+                        serverTitle
+                    );
+            }
+
+            List<String> serverLines =
+                ModernQuestChatServerState.getLines();
+            if (!serverLines.isEmpty()) {
+                List<TextEntry> semanticMessages =
+                    new ArrayList<>();
+                for (int i = 0;
+                    i < serverLines.size();
+                    i++) {
+                    Component styleSource =
+                        i < messages.size()
+                            ? messages.get(i).component
+                            : null;
+                    semanticMessages.add(
+                        new TextEntry(
+                            styleSource,
+                            clean(serverLines.get(i))
+                        )
+                    );
+                }
+                messages = semanticMessages;
+            }
+
+            List<String> serverOptions =
+                ModernQuestChatServerState.getOptions();
+            if (!serverOptions.isEmpty()) {
+                List<Action> semanticActions =
+                    new ArrayList<>();
+                int optionCount =
+                    Math.min(
+                        serverOptions.size(),
+                        actions.size()
+                    );
+                for (int i = 0;
+                    i < optionCount;
+                    i++) {
+                    semanticActions.add(
+                        new Action(
+                            actions.get(i).component,
+                            clean(serverOptions.get(i))
+                        )
+                    );
+                }
+                actions = semanticActions;
+            } else if (
+                ModernQuestChatServerState.canContinue()
+            ) {
+                if (!actions.isEmpty()) {
+                    Action target = actions.get(0);
+                    actions =
+                        new ArrayList<>();
+                    actions.add(
+                        new Action(
+                            target.component,
+                            "Click here to continue"
+                        )
+                    );
+                }
+            } else {
+                actions = new ArrayList<>();
+            }
+        }
+
         return new Model(
             title,
             messages,
