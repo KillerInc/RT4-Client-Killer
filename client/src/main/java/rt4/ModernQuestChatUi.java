@@ -111,16 +111,16 @@ public final class ModernQuestChatUi {
         drawAsset("audio-options/divider", layout.divider);
 
         ModernTrueTypeFont.drawInBox(
-            ModernUiFontRegistry.BOLD_12,
-            model.title,
+            fontFor(model.title.component),
+            model.title.text,
             layout.header.x,
             layout.header.y,
             layout.header.width,
             layout.header.height,
-            ModernUiMetrics.TEXT_GOLD,
+            colorFor(model.title.component, ModernUiMetrics.TEXT_GOLD),
             1,
             1,
-            ModernUiMetrics.FONT_SECTION,
+            sizeFor(model.title.component, ModernUiMetrics.FONT_SECTION),
             false
         );
 
@@ -131,17 +131,18 @@ public final class ModernQuestChatUi {
         for (int i = 0; i < count; i++) {
             ModernUiRect row =
                 layout.bodyLine(i, count);
+            TextEntry message = model.messages.get(i);
             ModernTrueTypeFont.drawInBox(
-                ModernUiFontRegistry.PLAIN_12,
-                model.messages.get(i),
+                fontFor(message.component),
+                message.text,
                 row.x,
                 row.y,
                 row.width,
                 row.height,
-                ModernUiMetrics.TEXT_PRIMARY,
+                colorFor(message.component, ModernUiMetrics.TEXT_PRIMARY),
                 1,
                 1,
-                ModernUiMetrics.FONT_CONTROL,
+                sizeFor(message.component, ModernUiMetrics.FONT_CONTROL),
                 false
             );
         }
@@ -259,7 +260,8 @@ public final class ModernQuestChatUi {
                 );
         }
 
-        String title = "Dialogue";
+        TextEntry title =
+            new TextEntry(null, "Dialogue");
         for (TextEntry entry : textEntries) {
             String text = entry.text;
             if (text.length() <= 32
@@ -269,16 +271,16 @@ public final class ModernQuestChatUi {
                     entry.component,
                     text
                 )) {
-                title = text;
+                title = entry;
                 break;
             }
         }
 
-        List<String> messages =
+        List<TextEntry> messages =
             new ArrayList<>();
         for (TextEntry entry : textEntries) {
             String text = entry.text;
-            if (text.equals(title)
+            if (entry == title
                 || matchesAction(
                     actions,
                     entry.component,
@@ -287,19 +289,19 @@ public final class ModernQuestChatUi {
                 continue;
             }
 
-            if (!containsIgnoreCase(
+            if (!containsIgnoreCaseEntries(
                 messages,
                 text
             )) {
-                messages.add(text);
+                messages.add(entry);
             }
         }
 
         if (messages.isEmpty()
             && !textEntries.isEmpty()
-            && !"Dialogue".equals(title)) {
+            && !"Dialogue".equals(title.text)) {
             messages.add(title);
-            title = "Dialogue";
+            title = new TextEntry(null, "Dialogue");
         }
 
         return new Model(
@@ -465,16 +467,74 @@ public final class ModernQuestChatUi {
         return -1;
     }
 
-    private static boolean containsIgnoreCase(
-        List<String> values,
+    private static boolean containsIgnoreCaseEntries(
+        List<TextEntry> values,
         String candidate
     ) {
-        for (String value : values) {
-            if (value.equalsIgnoreCase(candidate)) {
+        for (TextEntry value : values) {
+            if (value.text.equalsIgnoreCase(candidate)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private static String fontFor(Component component) {
+        if (component != null && component.font >= 0) {
+            String mapped =
+                ModernUiFontRegistry.resolveAsset(component.font);
+            if (mapped != null) {
+                return mapped;
+            }
+        }
+
+        // Vanilla tutorial/quest prose uses the q8/quill family. Use the
+        // scalable equivalent when a component has no resolved font id.
+        return ModernUiFontRegistry.QUILL_8;
+    }
+
+    private static int colorFor(
+        Component component,
+        int fallback
+    ) {
+        if (component == null) {
+            return fallback;
+        }
+
+        boolean active = Cs1ScriptRunner.isTrue(component);
+        int color =
+            active && component.activeColor != 0
+                ? component.activeColor
+                : component.color;
+
+        return color == 0 && fallback != 0
+            ? fallback
+            : color & 0xFFFFFF;
+    }
+
+    private static float sizeFor(
+        Component component,
+        float fallback
+    ) {
+        if (component == null || component.font < 0) {
+            return fallback;
+        }
+
+        String cacheName =
+            ModernUiFontRegistry.resolveCacheName(
+                component.font
+            );
+        if ("q8_full".equals(cacheName)) {
+            return 14.0F;
+        }
+        if ("p11_full".equals(cacheName)) {
+            return 11.0F;
+        }
+        if ("p12_full".equals(cacheName)
+            || "b12_full".equals(cacheName)) {
+            return 12.0F;
+        }
+        return fallback;
     }
 
     private static String shorten(
@@ -547,13 +607,13 @@ public final class ModernQuestChatUi {
     }
 
     private static final class Model {
-        private final String title;
-        private final List<String> messages;
+        private final TextEntry title;
+        private final List<TextEntry> messages;
         private final List<Action> actions;
 
         private Model(
-            String title,
-            List<String> messages,
+            TextEntry title,
+            List<TextEntry> messages,
             List<Action> actions
         ) {
             this.title = title;
