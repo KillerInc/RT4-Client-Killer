@@ -45,15 +45,28 @@ public final class ModernUiInputRouter {
         if (component == null || bounds == null) {
             return;
         }
-        bindings.put(
-            component,
+        ModernUiRect effectiveClip =
+            clip == null ? bounds : clip;
+        Binding binding =
             new Binding(
                 bounds,
-                clip == null ? bounds : clip,
+                effectiveClip,
                 client.loop,
                 activePrepareSerial
-            )
+            );
+        bindings.put(
+            component,
+            binding
         );
+
+        // Any Modern-owned interactive rectangle must occlude the game world.
+        // World menu entries are built separately from interface actions; if
+        // this rectangle is not also a blocker, a single click can activate
+        // the Modern control and the NPC/object/walk target behind it.
+        ModernUiRect hit = effectiveBounds(binding);
+        if (hit != null) {
+            addBlocker(hit);
+        }
     }
 
     public static synchronized void beginFrame() {
@@ -87,6 +100,16 @@ public final class ModernUiInputRouter {
         ModernUiRect bounds
     ) {
         if (bounds == null || !ModernUiManager.isEnabled()) {
+            return;
+        }
+
+        addBlocker(bounds);
+    }
+
+    private static void addBlocker(
+        ModernUiRect bounds
+    ) {
+        if (bounds == null) {
             return;
         }
 
