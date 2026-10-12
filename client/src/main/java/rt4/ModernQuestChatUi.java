@@ -176,7 +176,7 @@ public final class ModernQuestChatUi {
                 ModernUiMetrics.TEXT_PRIMARY,
                 1,
                 1,
-                9.0F,
+                21.0F,
                 false
             );
         }
@@ -516,8 +516,10 @@ public final class ModernQuestChatUi {
         Component component,
         float fallback
     ) {
+        final float questChatBoost = 12.0F;
+
         if (component == null || component.font < 0) {
-            return fallback;
+            return fallback + questChatBoost;
         }
 
         String cacheName =
@@ -525,16 +527,16 @@ public final class ModernQuestChatUi {
                 component.font
             );
         if ("q8_full".equals(cacheName)) {
-            return 14.0F;
+            return 14.0F + questChatBoost;
         }
         if ("p11_full".equals(cacheName)) {
-            return 11.0F;
+            return 11.0F + questChatBoost;
         }
         if ("p12_full".equals(cacheName)
             || "b12_full".equals(cacheName)) {
-            return 12.0F;
+            return 12.0F + questChatBoost;
         }
-        return fallback;
+        return fallback + questChatBoost;
     }
 
     private static String shorten(
