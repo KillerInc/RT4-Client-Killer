@@ -200,6 +200,32 @@ public final class ModernTrueTypeFont {
         }
     }
 
+    public static java.util.List<String> wrapLines(
+        String fontAsset,
+        String text,
+        int width,
+        float size
+    ) {
+        int pixelSize =
+            Math.max(
+                7,
+                Math.round(
+                    size
+                        * ModernUiPreferences.getTextScale()
+                )
+            );
+        return new java.util.ArrayList<>(
+            wrap(
+                fontAsset,
+                cleanMarkup(
+                    text == null ? "" : text
+                ),
+                Math.max(1, width),
+                pixelSize
+            )
+        );
+    }
+
     private static java.util.List<String> wrap(String fontAsset, String text, int width, int pixelSize) {
         java.util.List<String> out = new java.util.ArrayList<>();
         if (text.isEmpty()) {
