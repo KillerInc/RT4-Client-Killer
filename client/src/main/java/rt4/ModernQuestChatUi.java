@@ -1,5 +1,6 @@
 package rt4;
 
+import java.awt.Cursor;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -19,6 +20,7 @@ public final class ModernQuestChatUi {
     private static boolean dragging;
     private static int dragOffsetX;
     private static int dragOffsetY;
+    private static boolean handCursorActive;
 
     private ModernQuestChatUi() {
     }
@@ -85,11 +87,18 @@ public final class ModernQuestChatUi {
                 GameShell.canvasHeight
             );
 
+        boolean hasPortrait = hasPortrait(model);
         int count = Math.min(5, model.actions.size());
+        boolean linkStyle = count > 1;
         for (int i = 0; i < count; i++) {
             ModernUiInputRouter.bind(
                 model.actions.get(i).component,
-                layout.actionRect(i, count),
+                layout.actionRect(
+                    i,
+                    count,
+                    hasPortrait,
+                    linkStyle
+                ),
                 screen
             );
         }
@@ -110,6 +119,14 @@ public final class ModernQuestChatUi {
         drawAsset("game-ui/panel", layout.panel);
         drawAsset("audio-options/divider", layout.divider);
 
+        boolean hasPortrait = hasPortrait(model);
+        if (hasPortrait) {
+            ModernModelContentRenderer.render(
+                model.portraitComponent,
+                layout.portrait
+            );
+        }
+
         ModernTrueTypeFont.drawInBox(
             fontFor(model.title.component),
             model.title.text,
@@ -124,13 +141,19 @@ public final class ModernQuestChatUi {
             false
         );
 
+        ModernUiRect contentBody =
+            layout.contentBody(hasPortrait);
         int maxLines =
-            Math.max(1, layout.body.height / 20);
+            Math.max(1, contentBody.height / 20);
         int count =
             Math.min(maxLines, model.messages.size());
         for (int i = 0; i < count; i++) {
             ModernUiRect row =
-                layout.bodyLine(i, count);
+                layout.bodyLine(
+                    i,
+                    count,
+                    hasPortrait
+                );
             TextEntry message = model.messages.get(i);
             ModernTrueTypeFont.drawInBox(
                 fontFor(message.component),
@@ -149,15 +172,43 @@ public final class ModernQuestChatUi {
 
         int actionCount =
             Math.min(5, model.actions.size());
+        boolean linkStyle = actionCount > 1;
+        boolean anyLinkHover = false;
+
         for (int i = 0; i < actionCount; i++) {
             Action action = model.actions.get(i);
             ModernUiRect rect =
-                layout.actionRect(i, actionCount);
+                layout.actionRect(
+                    i,
+                    actionCount,
+                    hasPortrait,
+                    linkStyle
+                );
             boolean hover =
                 rect.contains(
                     Mouse.lastMouseX,
                     Mouse.lastMouseY
                 );
+
+            if (linkStyle) {
+                anyLinkHover |= hover;
+                ModernTrueTypeFont.drawInBox(
+                    ModernUiFontRegistry.BOLD_12,
+                    "› " + action.label,
+                    rect.x + 6,
+                    rect.y,
+                    Math.max(1, rect.width - 12),
+                    rect.height,
+                    hover
+                        ? 0xFFF0A0
+                        : ModernUiMetrics.TEXT_GOLD,
+                    0,
+                    1,
+                    15.0F,
+                    false
+                );
+                continue;
+            }
 
             drawAsset(
                 hover
@@ -180,12 +231,17 @@ public final class ModernQuestChatUi {
                 false
             );
         }
+
+        updateChoiceCursor(
+            linkStyle && anyLinkHover
+        );
     }
 
     public static void resetPosition() {
         windowX = Integer.MIN_VALUE;
         windowY = Integer.MIN_VALUE;
         dragging = false;
+        updateChoiceCursor(false);
     }
 
     private static ModernQuestChatLayout currentLayout() {
@@ -212,6 +268,9 @@ public final class ModernQuestChatUi {
         List<Component> flat =
             new ArrayList<>();
         collect(components, flat);
+
+        Component portraitComponent =
+            findPortraitComponent(flat);
 
         List<TextEntry> textEntries =
             new ArrayList<>();
@@ -386,7 +445,68 @@ public final class ModernQuestChatUi {
         return new Model(
             title,
             messages,
-            actions
+            actions,
+            portraitComponent
+        );
+    }
+
+    private static boolean hasPortrait(
+        Model model
+    ) {
+        if (model == null
+            || model.portraitComponent == null) {
+            return false;
+        }
+
+        if (ModernQuestChatServerState.isActive()) {
+            int speakerType =
+                ModernQuestChatServerState.getSpeakerType();
+            return speakerType == 1
+                || speakerType == 2;
+        }
+
+        Component component =
+            model.portraitComponent;
+        return component.objId == -1;
+    }
+
+    private static Component findPortraitComponent(
+        List<Component> components
+    ) {
+        if (components == null) {
+            return null;
+        }
+
+        for (Component component : components) {
+            if (component == null
+                || component.type != 6) {
+                continue;
+            }
+
+            if (component.objId != -1) {
+                continue;
+            }
+
+            return component;
+        }
+        return null;
+    }
+
+    private static void updateChoiceCursor(
+        boolean hand
+    ) {
+        if (handCursorActive == hand
+            || GameShell.canvas == null) {
+            return;
+        }
+
+        handCursorActive = hand;
+        GameShell.canvas.setCursor(
+            Cursor.getPredefinedCursor(
+                hand
+                    ? Cursor.HAND_CURSOR
+                    : Cursor.DEFAULT_CURSOR
+            )
         );
     }
 
@@ -691,15 +811,18 @@ public final class ModernQuestChatUi {
         private final TextEntry title;
         private final List<TextEntry> messages;
         private final List<Action> actions;
+        private final Component portraitComponent;
 
         private Model(
             TextEntry title,
             List<TextEntry> messages,
-            List<Action> actions
+            List<Action> actions,
+            Component portraitComponent
         ) {
             this.title = title;
             this.messages = messages;
             this.actions = actions;
+            this.portraitComponent = portraitComponent;
         }
     }
 
