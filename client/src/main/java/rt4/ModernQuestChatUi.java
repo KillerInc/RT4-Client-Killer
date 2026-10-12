@@ -21,6 +21,9 @@ public final class ModernQuestChatUi {
     private static int dragOffsetX;
     private static int dragOffsetY;
     private static boolean handCursorActive;
+    private static final int SCROLLBAR_WIDTH = 14;
+    private static int textScrollLine;
+    private static String textScrollSignature = "";
 
     private ModernQuestChatUi() {
     }
@@ -72,6 +75,105 @@ public final class ModernQuestChatUi {
             }
         }
 
+        boolean hasPortrait = hasPortrait(model);
+        ModernUiRect contentBody =
+            layout.contentBody(hasPortrait);
+        String combinedText =
+            combinedMessageText(model);
+        TextEntry styleSource =
+            model.messages.isEmpty()
+                ? null
+                : model.messages.get(0);
+        String fontAsset =
+            styleSource == null
+                ? ModernUiFontRegistry.QUILL_8
+                : fontFor(styleSource.component);
+        float fontSize =
+            styleSource == null
+                ? 20.0F
+                : sizeFor(
+                    styleSource.component,
+                    ModernUiMetrics.FONT_CONTROL
+                );
+        int lineHeight =
+            Math.max(
+                22,
+                ModernTrueTypeFont.getLineHeight(
+                    fontAsset,
+                    fontSize
+                ) + 2
+            );
+        List<String> wrapped =
+            ModernTrueTypeFont.wrapLines(
+                fontAsset,
+                combinedText,
+                contentBody.width,
+                fontSize
+            );
+        int visibleLines =
+            Math.max(
+                1,
+                contentBody.height / lineHeight
+            );
+        boolean overflow =
+            wrapped.size() > visibleLines;
+        if (overflow) {
+            wrapped =
+                ModernTrueTypeFont.wrapLines(
+                    fontAsset,
+                    combinedText,
+                    Math.max(
+                        1,
+                        contentBody.width
+                            - SCROLLBAR_WIDTH - 8
+                    ),
+                    fontSize
+                );
+        }
+
+        String signature =
+            combinedText
+                + "|" + contentBody.width
+                + "|" + fontSize;
+        if (!signature.equals(textScrollSignature)) {
+            textScrollSignature = signature;
+            textScrollLine = 0;
+        }
+
+        int maxScroll =
+            Math.max(
+                0,
+                wrapped.size() - visibleLines
+            );
+        textScrollLine =
+            Math.max(
+                0,
+                Math.min(
+                    textScrollLine,
+                    maxScroll
+                )
+            );
+
+        if (overflow
+            && contentBody.contains(
+                Mouse.lastMouseX,
+                Mouse.lastMouseY
+            )
+            && MouseWheel.wheelRotation != 0) {
+            textScrollLine =
+                Math.max(
+                    0,
+                    Math.min(
+                        maxScroll,
+                        textScrollLine
+                            + MouseWheel.wheelRotation * 3
+                    )
+                );
+            MouseWheel.wheelRotation = 0;
+            InterfaceList.fullRedrawAllInterfaces();
+            GameShell.fullRedraw = true;
+        }
+
         ModernUiInputRouter.blockWorldInput(layout.panel);
         ModernUiInputRouter.registerModernRegion(
             "quest-chat-drag",
@@ -87,7 +189,6 @@ public final class ModernQuestChatUi {
                 GameShell.canvasHeight
             );
 
-        boolean hasPortrait = hasPortrait(model);
         int count = Math.min(5, model.actions.size());
         boolean linkStyle = count > 1;
         for (int i = 0; i < count; i++) {
@@ -143,87 +244,119 @@ public final class ModernQuestChatUi {
 
         ModernUiRect contentBody =
             layout.contentBody(hasPortrait);
+        String combinedText =
+            combinedMessageText(model);
 
-        if (ModernQuestChatServerState.isActive()
+        if (!combinedText.isEmpty()
             && !model.messages.isEmpty()) {
-            StringBuilder semanticText =
-                new StringBuilder();
-            for (int i = 0; i < model.messages.size(); i++) {
-                if (semanticText.length() > 0) {
-                    semanticText.append('\n');
-                }
-                semanticText.append(
-                    model.messages.get(i).text
-                );
-            }
-
             TextEntry styleSource =
                 model.messages.get(0);
-            ModernTrueTypeFont.drawInBox(
-                fontFor(styleSource.component),
-                semanticText.toString(),
-                contentBody.x,
-                contentBody.y,
-                contentBody.width,
-                contentBody.height,
-                colorFor(
-                    styleSource.component,
-                    ModernUiMetrics.TEXT_PRIMARY
-                ),
-                1,
-                1,
+            String fontAsset =
+                fontFor(styleSource.component);
+            float fontSize =
                 sizeFor(
                     styleSource.component,
                     ModernUiMetrics.FONT_CONTROL
-                ),
-                false
-            );
-        } else {
+                );
             int lineHeight =
                 Math.max(
                     22,
                     ModernTrueTypeFont.getLineHeight(
-                        ModernUiFontRegistry.QUILL_8,
-                        20.0F
+                        fontAsset,
+                        fontSize
                     ) + 2
                 );
-            int maxLines =
+            int textWidth =
+                contentBody.width;
+
+            List<String> wrapped =
+                ModernTrueTypeFont.wrapLines(
+                    fontAsset,
+                    combinedText,
+                    textWidth,
+                    fontSize
+                );
+            int visibleLines =
                 Math.max(
                     1,
                     contentBody.height / lineHeight
                 );
-            int count =
-                Math.min(
-                    maxLines,
-                    model.messages.size()
-                );
-            for (int i = 0; i < count; i++) {
-                ModernUiRect row =
-                    layout.bodyLine(
-                        i,
-                        count,
-                        hasPortrait
+            boolean overflow =
+                wrapped.size() > visibleLines;
+            if (overflow) {
+                textWidth =
+                    Math.max(
+                        1,
+                        contentBody.width
+                            - SCROLLBAR_WIDTH - 8
                     );
-                TextEntry message =
-                    model.messages.get(i);
+                wrapped =
+                    ModernTrueTypeFont.wrapLines(
+                        fontAsset,
+                        combinedText,
+                        textWidth,
+                        fontSize
+                    );
+            }
+
+            int maxScroll =
+                Math.max(
+                    0,
+                    wrapped.size() - visibleLines
+                );
+            textScrollLine =
+                Math.max(
+                    0,
+                    Math.min(
+                        textScrollLine,
+                        maxScroll
+                    )
+                );
+
+            int drawCount =
+                Math.min(
+                    visibleLines,
+                    wrapped.size() - textScrollLine
+                );
+            int blockHeight =
+                Math.max(0, drawCount * lineHeight);
+            int startY =
+                overflow
+                    ? contentBody.y
+                    : contentBody.y
+                        + Math.max(
+                            0,
+                            (contentBody.height
+                                - blockHeight) / 2
+                        );
+
+            for (int i = 0; i < drawCount; i++) {
                 ModernTrueTypeFont.drawInBox(
-                    fontFor(message.component),
-                    message.text,
-                    row.x,
-                    row.y,
-                    row.width,
-                    Math.max(row.height, lineHeight),
+                    fontAsset,
+                    wrapped.get(
+                        textScrollLine + i
+                    ),
+                    contentBody.x,
+                    startY + i * lineHeight,
+                    textWidth,
+                    lineHeight,
                     colorFor(
-                        message.component,
+                        styleSource.component,
                         ModernUiMetrics.TEXT_PRIMARY
                     ),
                     1,
                     1,
-                    sizeFor(
-                        message.component,
-                        ModernUiMetrics.FONT_CONTROL
-                    ),
+                    fontSize,
                     false
+                );
+            }
+
+            if (overflow) {
+                drawScrollbar(
+                    contentBody,
+                    textScrollLine,
+                    visibleLines,
+                    wrapped.size()
                 );
             }
         }
@@ -324,7 +457,92 @@ public final class ModernQuestChatUi {
         windowX = Integer.MIN_VALUE;
         windowY = Integer.MIN_VALUE;
         dragging = false;
+        textScrollLine = 0;
+        textScrollSignature = "";
         updateChoiceCursor(false);
+    }
+
+    private static String combinedMessageText(
+        Model model
+    ) {
+        if (model == null
+            || model.messages == null
+            || model.messages.isEmpty()) {
+            return "";
+        }
+
+        StringBuilder out =
+            new StringBuilder();
+        for (TextEntry message : model.messages) {
+            if (message == null
+                || message.text == null
+                || message.text.isEmpty()) {
+                continue;
+            }
+            if (out.length() > 0) {
+                out.append('\n');
+            }
+            out.append(message.text);
+        }
+        return out.toString();
+    }
+
+    private static void drawScrollbar(
+        ModernUiRect viewport,
+        int startLine,
+        int visibleLines,
+        int totalLines
+    ) {
+        if (totalLines <= visibleLines) {
+            return;
+        }
+
+        ModernUiRect track =
+            new ModernUiRect(
+                viewport.right() - SCROLLBAR_WIDTH,
+                viewport.y,
+                SCROLLBAR_WIDTH,
+                viewport.height
+            );
+        int thumbHeight =
+            Math.max(
+                24,
+                track.height
+                    * visibleLines
+                    / Math.max(1, totalLines)
+            );
+        int maxStart =
+            Math.max(
+                1,
+                totalLines - visibleLines
+            );
+        int travel =
+            Math.max(
+                0,
+                track.height - thumbHeight
+            );
+        int thumbY =
+            track.y
+                + travel * startLine / maxStart;
+        ModernUiRect thumb =
+            new ModernUiRect(
+                track.x,
+                thumbY,
+                track.width,
+                Math.min(
+                    thumbHeight,
+                    track.bottom() - thumbY
+                )
+            );
+
+        drawAsset(
+            "game-ui/scrollbar-track",
+            track
+        );
+        drawAsset(
+            "game-ui/scrollbar-thumb",
+            thumb
+        );
     }
 
     private static ModernQuestChatLayout currentLayout() {
