@@ -22,6 +22,23 @@ public final class ModernGameUi {
     private static final List<Component> tabs =
         new ArrayList<>();
 
+    private static final String[] TAB_ICON_ASSETS = {
+        "game-ui/tabs/combat",
+        "game-ui/tabs/stats",
+        "game-ui/tabs/quests",
+        "game-ui/tabs/inventory",
+        "game-ui/tabs/equipment",
+        "game-ui/tabs/prayer",
+        "game-ui/tabs/magic",
+        "game-ui/tabs/lore",
+        "game-ui/tabs/friends",
+        "game-ui/tabs/ignore",
+        "game-ui/tabs/clan",
+        "game-ui/tabs/options",
+        "game-ui/tabs/emotes",
+        "game-ui/tabs/music"
+    };
+
     private ModernGameUi() {
     }
 
@@ -94,16 +111,43 @@ public final class ModernGameUi {
             );
         }
 
-        int count = Math.min(
-            ModernGameFrameLayout.TAB_COUNT,
-            tabs.size()
-        );
+        int count =
+            ModernGameFrameLayout.TAB_COUNT;
         for (int i = 0; i < count; i++) {
-            ModernUiInputRouter.bind(
-                tabs.get(i),
-                layout.tabSlot(i),
+            ModernUiRect slot =
+                layout.tabSlot(i);
+
+            // Every Modern tab slot owns its rectangle even while locked.
+            // This prevents world clicks from passing through empty tutorial
+            // slots and prevents a hidden/locked tab from opening.
+            ModernUiInputRouter.blockWorldInput(slot);
+            ModernUiInputRouter.registerModernRegion(
+                "game-tab-" + i,
+                slot,
                 screen
             );
+
+            boolean unlocked =
+                ModernTutorialState.isUnlocked(i);
+            Component component =
+                i < tabs.size()
+                    ? tabs.get(i)
+                    : null;
+
+            if (unlocked && component != null) {
+                ModernUiInputRouter.bind(
+                    component,
+                    slot,
+                    screen
+                );
+            } else if (Mouse.clickButton == 1
+                && slot.contains(
+                    Mouse.clickX,
+                    Mouse.clickY
+                )) {
+                Mouse.clickButton = 0;
+                MiniMenu.clickProcessingState = 0;
+            }
         }
     }
 
@@ -180,12 +224,18 @@ public final class ModernGameUi {
             layout.compass
         );
 
-        int count = Math.min(
-            ModernGameFrameLayout.TAB_COUNT,
-            tabs.size()
-        );
+        int count =
+            ModernGameFrameLayout.TAB_COUNT;
         for (int i = 0; i < count; i++) {
-            renderTab(tabs.get(i), layout.tabSlot(i));
+            Component component =
+                i < tabs.size()
+                    ? tabs.get(i)
+                    : null;
+            renderTab(
+                i,
+                component,
+                layout.tabSlot(i)
+            );
         }
     }
 
@@ -296,16 +346,22 @@ public final class ModernGameUi {
     }
 
     private static void renderTab(
+        int index,
         Component component,
         ModernUiRect rect
     ) {
+        boolean unlocked =
+            ModernTutorialState.isUnlocked(index);
         boolean active =
-            Cs1ScriptRunner.isTrue(component);
+            unlocked
+                && component != null
+                && Cs1ScriptRunner.isTrue(component);
         boolean hover =
-            rect.contains(
-                Mouse.lastMouseX,
-                Mouse.lastMouseY
-            );
+            unlocked
+                && rect.contains(
+                    Mouse.lastMouseX,
+                    Mouse.lastMouseY
+                );
 
         drawAsset(
             active || hover
@@ -314,40 +370,52 @@ public final class ModernGameUi {
             rect
         );
 
-        Sprite sprite =
-            component.getSprite(active);
-        if (sprite == null) {
-            return;
+        // Vanilla Tutorial Island removes unavailable tabs entirely. Keep the
+        // Modern strip geometry stable, but mirror that behavior by hiding the
+        // icon and refusing input until the server unlocks the slot.
+        if (unlocked
+            && index >= 0
+            && index < TAB_ICON_ASSETS.length) {
+            int iconSize =
+                Math.max(
+                    16,
+                    Math.min(
+                        24,
+                        rect.width - 8
+                    )
+                );
+            ModernUiRect iconRect =
+                new ModernUiRect(
+                    rect.centerX() - iconSize / 2,
+                    rect.centerY() - iconSize / 2,
+                    iconSize,
+                    iconSize
+                );
+            drawAsset(
+                TAB_ICON_ASSETS[index],
+                iconRect
+            );
         }
 
-        int max = Math.max(1, rect.width - 8);
-        int width = Math.max(1, sprite.width);
-        int height = Math.max(1, sprite.height);
-
-        if (width > max || height > max) {
-            float scale =
-                Math.min(
-                    max / (float) width,
-                    max / (float) height
+        if (ModernTutorialState.getHighlightedSlot()
+                == index
+            && unlocked) {
+            int bouncePhase =
+                client.loop % 20;
+            int bounce =
+                bouncePhase < 10
+                    ? bouncePhase / 2
+                    : (20 - bouncePhase) / 2;
+            ModernUiRect arrow =
+                new ModernUiRect(
+                    rect.centerX() - 11,
+                    rect.y - 20 - bounce,
+                    22,
+                    18
                 );
-            width = Math.max(
-                1,
-                (int) (width * scale)
-            );
-            height = Math.max(
-                1,
-                (int) (height * scale)
-            );
-            sprite.renderResized(
-                rect.centerX() - width / 2,
-                rect.centerY() - height / 2,
-                width,
-                height
-            );
-        } else {
-            sprite.render(
-                rect.centerX() - width / 2,
-                rect.centerY() - height / 2
+            drawAsset(
+                "game-ui/tabs/tutorial-arrow",
+                arrow
             );
         }
     }
