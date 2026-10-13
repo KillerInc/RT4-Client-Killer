@@ -188,7 +188,6 @@ public final class ModernChatPanelUi {
         prepareInput(components);
 
         drawAsset("game-ui/panel", layout.historyPanel);
-        drawAsset("audio-options/divider", layout.divider);
 
         drawFontButton(
             layout.fontDecrease,
