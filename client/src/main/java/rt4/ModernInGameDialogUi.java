@@ -105,7 +105,6 @@ public final class ModernInGameDialogUi {
             currentLayout();
 
         drawAsset("game-ui/panel", layout.panel);
-        drawAsset("audio-options/divider", layout.divider);
 
         ModernTrueTypeFont.drawInBox(
             ModernUiFontRegistry.BOLD_12,
