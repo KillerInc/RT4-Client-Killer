@@ -19,8 +19,8 @@ public final class ModernGameUi {
 
     private static int preparedLoop = -1;
     private static ModernGameFrameLayout layout;
-    private static final List<Component> tabs =
-        new ArrayList<>();
+    private static final Component[] tabs =
+        new Component[ModernGameFrameLayout.TAB_COUNT];
 
     private static final String[] TAB_ICON_ASSETS = {
         "game-ui/tabs/combat",
@@ -64,7 +64,9 @@ public final class ModernGameUi {
 
         preparedLoop = client.loop;
         renderBounds.clear();
-        tabs.clear();
+        for (int i = 0; i < tabs.length; i++) {
+            tabs[i] = null;
+        }
         layout = ModernGameFrameLayout.create(
             GameShell.canvasWidth,
             GameShell.canvasHeight
@@ -130,9 +132,7 @@ public final class ModernGameUi {
             boolean unlocked =
                 ModernTutorialState.isUnlocked(i);
             Component component =
-                i < tabs.size()
-                    ? tabs.get(i)
-                    : null;
+                tabs[i];
 
             if (unlocked && component != null) {
                 ModernUiInputRouter.bind(
@@ -228,9 +228,7 @@ public final class ModernGameUi {
             ModernGameFrameLayout.TAB_COUNT;
         for (int i = 0; i < count; i++) {
             Component component =
-                i < tabs.size()
-                    ? tabs.get(i)
-                    : null;
+                tabs[i];
             renderTab(
                 i,
                 component,
@@ -311,38 +309,163 @@ public final class ModernGameUi {
             return;
         }
 
-        List<TabCandidate> best =
+        List<List<TabCandidate>> rows =
             new ArrayList<>();
 
-        for (TabCandidate seed : candidates) {
-            List<TabCandidate> row =
-                new ArrayList<>();
-            for (TabCandidate candidate : candidates) {
-                if (Math.abs(
-                    candidate.y - seed.y
-                ) <= 8) {
-                    row.add(candidate);
+        for (TabCandidate candidate : candidates) {
+            List<TabCandidate> target = null;
+            for (List<TabCandidate> row : rows) {
+                if (!row.isEmpty()
+                    && Math.abs(
+                        row.get(0).y - candidate.y
+                    ) <= 8) {
+                    target = row;
+                    break;
                 }
             }
+
+            if (target == null) {
+                target = new ArrayList<>();
+                rows.add(target);
+            }
+            target.add(candidate);
+        }
+
+        for (List<TabCandidate> row : rows) {
+            Collections.sort(
+                row,
+                Comparator.comparingInt(
+                    candidate -> candidate.x
+                )
+            );
+        }
+
+        // HD/resizable top-level interfaces can expose all tab buttons on one
+        // legacy row. Prefer that immediately when available.
+        List<TabCandidate> singleRow = null;
+        for (List<TabCandidate> row : rows) {
+            if (row.size()
+                    >= ModernGameFrameLayout.TAB_COUNT
+                && (singleRow == null
+                    || row.size() < singleRow.size())) {
+                singleRow = row;
+            }
+        }
+
+        if (singleRow != null) {
+            for (int i = 0;
+                 i < ModernGameFrameLayout.TAB_COUNT;
+                 i++) {
+                tabs[i] = singleRow.get(i).component;
+            }
+            logTabMapping("single-row");
+            return;
+        }
+
+        // The classic 530 top-level (including interface 746) lays the tab
+        // buttons out as two seven-button rows. Reconstruct those rows rather
+        // than compacting one row into Modern slots 0..N.
+        List<TabCandidate> first = null;
+        List<TabCandidate> second = null;
+        int bestScore = Integer.MIN_VALUE;
+
+        for (int i = 0; i < rows.size(); i++) {
+            List<TabCandidate> a = rows.get(i);
+            if (a.size() < 5 || a.size() > 9) {
+                continue;
+            }
+
+            for (int j = i + 1; j < rows.size(); j++) {
+                List<TabCandidate> b = rows.get(j);
+                if (b.size() < 5 || b.size() > 9) {
+                    continue;
+                }
+
+                int combined = a.size() + b.size();
+                int score =
+                    100
+                        - Math.abs(7 - a.size()) * 20
+                        - Math.abs(7 - b.size()) * 20
+                        - Math.abs(
+                            ModernGameFrameLayout.TAB_COUNT
+                                - combined
+                        ) * 25;
+
+                int spanA =
+                    a.get(a.size() - 1).x
+                        - a.get(0).x;
+                int spanB =
+                    b.get(b.size() - 1).x
+                        - b.get(0).x;
+                score -= Math.abs(spanA - spanB) / 4;
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    if (a.get(0).y <= b.get(0).y) {
+                        first = a;
+                        second = b;
+                    } else {
+                        first = b;
+                        second = a;
+                    }
+                }
+            }
+        }
+
+        if (first != null && second != null) {
+            int slot = 0;
+            for (TabCandidate candidate : first) {
+                if (slot >= tabs.length) {
+                    break;
+                }
+                tabs[slot++] = candidate.component;
+            }
+            for (TabCandidate candidate : second) {
+                if (slot >= tabs.length) {
+                    break;
+                }
+                tabs[slot++] = candidate.component;
+            }
+            logTabMapping("two-row");
+            return;
+        }
+
+        // Conservative fallback for unusual top-level layouts.
+        List<TabCandidate> best =
+            new ArrayList<>();
+        for (List<TabCandidate> row : rows) {
             if (row.size() > best.size()) {
                 best = row;
             }
         }
-
-        Collections.sort(
-            best,
-            Comparator.comparingInt(
-                candidate -> candidate.x
-            )
-        );
-
-        int count = Math.min(
-            ModernGameFrameLayout.TAB_COUNT,
-            best.size()
-        );
+        int count =
+            Math.min(tabs.length, best.size());
         for (int i = 0; i < count; i++) {
-            tabs.add(best.get(i).component);
+            tabs[i] = best.get(i).component;
         }
+        logTabMapping("fallback");
+    }
+
+    private static void logTabMapping(
+        String mode
+    ) {
+        StringBuilder out =
+            new StringBuilder(
+                "MODERN_UI tab mapping mode="
+                    + mode
+            );
+        for (int i = 0; i < tabs.length; i++) {
+            Component component = tabs[i];
+            out.append(" slot")
+                .append(i)
+                .append('=')
+                .append(
+                    component == null
+                        ? -1
+                        : component.id
+                );
+        }
+        DisplayDebug.log(out.toString());
     }
 
     private static void renderTab(
