@@ -218,6 +218,7 @@ public final class ModernQuestChatUi {
             currentLayout();
 
         drawAsset("game-ui/panel", layout.panel);
+        drawAsset("audio-options/divider", layout.divider);
 
         boolean hasPortrait = hasPortrait(model);
         if (hasPortrait) {
