@@ -1016,7 +1016,7 @@ public final class ModernQuestChatUi {
         Component component,
         float fallback
     ) {
-        final float questChatBoost = 6.0F;
+        final float questChatBoost = 0.0F;
 
         if (component == null || component.font < 0) {
             return fallback + questChatBoost;
