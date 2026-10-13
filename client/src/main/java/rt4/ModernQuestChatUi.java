@@ -91,7 +91,7 @@ public final class ModernQuestChatUi {
         float fontSize =
             styleSource == null
                 ? 20.0F
-                : sizeFor(
+                : bodySizeFor(
                     styleSource.component,
                     ModernUiMetrics.FONT_CONTROL
                 );
@@ -254,7 +254,7 @@ public final class ModernQuestChatUi {
             String fontAsset =
                 fontFor(styleSource.component);
             float fontSize =
-                sizeFor(
+                bodySizeFor(
                     styleSource.component,
                     ModernUiMetrics.FONT_CONTROL
                 );
@@ -1012,11 +1012,21 @@ public final class ModernQuestChatUi {
             : color & 0xFFFFFF;
     }
 
+    private static float bodySizeFor(
+        Component component,
+        float fallback
+    ) {
+        return Math.max(
+            7.0F,
+            sizeFor(component, fallback) - 6.0F
+        );
+    }
+
     private static float sizeFor(
         Component component,
         float fallback
     ) {
-        final float questChatBoost = 0.0F;
+        final float questChatBoost = 6.0F;
 
         if (component == null || component.font < 0) {
             return fallback + questChatBoost;
