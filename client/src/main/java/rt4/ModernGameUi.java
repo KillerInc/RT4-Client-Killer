@@ -134,17 +134,42 @@ public final class ModernGameUi {
             Component component =
                 tabs[i];
 
+            boolean clicked =
+                Mouse.clickButton == 1
+                    && slot.contains(
+                        Mouse.clickX,
+                        Mouse.clickY
+                    );
+
+            if (ModernTutorialState.isActive()) {
+                if (unlocked && clicked) {
+                    Cheat.sendCheatPacket(
+                        JagString.parse(
+                            "::killer_modern_tab " + i
+                        )
+                    );
+                    DisplayDebug.log(
+                        "MODERN_UI tutorial tab click"
+                            + " slot=" + i
+                            + " stage="
+                            + ModernTutorialState.getStage()
+                    );
+                }
+
+                if (clicked) {
+                    Mouse.clickButton = 0;
+                    MiniMenu.clickProcessingState = 0;
+                }
+                continue;
+            }
+
             if (unlocked && component != null) {
                 ModernUiInputRouter.bind(
                     component,
                     slot,
                     screen
                 );
-            } else if (Mouse.clickButton == 1
-                && slot.contains(
-                    Mouse.clickX,
-                    Mouse.clickY
-                )) {
+            } else if (clicked) {
                 Mouse.clickButton = 0;
                 MiniMenu.clickProcessingState = 0;
             }
