@@ -107,7 +107,7 @@ public final class ModernQuestChatLayout {
                 panel.width - 32,
                 ACTION_HEIGHT
             );
-        int bodyY = header.bottom() + 8;
+        int bodyY = divider.bottom() + 8;
         ModernUiRect body =
             new ModernUiRect(
                 panel.x + 18,
