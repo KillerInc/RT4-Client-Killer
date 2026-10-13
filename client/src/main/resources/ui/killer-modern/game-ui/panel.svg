@@ -12,5 +12,4 @@
   </defs>
   <rect x=".75" y=".75" width="218.5" height="308.5" rx="8" fill="url(#bg)" stroke="#17110b" stroke-width="1.5"/>
   <rect x="3" y="3" width="214" height="304" rx="6" fill="none" stroke="url(#rim)" stroke-width="2"/>
-  <path d="M14 39 H206" stroke="#6b5638"/>
 </svg>
