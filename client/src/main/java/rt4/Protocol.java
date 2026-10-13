@@ -973,7 +973,8 @@ public class Protocol {
 			scriptArgs[0] = inboundBuffer.g4();
 			setVerifyId(tracknum);
 
-			if (ModernQuestChatServerState.handleRunScript(scriptArgs)) {
+			if (ModernQuestChatServerState.handleRunScript(scriptArgs)
+					|| ModernTutorialState.handleRunScript(scriptArgs)) {
 				opcode = -1;
 				return true;
 			}
